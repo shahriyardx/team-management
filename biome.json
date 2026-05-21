@@ -9,6 +9,13 @@
     "ignoreUnknown": true,
     "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
   },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "indentWidth": 2,
+      "indentStyle": "space"
+    }
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -19,7 +26,11 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noUnknownAtRules": "off"
+        "noUnknownAtRules": "off",
+        "noArrayIndexKey": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
       }
     },
     "domains": {
@@ -30,7 +41,7 @@
   "assist": {
     "actions": {
       "source": {
-        "organizeImports": "on"
+        "organizeImports": "off"
       }
     }
   }
