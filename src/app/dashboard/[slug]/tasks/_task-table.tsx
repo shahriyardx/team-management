@@ -5,8 +5,9 @@ import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
-  DotsThreeVertical,
+  Eye,
   MagnifyingGlass,
+  PencilSimple,
   Plus,
   Trash,
   WarningCircle,
@@ -160,6 +161,12 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
     { enabled: !!organization },
   )
   const availableLabels = labelsData?.labels ?? []
+  const createLabelMutation = api.label.create.useMutation({
+    onSuccess: () => utils.label.list.invalidate(),
+  })
+  const [labelCreateOpen, setLabelCreateOpen] = useState(false)
+  const [newLabelName, setNewLabelName] = useState("")
+  const [newLabelColor, setNewLabelColor] = useState("#6366f1")
 
   const currentMember = members.find((m) => m.userId === session?.user?.id)
   const canEditAll =
@@ -183,25 +190,42 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
   const filteredTasks = visibleTasks.filter((t) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      if (!t.title.toLowerCase().includes(q) && !(t.description ?? "").toLowerCase().includes(q)) {
+      if (
+        !t.title.toLowerCase().includes(q) &&
+        !(t.description ?? "").toLowerCase().includes(q)
+      ) {
         return false
       }
     }
     if (filterPriority && t.priority !== filterPriority) return false
     if (filterStatus && t.status !== filterStatus) return false
-    if (filterAssignee && !t.assignees.some((a) => a.member.id === filterAssignee)) return false
-    if (filterLabel && !t.labels.some((l) => l.label.id === filterLabel)) return false
+    if (
+      filterAssignee &&
+      !t.assignees.some((a) => a.member.id === filterAssignee)
+    )
+      return false
+    if (filterLabel && !t.labels.some((l) => l.label.id === filterLabel))
+      return false
     return true
   })
 
-  const hasActiveFilters = searchQuery || filterPriority || filterStatus || filterAssignee || filterLabel
+  const hasActiveFilters =
+    searchQuery ||
+    filterPriority ||
+    filterStatus ||
+    filterAssignee ||
+    filterLabel
 
   // Client-side pagination of filtered results
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages - 1)
-  const paginatedTasks = filteredTasks.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE)
+  const paginatedTasks = filteredTasks.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE,
+  )
 
   // Reset to first page when filters change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: deps trigger reset, not used inside
   useEffect(() => {
     setPage(0)
   }, [searchQuery, filterPriority, filterStatus, filterAssignee, filterLabel])
@@ -269,7 +293,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
         status: data.status,
         priority: data.priority,
         assigneeIds: data.assigneeIds?.length ? data.assigneeIds : undefined,
-        labelIds: data.labelIds?.length ? data.labelIds : undefined,
+        labelIds: data.labelIds ?? [],
         dueDate: data.dueDate || null,
       }
 
@@ -311,9 +335,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
     },
   })
   const deleteCommentMutation = api.comment.delete.useMutation({
-    onSuccess: () => utils.comment.list.invalidate({ taskId: viewTask?.id ?? "" }),
+    onSuccess: () =>
+      utils.comment.list.invalidate({ taskId: viewTask?.id ?? "" }),
   })
-
 
   if (isLoading || membersLoading) {
     return (
@@ -413,9 +437,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             Clear
           </button>
         )}
-        <span className="whitespace-nowrap text-xs text-muted-foreground">
-          {filteredTasks.length} of {visibleTasks.length} tasks
-        </span>
+
       </div>
 
       {/* Create/Edit Dialog */}
@@ -541,9 +563,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
               </div>
             </div>
 
-            {availableLabels.length > 0 && (
-              <div>
-                <Label className="mb-2 block">Labels</Label>
+            <div>
+              <Label className="mb-2 block">Labels</Label>
+              {availableLabels.length > 0 ? (
                 <Controller
                   name="labelIds"
                   control={form.control}
@@ -557,7 +579,11 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                       </MultiSelectTrigger>
                       <MultiSelectContent>
                         {availableLabels.map((l) => (
-                          <MultiSelectItem key={l.id} value={l.id} badgeLabel={l.name}>
+                          <MultiSelectItem
+                            key={l.id}
+                            value={l.id}
+                            badgeLabel={l.name}
+                          >
                             {l.name}
                           </MultiSelectItem>
                         ))}
@@ -565,8 +591,58 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                     </MultiSelect>
                   )}
                 />
-              </div>
-            )}
+              ) : (
+                <p className="text-xs text-muted-foreground">No labels yet.</p>
+              )}
+              {canEditAll && (
+                <div className="mt-2">
+                  {labelCreateOpen ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Label name"
+                        value={newLabelName}
+                        onChange={(e) => setNewLabelName(e.target.value)}
+                        className="h-7 flex-1 rounded-none border border-border bg-transparent px-2 text-xs outline-hidden focus:border-foreground"
+                      />
+                      <input
+                        type="color"
+                        value={newLabelColor}
+                        onChange={(e) => setNewLabelColor(e.target.value)}
+                        className="h-7 w-8 cursor-pointer rounded-none border border-border bg-transparent p-0.5"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (newLabelName.trim() && organization) {
+                            createLabelMutation.mutate(
+                              { name: newLabelName.trim(), color: newLabelColor, organizationId: organization.id },
+                              { onSuccess: () => { setNewLabelName(""); setNewLabelColor("#6366f1"); setLabelCreateOpen(false) } },
+                            )
+                          }
+                        }}
+                        disabled={!newLabelName.trim() || createLabelMutation.isPending}
+                      >
+                        Add
+                      </Button>
+                      <button
+                        onClick={() => setLabelCreateOpen(false)}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setLabelCreateOpen(true)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      + Create label
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
@@ -695,10 +771,15 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
               </h4>
               <div className="mb-2 max-h-40 space-y-2 overflow-y-auto">
                 {comments.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No comments yet.</p>
+                  <p className="text-xs text-muted-foreground">
+                    No comments yet.
+                  </p>
                 ) : (
                   comments.map((c) => (
-                    <div key={c.id} className="rounded-none border border-border px-2 py-1.5 text-xs">
+                    <div
+                      key={c.id}
+                      className="rounded-none border border-border px-2 py-1.5 text-xs"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-foreground">
                           {c.author.name}
@@ -712,7 +793,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                           </span>
                           {c.authorId === session?.user?.id && (
                             <button
-                              onClick={() => deleteCommentMutation.mutate({ id: c.id })}
+                              onClick={() =>
+                                deleteCommentMutation.mutate({ id: c.id })
+                              }
                               className="text-muted-foreground hover:text-destructive transition-colors"
                             >
                               <Trash className="size-3" />
@@ -720,7 +803,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                           )}
                         </div>
                       </div>
-                      <p className="mt-0.5 text-muted-foreground">{c.content}</p>
+                      <p className="mt-0.5 text-muted-foreground">
+                        {c.content}
+                      </p>
                     </div>
                   ))
                 )}
@@ -743,7 +828,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                       })
                     }
                   }}
-                  disabled={!newComment.trim() || createCommentMutation.isPending}
+                  disabled={
+                    !newComment.trim() || createCommentMutation.isPending
+                  }
                 >
                   Send
                 </Button>
@@ -775,8 +862,8 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
           <DialogHeader>
             <DialogTitle>Delete task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{confirmDelete?.title}&rdquo;?
-              This action cannot be undone.
+              Are you sure you want to delete &ldquo;{confirmDelete?.title}
+              &rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -809,20 +896,21 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
               <TableHead>Due</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assignee</TableHead>
+              <TableHead className="w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTasks.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="py-16 text-center text-muted-foreground"
                 >
                   {hasActiveFilters
-                  ? "No tasks match your filters."
-                  : mode === "all"
-                    ? "No tasks yet."
-                    : "No assigned tasks."}
+                    ? "No tasks match your filters."
+                    : mode === "all"
+                      ? "No tasks yet."
+                      : "No assigned tasks."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -835,17 +923,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                   (a) => a.memberId === currentMember?.id,
                 )
                 const canChangeStatus = canEditAll || isAssignee
-                const clickable = canEdit || isAssignee
 
                 return (
-                  <TableRow
-                    key={task.id}
-                    className={clickable ? "cursor-pointer" : ""}
-                    onClick={() => {
-                      if (canEdit) openEdit(task)
-                      else if (isAssignee) setViewTask(task)
-                    }}
-                  >
+                  <TableRow key={task.id}>
                     <TableCell>
                       <span
                         className={`truncate ${task.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}
@@ -964,16 +1044,42 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7"
+                          onClick={() => setViewTask(task)}
+                        >
+                          <Eye className="size-3.5" />
+                        </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            onClick={() => openEdit(task)}
+                          >
+                            <PencilSimple className="size-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 )
               })
             )}
           </TableBody>
         </Table>
-        {filteredTasks.length > 0 && (
-          <div className="flex items-center justify-between border border-t-0 border-border px-3 py-2">
+      </div>
+      {filteredTasks.length > 0 && (
+        <div className="mt-4 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              Showing {Math.min(filteredTasks.length, safePage * PAGE_SIZE + 1)}&ndash;{Math.min((safePage + 1) * PAGE_SIZE, filteredTasks.length)} of {filteredTasks.length} tasks
+              Showing {Math.min(filteredTasks.length, safePage * PAGE_SIZE + 1)}
+              &ndash;
+              {Math.min((safePage + 1) * PAGE_SIZE, filteredTasks.length)} of{" "}
+              {filteredTasks.length} tasks
             </span>
             <div className="flex items-center gap-1">
               <Button
@@ -985,7 +1091,10 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                 Previous
               </Button>
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const pageNum = Math.max(0, Math.min(safePage - 2, totalPages - 5))
+                const pageNum = Math.max(
+                  0,
+                  Math.min(safePage - 2, totalPages - 5),
+                )
                 const actualPage = pageNum + i
                 if (actualPage >= totalPages) return null
                 return (
@@ -994,7 +1103,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                     variant={actualPage === safePage ? "default" : "outline"}
                     size="sm"
                     onClick={() => setPage(actualPage)}
-                    className="min-w-[28px]"
+                    className="min-w-7"
                   >
                     {actualPage + 1}
                   </Button>
@@ -1011,7 +1120,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             </div>
           </div>
         )}
-      </div>
     </div>
   )
 }

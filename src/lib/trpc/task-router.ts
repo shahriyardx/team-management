@@ -54,20 +54,21 @@ export const taskRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const [tasks, total] = await prisma.$transaction([
-        prisma.task.findMany({
+      const [tasks, total] = await prisma.$transaction(async (tx) => {
+        const items = await tx.task.findMany({
           where: { organizationId: input.organizationId },
           include: {
             assignees: assigneesInclude,
             createdBy: { select: { id: true, name: true, email: true, image: true } },
             labels: { include: { label: true } },
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
           skip: input.skip,
           take: input.take,
-        }),
-        prisma.task.count({ where: { organizationId: input.organizationId } }),
-      ])
+        })
+        const count = await tx.task.count({ where: { organizationId: input.organizationId } })
+        return [items, count] as const
+      })
 
       return { tasks, total }
     }),
