@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Eye,
-  MagnifyingGlass,
+  MagnifyingGlassIcon,
   PencilSimple,
   Plus,
   Trash,
@@ -134,7 +134,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
     { enabled: !!organization },
   )
   const tasks = data?.tasks ?? []
-  const totalTasks = data?.total ?? 0
   const utils = api.useUtils()
 
   // Members for assignee dropdown + current member lookup
@@ -366,8 +365,8 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
-          <MagnifyingGlass className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative min-w-50 flex-1">
+          <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search tasks..."
@@ -483,7 +482,10 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                     name="status"
                     control={form.control}
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <SelectTrigger className="h-9 w-full rounded-none text-xs">
                           {field.value
                             ? statusLabels[field.value]
@@ -491,7 +493,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                         </SelectTrigger>
                         <SelectContent position="popper">
                           <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="in_progress">
+                            In Progress
+                          </SelectItem>
                           <SelectItem value="done">Done</SelectItem>
                         </SelectContent>
                       </Select>
