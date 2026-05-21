@@ -1,0 +1,181 @@
+import { z } from "zod"
+import { TRPCError } from "@trpc/server"
+import { prisma } from "@/lib/prisma"
+import { router, protectedProcedure } from "./server"
+
+const assigneesInclude = {
+  include: {
+    member: {
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    },
+  },
+} as const
+
+export const taskRouter = router({
+  list: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const tasks = await prisma.task.findMany({
+        where: { organizationId: input.organizationId },
+        include: {
+          assignees: assigneesInclude,
+          createdBy: { select: { id: true, name: true, email: true, image: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+
+      return { tasks }
+    }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1),
+        description: z.string().nullable().optional(),
+        status: z.string().optional(),
+        priority: z.string().optional(),
+        dueDate: z.string().nullable().optional(),
+        assigneeIds: z.array(z.string()).optional(),
+        organizationId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      // Validate all assignees belong to this org
+      if (input.assigneeIds?.length) {
+        const assigneeCount = await prisma.member.count({
+          where: { id: { in: input.assigneeIds }, organizationId: input.organizationId },
+        })
+        if (assigneeCount !== input.assigneeIds.length) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid assignee" })
+        }
+      }
+
+      const task = await prisma.task.create({
+        data: {
+          title: input.title,
+          description: input.description ?? null,
+          status: input.status ?? "todo",
+          priority: input.priority ?? "medium",
+          dueDate: input.dueDate ? new Date(input.dueDate) : null,
+          createdById: ctx.session.user.id,
+          organizationId: input.organizationId,
+          ...(input.assigneeIds?.length
+            ? { assignees: { create: input.assigneeIds.map((memberId) => ({ memberId })) } }
+            : {}),
+        },
+        include: {
+          assignees: assigneesInclude,
+          createdBy: { select: { id: true, name: true, email: true, image: true } },
+        },
+      })
+
+      return { task }
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        title: z.string().optional(),
+        description: z.string().nullable().optional(),
+        status: z.string().optional(),
+        priority: z.string().optional(),
+        dueDate: z.string().nullable().optional(),
+        assigneeIds: z.array(z.string()).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.task.findUnique({ where: { id: input.id } })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      // If updating assignees, validate and replace
+      if (input.assigneeIds !== undefined) {
+        if (input.assigneeIds.length > 0) {
+          const assigneeCount = await prisma.member.count({
+            where: { id: { in: input.assigneeIds }, organizationId: existing.organizationId },
+          })
+          if (assigneeCount !== input.assigneeIds.length) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid assignee" })
+          }
+        }
+
+        await prisma.taskAssignee.deleteMany({ where: { taskId: input.id } })
+        if (input.assigneeIds.length > 0) {
+          await prisma.taskAssignee.createMany({
+            data: input.assigneeIds.map((memberId) => ({ taskId: input.id, memberId })),
+          })
+        }
+      }
+
+      const task = await prisma.task.update({
+        where: { id: input.id },
+        data: {
+          ...(input.title !== undefined && { title: input.title }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.status !== undefined && { status: input.status }),
+          ...(input.priority !== undefined && { priority: input.priority }),
+          ...(input.dueDate !== undefined && { dueDate: input.dueDate ? new Date(input.dueDate) : null }),
+        },
+        include: {
+          assignees: assigneesInclude,
+          createdBy: { select: { id: true, name: true, email: true, image: true } },
+        },
+      })
+
+      return { task }
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.task.findUnique({ where: { id: input.id } })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member || (member.role === "member" && existing.createdById !== ctx.session.user.id)) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      await prisma.task.delete({ where: { id: input.id } })
+      return { success: true }
+    }),
+})

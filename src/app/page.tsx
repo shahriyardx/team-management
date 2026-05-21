@@ -35,16 +35,18 @@ export default function Home() {
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true)
+    const params = new URLSearchParams(window.location.search)
+    const invitation = params.get("invitation")
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: invitation ? `/invitations/accept?id=${invitation}` : "/dashboard",
     })
   }, [])
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Left: Brand & Info */}
-      <div className="flex flex-col justify-between bg-gradient-to-br from-zinc-950 via-zinc-900 to-indigo-950 px-8 py-12 sm:px-12 sm:py-16 lg:w-1/2 lg:px-16">
+      <div className="flex flex-col justify-between bg-linear-to-br from-zinc-950 via-zinc-900 to-indigo-950 px-8 py-12 sm:px-12 sm:py-16 lg:w-1/2 lg:px-16">
         <div>
           <h1 className="text-4xl font-bold tracking-[0.15em] text-white sm:text-5xl">
             PULSE

@@ -22,21 +22,101 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  members       Member[]
+  invitations   Invitation[]
+  createdTasks  Task[] @relation("CreatedTasks")
 
   @@unique([email])
   @@map("user")
 }
 
+model Organization {
+  id        String       @id
+  name      String
+  slug      String       @unique
+  logo      String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  members     Member[]
+  invitations Invitation[]
+  tasks       Task[]
+
+  @@map("organization")
+}
+
+model Member {
+  id             String          @id
+  role           String          @default("member")
+  createdAt      DateTime        @default(now())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedTasks  TaskAssignee[]
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("member")
+}
+
+model Task {
+  id             String          @id @default(cuid())
+  title          String
+  description    String?
+  status         String          @default("todo")
+  priority       String          @default("medium")
+  dueDate        DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignees      TaskAssignee[]
+  createdById    String
+  createdBy      User            @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("task")
+}
+
+model TaskAssignee {
+  taskId   String
+  memberId String
+  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, memberId])
+  @@index([taskId])
+  @@index([memberId])
+  @@map("task_assignee")
+}
+
+model Invitation {
+  id             String       @id
+  email          String
+  role           String
+  status         String       @default("pending")
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviterId      String
+  inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("invitation")
+}
+
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String   @id
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
 
   @@unique([token])
   @@index([userId])
