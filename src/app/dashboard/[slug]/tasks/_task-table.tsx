@@ -437,7 +437,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             Clear
           </button>
         )}
-
       </div>
 
       {/* Create/Edit Dialog */}
@@ -477,27 +476,29 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             </Field>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="mb-2 block">Status</Label>
-                <Controller
-                  name="status"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="h-9 w-full rounded-none text-xs">
-                        {field.value
-                          ? statusLabels[field.value]
-                          : "Select status"}
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todo">Todo</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="done">Done</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+              {editTask ? (
+                <div>
+                  <Label className="mb-2 block">Status</Label>
+                  <Controller
+                    name="status"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="h-9 w-full rounded-none text-xs">
+                          {field.value
+                            ? statusLabels[field.value]
+                            : "Select status"}
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          <SelectItem value="todo">Todo</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="done">Done</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              ) : null}
               <div>
                 <Label className="mb-2 block">Priority</Label>
                 <Controller
@@ -520,37 +521,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                   )}
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="mb-2 block">Assignees</Label>
-                <Controller
-                  name="assigneeIds"
-                  control={form.control}
-                  render={({ field }) => (
-                    <MultiSelect
-                      values={field.value ?? []}
-                      onValuesChange={field.onChange}
-                    >
-                      <MultiSelectTrigger className="w-full rounded-none">
-                        <MultiSelectValue placeholder="Select assignees" />
-                      </MultiSelectTrigger>
-                      <MultiSelectContent>
-                        {members.map((m) => (
-                          <MultiSelectItem
-                            key={m.id}
-                            value={m.id}
-                            badgeLabel={m.user.name}
-                          >
-                            {m.user.name}
-                          </MultiSelectItem>
-                        ))}
-                      </MultiSelectContent>
-                    </MultiSelect>
-                  )}
-                />
-              </div>
               <div>
                 <Label htmlFor="task-due" className="mb-2 block">
                   Due date
@@ -561,6 +531,35 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                   {...form.register("dueDate")}
                 />
               </div>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Assignees</Label>
+              <Controller
+                name="assigneeIds"
+                control={form.control}
+                render={({ field }) => (
+                  <MultiSelect
+                    values={field.value ?? []}
+                    onValuesChange={field.onChange}
+                  >
+                    <MultiSelectTrigger className="w-full rounded-none">
+                      <MultiSelectValue placeholder="Select assignees" />
+                    </MultiSelectTrigger>
+                    <MultiSelectContent>
+                      {members.map((m) => (
+                        <MultiSelectItem
+                          key={m.id}
+                          value={m.id}
+                          badgeLabel={m.user.name}
+                        >
+                          {m.user.name}
+                        </MultiSelectItem>
+                      ))}
+                    </MultiSelectContent>
+                  </MultiSelect>
+                )}
+              />
             </div>
 
             <div>
@@ -616,12 +615,24 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                         onClick={() => {
                           if (newLabelName.trim() && organization) {
                             createLabelMutation.mutate(
-                              { name: newLabelName.trim(), color: newLabelColor, organizationId: organization.id },
-                              { onSuccess: () => { setNewLabelName(""); setNewLabelColor("#6366f1"); setLabelCreateOpen(false) } },
+                              {
+                                name: newLabelName.trim(),
+                                color: newLabelColor,
+                                organizationId: organization.id,
+                              },
+                              {
+                                onSuccess: () => {
+                                  setNewLabelName("")
+                                  setNewLabelColor("#6366f1")
+                                  setLabelCreateOpen(false)
+                                },
+                              },
                             )
                           }
                         }}
-                        disabled={!newLabelName.trim() || createLabelMutation.isPending}
+                        disabled={
+                          !newLabelName.trim() || createLabelMutation.isPending
+                        }
                       >
                         Add
                       </Button>
@@ -1075,51 +1086,51 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
       </div>
       {filteredTasks.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              Showing {Math.min(filteredTasks.length, safePage * PAGE_SIZE + 1)}
-              &ndash;
-              {Math.min((safePage + 1) * PAGE_SIZE, filteredTasks.length)} of{" "}
-              {filteredTasks.length} tasks
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={safePage === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-              >
-                Previous
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const pageNum = Math.max(
-                  0,
-                  Math.min(safePage - 2, totalPages - 5),
-                )
-                const actualPage = pageNum + i
-                if (actualPage >= totalPages) return null
-                return (
-                  <Button
-                    key={actualPage}
-                    variant={actualPage === safePage ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPage(actualPage)}
-                    className="min-w-7"
-                  >
-                    {actualPage + 1}
-                  </Button>
-                )
-              })}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={safePage >= totalPages - 1}
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              >
-                Next
-              </Button>
-            </div>
+          <span className="text-xs text-muted-foreground">
+            Showing {Math.min(filteredTasks.length, safePage * PAGE_SIZE + 1)}
+            &ndash;
+            {Math.min((safePage + 1) * PAGE_SIZE, filteredTasks.length)} of{" "}
+            {filteredTasks.length} tasks
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage === 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              Previous
+            </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const pageNum = Math.max(
+                0,
+                Math.min(safePage - 2, totalPages - 5),
+              )
+              const actualPage = pageNum + i
+              if (actualPage >= totalPages) return null
+              return (
+                <Button
+                  key={actualPage}
+                  variant={actualPage === safePage ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPage(actualPage)}
+                  className="min-w-7"
+                >
+                  {actualPage + 1}
+                </Button>
+              )
+            })}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages - 1}
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            >
+              Next
+            </Button>
           </div>
-        )}
+        </div>
+      )}
     </div>
   )
 }
