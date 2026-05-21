@@ -25,6 +25,8 @@ model User {
   members       Member[]
   invitations   Invitation[]
   createdTasks  Task[] @relation("CreatedTasks")
+  comments      Comment[]
+  notifications Notification[]
 
   @@unique([email])
   @@map("user")
@@ -40,6 +42,8 @@ model Organization {
   members     Member[]
   invitations Invitation[]
   tasks       Task[]
+  labels      Label[]
+  notifications Notification[]
 
   @@map("organization")
 }
@@ -73,6 +77,9 @@ model Task {
   assignees      TaskAssignee[]
   createdById    String
   createdBy      User            @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+  labels         TaskLabel[]
+  comments       Comment[]
+  notifications  Notification[]
 
   @@index([organizationId])
   @@map("task")
@@ -153,4 +160,63 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Label {
+  id             String       @id @default(cuid())
+  name           String
+  color          String       @default("#6366f1")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  tasks          TaskLabel[]
+
+  @@unique([name, organizationId])
+  @@index([organizationId])
+  @@map("label")
+}
+
+model TaskLabel {
+  taskId String
+  labelId String
+  task   Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label  Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@index([taskId])
+  @@index([labelId])
+  @@map("task_label")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("comment")
+}
+
+model Notification {
+  id             String       @id @default(cuid())
+  type           String
+  title          String
+  body           String?
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taskId         String?
+  task           Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([organizationId])
+  @@map("notification")
 }

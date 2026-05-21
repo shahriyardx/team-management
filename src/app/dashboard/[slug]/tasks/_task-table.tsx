@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   DotsThreeVertical,
+  MagnifyingGlass,
   Plus,
   Trash,
   WarningCircle,
@@ -87,6 +88,13 @@ type Task = {
     email: string
     image: string | null | undefined
   }
+  labels: Array<{
+    label: {
+      id: string
+      name: string
+      color: string
+    }
+  }>
 }
 
 const statusLabels: Record<string, string> = {
@@ -108,6 +116,7 @@ const taskSchema = z.object({
   status: z.enum(["todo", "in_progress", "done"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   assigneeIds: z.array(z.string()).optional(),
+  labelIds: z.array(z.string()).optional(),
   dueDate: z.string().optional(),
 })
 
@@ -116,11 +125,15 @@ type TaskForm = z.infer<typeof taskSchema>
 export function TaskTable({ mode }: { mode: "mine" | "all" }) {
   const { session, organization } = useOrganization()
 
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 10
+
   const { data, isLoading } = api.task.list.useQuery(
-    { organizationId: organization?.id ?? "" },
+    { organizationId: organization?.id ?? "", skip: 0, take: 100 },
     { enabled: !!organization },
   )
   const tasks = data?.tasks ?? []
+  const totalTasks = data?.total ?? 0
   const utils = api.useUtils()
 
   // Members for assignee dropdown + current member lookup
@@ -141,6 +154,13 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
       .catch(() => setMembersLoading(false))
   }, [organization])
 
+  // Labels for filtering + management
+  const { data: labelsData } = api.label.list.useQuery(
+    { organizationId: organization?.id ?? "" },
+    { enabled: !!organization },
+  )
+  const availableLabels = labelsData?.labels ?? []
+
   const currentMember = members.find((m) => m.userId === session?.user?.id)
   const canEditAll =
     currentMember?.role === "admin" || currentMember?.role === "owner"
@@ -152,6 +172,39 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
         return t.assignees.some((a) => a.memberId === currentMember.id)
       })
     : []
+
+  // Filters (client-side)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterPriority, setFilterPriority] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string | null>(null)
+  const [filterAssignee, setFilterAssignee] = useState<string | null>(null)
+  const [filterLabel, setFilterLabel] = useState<string | null>(null)
+
+  const filteredTasks = visibleTasks.filter((t) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      if (!t.title.toLowerCase().includes(q) && !(t.description ?? "").toLowerCase().includes(q)) {
+        return false
+      }
+    }
+    if (filterPriority && t.priority !== filterPriority) return false
+    if (filterStatus && t.status !== filterStatus) return false
+    if (filterAssignee && !t.assignees.some((a) => a.member.id === filterAssignee)) return false
+    if (filterLabel && !t.labels.some((l) => l.label.id === filterLabel)) return false
+    return true
+  })
+
+  const hasActiveFilters = searchQuery || filterPriority || filterStatus || filterAssignee || filterLabel
+
+  // Client-side pagination of filtered results
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages - 1)
+  const paginatedTasks = filteredTasks.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE)
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPage(0)
+  }, [searchQuery, filterPriority, filterStatus, filterAssignee, filterLabel])
 
   // Create/edit mutation
   const createMutation = api.task.create.useMutation({
@@ -168,6 +221,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
   const [createOpen, setCreateOpen] = useState(false)
   const [editTask, setEditTask] = useState<Task | null>(null)
   const [viewTask, setViewTask] = useState<Task | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Task | null>(null)
 
   const form = useForm<TaskForm>({
     resolver: zodResolver(taskSchema),
@@ -177,6 +231,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
       status: "todo",
       priority: "medium",
       assigneeIds: [],
+      labelIds: [],
       dueDate: "",
     },
   })
@@ -196,6 +251,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
         status: task.status as TaskForm["status"],
         priority: task.priority as TaskForm["priority"],
         assigneeIds: task.assignees.map((a) => a.member.id),
+        labelIds: task.labels.map((l) => l.label.id),
         dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
       })
       setCreateOpen(true)
@@ -213,6 +269,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
         status: data.status,
         priority: data.priority,
         assigneeIds: data.assigneeIds?.length ? data.assigneeIds : undefined,
+        labelIds: data.labelIds?.length ? data.labelIds : undefined,
         dueDate: data.dueDate || null,
       }
 
@@ -240,6 +297,24 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
     [updateMutation],
   )
 
+  // Comments
+  const { data: commentsData } = api.comment.list.useQuery(
+    { taskId: viewTask?.id ?? "" },
+    { enabled: !!viewTask },
+  )
+  const comments = commentsData?.comments ?? []
+  const [newComment, setNewComment] = useState("")
+  const createCommentMutation = api.comment.create.useMutation({
+    onSuccess: () => {
+      utils.comment.list.invalidate({ taskId: viewTask?.id ?? "" })
+      setNewComment("")
+    },
+  })
+  const deleteCommentMutation = api.comment.delete.useMutation({
+    onSuccess: () => utils.comment.list.invalidate({ taskId: viewTask?.id ?? "" }),
+  })
+
+
   if (isLoading || membersLoading) {
     return (
       <div className="flex flex-1 items-center justify-center bg-background">
@@ -263,6 +338,84 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             Add task
           </Button>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <MagnifyingGlass className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 w-full rounded-none border border-input bg-transparent pl-8 pr-2.5 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+          />
+        </div>
+        <select
+          value={filterStatus ?? ""}
+          onChange={(e) => setFilterStatus(e.target.value || null)}
+          className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+        >
+          <option value="">All statuses</option>
+          <option value="todo">Todo</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+        <select
+          value={filterPriority ?? ""}
+          onChange={(e) => setFilterPriority(e.target.value || null)}
+          className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+        >
+          <option value="">All priorities</option>
+          <option value="urgent">Urgent</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select
+          value={filterAssignee ?? ""}
+          onChange={(e) => setFilterAssignee(e.target.value || null)}
+          className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+        >
+          <option value="">All assignees</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.user.name}
+            </option>
+          ))}
+        </select>
+        {availableLabels.length > 0 && (
+          <select
+            value={filterLabel ?? ""}
+            onChange={(e) => setFilterLabel(e.target.value || null)}
+            className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+          >
+            <option value="">All labels</option>
+            {availableLabels.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {hasActiveFilters && (
+          <button
+            onClick={() => {
+              setSearchQuery("")
+              setFilterPriority(null)
+              setFilterStatus(null)
+              setFilterAssignee(null)
+              setFilterLabel(null)
+            }}
+            className="h-8 rounded-none border border-border px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {filteredTasks.length} of {visibleTasks.length} tasks
+        </span>
       </div>
 
       {/* Create/Edit Dialog */}
@@ -387,9 +540,45 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                 />
               </div>
             </div>
+
+            {availableLabels.length > 0 && (
+              <div>
+                <Label className="mb-2 block">Labels</Label>
+                <Controller
+                  name="labelIds"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MultiSelect
+                      values={field.value ?? []}
+                      onValuesChange={field.onChange}
+                    >
+                      <MultiSelectTrigger className="w-full rounded-none">
+                        <MultiSelectValue placeholder="Select labels" />
+                      </MultiSelectTrigger>
+                      <MultiSelectContent>
+                        {availableLabels.map((l) => (
+                          <MultiSelectItem key={l.id} value={l.id} badgeLabel={l.name}>
+                            {l.name}
+                          </MultiSelectItem>
+                        ))}
+                      </MultiSelectContent>
+                    </MultiSelect>
+                  )}
+                />
+              </div>
+            )}
           </div>
 
           <DialogFooter>
+            {editTask && (
+              <Button
+                variant="destructive"
+                onClick={() => setConfirmDelete(editTask)}
+              >
+                <Trash className="size-3.5" />
+                Delete
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
@@ -480,10 +669,131 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                 </div>
               </div>
             )}
+            {viewTask && viewTask.labels.length > 0 && (
+              <div>
+                <span className="text-xs text-muted-foreground">Labels</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {viewTask.labels.map((l) => (
+                    <span
+                      key={l.label.id}
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: l.label.color + "20",
+                        color: l.label.color,
+                      }}
+                    >
+                      {l.label.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Comments */}
+            <div className="border-t border-border pt-3">
+              <h4 className="mb-2 text-xs font-medium text-foreground">
+                Comments ({comments.length})
+              </h4>
+              <div className="mb-2 max-h-40 space-y-2 overflow-y-auto">
+                {comments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No comments yet.</p>
+                ) : (
+                  comments.map((c) => (
+                    <div key={c.id} className="rounded-none border border-border px-2 py-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-foreground">
+                          {c.author.name}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">
+                            {new Date(c.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                          {c.authorId === session?.user?.id && (
+                            <button
+                              onClick={() => deleteCommentMutation.mutate({ id: c.id })}
+                              className="text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <Trash className="size-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="mt-0.5 text-muted-foreground">{c.content}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-2">
+                <textarea
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={2}
+                  className="flex min-h-0 flex-1 rounded-none border border-border bg-transparent px-2 py-1.5 text-xs outline-hidden focus:border-foreground resize-none"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (viewTask && newComment.trim()) {
+                      createCommentMutation.mutate({
+                        taskId: viewTask.id,
+                        content: newComment.trim(),
+                      })
+                    }
+                  }}
+                  disabled={!newComment.trim() || createCommentMutation.isPending}
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => viewTask && setConfirmDelete(viewTask)}
+            >
+              <Trash className="size-3.5" />
+              Delete
+            </Button>
             <Button variant="outline" onClick={() => setViewTask(null)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog
+        open={!!confirmDelete}
+        onOpenChange={(open) => !open && setConfirmDelete(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &ldquo;{confirmDelete?.title}&rdquo;?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDelete) handleDelete(confirmDelete.id)
+                setConfirmDelete(null)
+                setViewTask(null)
+                setCreateOpen(false)
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -494,6 +804,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
+              <TableHead>Labels</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Due</TableHead>
               <TableHead>Status</TableHead>
@@ -501,17 +812,21 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visibleTasks.length === 0 ? (
+            {filteredTasks.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="py-16 text-center text-muted-foreground"
                 >
-                  {mode === "all" ? "No tasks yet." : "No assigned tasks."}
+                  {hasActiveFilters
+                  ? "No tasks match your filters."
+                  : mode === "all"
+                    ? "No tasks yet."
+                    : "No assigned tasks."}
                 </TableCell>
               </TableRow>
             ) : (
-              visibleTasks.map((task) => {
+              paginatedTasks.map((task) => {
                 const canEdit =
                   mode === "all"
                     ? canEditAll
@@ -537,6 +852,31 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                       >
                         {task.title}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {task.labels.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {task.labels.slice(0, 3).map((l) => (
+                            <span
+                              key={l.label.id}
+                              className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                              style={{
+                                backgroundColor: l.label.color + "20",
+                                color: l.label.color,
+                              }}
+                            >
+                              {l.label.name}
+                            </span>
+                          ))}
+                          {task.labels.length > 3 && (
+                            <span className="text-[10px] text-muted-foreground">
+                              +{task.labels.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span
@@ -630,6 +970,47 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             )}
           </TableBody>
         </Table>
+        {filteredTasks.length > 0 && (
+          <div className="flex items-center justify-between border border-t-0 border-border px-3 py-2">
+            <span className="text-xs text-muted-foreground">
+              Showing {Math.min(filteredTasks.length, safePage * PAGE_SIZE + 1)}&ndash;{Math.min((safePage + 1) * PAGE_SIZE, filteredTasks.length)} of {filteredTasks.length} tasks
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                Previous
+              </Button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNum = Math.max(0, Math.min(safePage - 2, totalPages - 5))
+                const actualPage = pageNum + i
+                if (actualPage >= totalPages) return null
+                return (
+                  <Button
+                    key={actualPage}
+                    variant={actualPage === safePage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPage(actualPage)}
+                    className="min-w-[28px]"
+                  >
+                    {actualPage + 1}
+                  </Button>
+                )
+              })}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage >= totalPages - 1}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

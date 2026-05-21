@@ -13,9 +13,36 @@ const assigneesInclude = {
   },
 } as const
 
+async function createNotifications(
+  userIds: string[],
+  type: string,
+  title: string,
+  body: string | undefined,
+  organizationId: string,
+  taskId: string | undefined,
+) {
+  if (userIds.length === 0) return
+  await prisma.notification.createMany({
+    data: userIds.map((userId) => ({
+      type,
+      title,
+      body,
+      userId,
+      organizationId,
+      taskId,
+    })),
+  })
+}
+
 export const taskRouter = router({
   list: protectedProcedure
-    .input(z.object({ organizationId: z.string() }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        skip: z.number().int().min(0).default(0),
+        take: z.number().int().min(1).max(100).default(25),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
         where: {
@@ -27,16 +54,22 @@ export const taskRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const tasks = await prisma.task.findMany({
-        where: { organizationId: input.organizationId },
-        include: {
-          assignees: assigneesInclude,
-          createdBy: { select: { id: true, name: true, email: true, image: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      })
+      const [tasks, total] = await prisma.$transaction([
+        prisma.task.findMany({
+          where: { organizationId: input.organizationId },
+          include: {
+            assignees: assigneesInclude,
+            createdBy: { select: { id: true, name: true, email: true, image: true } },
+            labels: { include: { label: true } },
+          },
+          orderBy: { createdAt: "asc" },
+          skip: input.skip,
+          take: input.take,
+        }),
+        prisma.task.count({ where: { organizationId: input.organizationId } }),
+      ])
 
-      return { tasks }
+      return { tasks, total }
     }),
 
   create: protectedProcedure
@@ -48,6 +81,7 @@ export const taskRouter = router({
         priority: z.string().optional(),
         dueDate: z.string().nullable().optional(),
         assigneeIds: z.array(z.string()).optional(),
+        labelIds: z.array(z.string()).optional(),
         organizationId: z.string(),
       }),
     )
@@ -84,12 +118,35 @@ export const taskRouter = router({
           ...(input.assigneeIds?.length
             ? { assignees: { create: input.assigneeIds.map((memberId) => ({ memberId })) } }
             : {}),
+          ...(input.labelIds?.length
+            ? { labels: { create: input.labelIds.map((labelId) => ({ labelId })) } }
+            : {}),
         },
         include: {
           assignees: assigneesInclude,
           createdBy: { select: { id: true, name: true, email: true, image: true } },
+          labels: { include: { label: true } },
         },
       })
+
+      // Notify assignees
+      if (input.assigneeIds?.length) {
+        const assigneeUsers = await prisma.member.findMany({
+          where: { id: { in: input.assigneeIds } },
+          select: { userId: true },
+        })
+        const notifyUserIds = assigneeUsers
+          .map((m) => m.userId)
+          .filter((id) => id !== ctx.session.user.id)
+        await createNotifications(
+          notifyUserIds,
+          "task_assigned",
+          `You were assigned: ${task.title}`,
+          undefined,
+          input.organizationId,
+          task.id,
+        )
+      }
 
       return { task }
     }),
@@ -104,6 +161,7 @@ export const taskRouter = router({
         priority: z.string().optional(),
         dueDate: z.string().nullable().optional(),
         assigneeIds: z.array(z.string()).optional(),
+        labelIds: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -119,6 +177,16 @@ export const taskRouter = router({
         },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      // If updating labels, replace
+      if (input.labelIds !== undefined) {
+        await prisma.taskLabel.deleteMany({ where: { taskId: input.id } })
+        if (input.labelIds.length > 0) {
+          await prisma.taskLabel.createMany({
+            data: input.labelIds.map((labelId) => ({ taskId: input.id, labelId })),
+          })
+        }
+      }
 
       // If updating assignees, validate and replace
       if (input.assigneeIds !== undefined) {
@@ -151,8 +219,24 @@ export const taskRouter = router({
         include: {
           assignees: assigneesInclude,
           createdBy: { select: { id: true, name: true, email: true, image: true } },
+          labels: { include: { label: true } },
         },
       })
+
+      // Notify assignees on status change
+      if (input.status !== undefined && task.assignees.length > 0) {
+        const notifyUserIds = task.assignees
+          .map((a) => a.member.user.id)
+          .filter((id) => id !== ctx.session.user.id)
+        await createNotifications(
+          notifyUserIds,
+          "status_changed",
+          `Task "${task.title}" moved to ${input.status.replace("_", " ")}`,
+          undefined,
+          existing.organizationId,
+          task.id,
+        )
+      }
 
       return { task }
     }),

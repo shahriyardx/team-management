@@ -27,7 +27,8 @@
       "recommended": true,
       "suspicious": {
         "noUnknownAtRules": "off",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"
@@ -35,7 +36,8 @@
       "a11y": {
         "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off",
-        "useButtonType": "off"
+        "useButtonType": "off",
+        "noAutofocus": "off"
       }
     },
     "domains": {
