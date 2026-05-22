@@ -57,7 +57,7 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
 
   return (
     <>
-      <div className="border border-border px-3 py-2">
+      <div className="border border-muted-foreground/20 border-l-2 border-l-amber-500/30 px-3 py-2">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">

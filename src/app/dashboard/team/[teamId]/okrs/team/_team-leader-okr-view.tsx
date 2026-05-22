@@ -58,17 +58,13 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
   const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState<string>("all")
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()))
 
-  // Unique years from cycles
+  // Years 2020 to current + 1
   const years = useMemo(() => {
-    const yrSet = new Set<string>()
-    for (const c of cycles) {
-      const yr = c.startDate?.slice(0, 4)
-      if (yr) yrSet.add(yr)
-    }
-    return Array.from(yrSet).sort().reverse()
-  }, [cycles])
+    const cur = new Date().getFullYear()
+    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
+  }, [])
 
   // Auto-select active or first cycle
   useMemo(() => {
@@ -117,37 +113,42 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Header with cycle selector */}
-      <div className="flex items-center gap-3">
-        <h2 className="text-sm font-medium">Team OKRs</h2>
-        <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
-          <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
-            {selectedYear === "all" ? "All years" : selectedYear}
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">All years</SelectItem>
-            {years.map((yr) => (
-              <SelectItem key={yr} value={yr}>{yr}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedCycleId ?? ""} onValueChange={setSelectedCycleId}>
-          <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
-            <span className="truncate">
-              {cycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
-            </span>
-          </SelectTrigger>
-          <SelectContent position="popper">
-            {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                <div className="flex items-center gap-2">
-                  <span>{c.title}</span>
-                  <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">Team OKR</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives. Fill in progress for your team.</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
+            <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
+              {selectedYear === "all" ? "All years" : selectedYear}
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="all">All years</SelectItem>
+              {years.map((yr) => (
+                <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedCycleId ?? ""} onValueChange={setSelectedCycleId}>
+            <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
+              <span className="truncate">
+                {cycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
+              </span>
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{c.title}</span>
+                    <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {objectives.length === 0 ? (

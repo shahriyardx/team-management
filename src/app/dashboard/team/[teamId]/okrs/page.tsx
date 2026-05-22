@@ -34,10 +34,6 @@ export default function TeamOkrPage({ params }: { params: Promise<{ teamId: stri
   // Team leader sees a summary; members see their personal OKRs
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">My OKRs</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Your personal objectives and key results.</p>
-      </div>
       <MemberOkrView cycleId={cycleId} locked={!!(activeCycle?.cycle as { locked?: boolean } | null)?.locked} />
     </div>
   )

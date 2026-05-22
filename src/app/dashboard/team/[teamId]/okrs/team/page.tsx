@@ -17,10 +17,6 @@ export default function TeamOkrDetailPage({ params }: { params: Promise<{ teamId
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">Team OKR</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives. Fill in progress for your team.</p>
-      </div>
       <TeamLeaderOkrView teamId={teamId} />
     </div>
   )

@@ -72,7 +72,6 @@ export function OkrPage() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-6 text-base font-semibold">My OKRs</h1>
       <MemberOkrView cycleId={defaultCycle.id} locked={!!(defaultCycle as { locked?: boolean }).locked} />
     </div>
   )

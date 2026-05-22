@@ -101,17 +101,13 @@ export function TeamOkrAssignment() {
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
   const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState<string>("all")
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()))
 
-  // Unique years from cycles
+  // Years 2020 to current + 1
   const years = useMemo(() => {
-    const yrSet = new Set<string>()
-    for (const c of cycles) {
-      const yr = c.startDate?.slice(0, 4)
-      if (yr) yrSet.add(yr)
-    }
-    return Array.from(yrSet).sort().reverse()
-  }, [cycles])
+    const cur = new Date().getFullYear()
+    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
+  }, [])
 
   // Auto-select active or first cycle
   useMemo(() => {

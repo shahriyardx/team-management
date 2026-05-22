@@ -86,16 +86,12 @@ export default function CyclesPage() {
   )
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
   const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
-  const [selectedYear, setSelectedYear] = useState("all")
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()))
 
   const years = useMemo(() => {
-    const yrSet = new Set<string>()
-    for (const c of cycles) {
-      const yr = c.startDate?.slice(0, 4)
-      if (yr) yrSet.add(yr)
-    }
-    return Array.from(yrSet).sort().reverse()
-  }, [cycles])
+    const cur = new Date().getFullYear()
+    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
+  }, [])
 
   // Create cycle
   const [cycleFormOpen, setCycleFormOpen] = useState(false)
@@ -345,7 +341,7 @@ export default function CyclesPage() {
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="h-8 w-full rounded-none text-xs">{field.value}</SelectTrigger>
                       <SelectContent position="popper">
-                        {Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - 2 + i)).map((y) => (
+                        {Array.from({ length: new Date().getFullYear() - 2020 + 2 }, (_, i) => String(2020 + i)).map((y) => (
                           <SelectItem key={y} value={y}>{y}</SelectItem>
                         ))}
                       </SelectContent>

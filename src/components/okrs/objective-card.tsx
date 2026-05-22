@@ -51,7 +51,7 @@ export function ObjectiveCard({
   const [editOpen, setEditOpen] = useState(false)
 
   return (
-    <div className="border border-border p-3">
+    <div className="border border-border border-l-2 border-l-violet-500/40 p-3">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -39,6 +39,14 @@ const objectiveSchema = z.object({
 })
 
 type ObjectiveForm = z.infer<typeof objectiveSchema>
+
+type OkrCycleItem = {
+  id: string
+  title: string
+  status: string
+  locked?: boolean
+  startDate: string
+}
 
 type TeamMember = {
   id: string
@@ -104,12 +112,35 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     return map
   }, [memberRecords])
 
-  // Active cycle
+  // All cycles for selector
+  const { data: cyclesData } = api.okrCycle.list.useQuery(
+    { organizationId: organization?.id ?? "", skip: 0, take: 25 },
+    { enabled: !!organization },
+  )
   const { data: activeCycleData } = api.okrCycle.getActive.useQuery(
     { organizationId: organization?.id ?? "" },
     { enabled: !!organization },
   )
-  const cycleId = activeCycleData?.cycle?.id
+  const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
+  const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
+  const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
+  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()))
+
+  // Years 2020 to current + 1
+  const years = useMemo(() => {
+    const cur = new Date().getFullYear()
+    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
+  }, [])
+
+  // Auto-select active or first cycle
+  useMemo(() => {
+    if (!selectedCycleId && cycles.length > 0) {
+      const target = activeCycle ?? cycles[0]
+      if (target) setSelectedCycleId(target.id)
+    }
+  }, [cycles, activeCycle, selectedCycleId])
+
+  const cycleId = selectedCycleId ?? ""
 
   // Member-level objectives for this team's members
   const { data: objectivesData, isLoading: objectivesLoading } = api.objective.list.useQuery(
@@ -220,20 +251,50 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-medium">{team.name} Members</h2>
           <Badge variant="outline" className="text-[10px]">{objectives.length} objective{objectives.length !== 1 ? "s" : ""}</Badge>
         </div>
-        <Button size="sm" onClick={() => { objectiveForm.reset(); setObjFormOpen(true) }} disabled={!cycleId}>
-          <Plus className="mr-1 size-3.5" />
-          New Objective
-        </Button>
+        <div className="flex items-center gap-3 shrink-0">
+          <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
+            <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
+              {selectedYear === "all" ? "All years" : selectedYear}
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="all">All years</SelectItem>
+              {years.map((yr) => (
+                <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={cycleId} onValueChange={setSelectedCycleId}>
+            <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
+              <span className="truncate">
+                {cycles.find((c) => c.id === cycleId)?.title ?? "Select cycle"}
+              </span>
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{c.title}</span>
+                    <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={() => { objectiveForm.reset(); setObjFormOpen(true) }} disabled={!cycleId}>
+            <Plus className="mr-1 size-3.5" />
+            New Objective
+          </Button>
+        </div>
       </div>
 
-      {!cycleId ? (
+      {!cycleId || cycles.length === 0 ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-          No active OKR cycle right now.
+          No OKR cycles yet. Your org admin will create one.
         </div>
       ) : objectivesLoading ? (
         <div className="space-y-4">
