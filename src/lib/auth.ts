@@ -1,12 +1,17 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { organization } from "better-auth/plugins/organization"
+import { twoFactor } from "better-auth/plugins"
+import { passkey } from "@better-auth/passkey"
 import { prisma } from "./prisma"
 import { sendInvitationEmail } from "./email"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   baseURL: "http://localhost:3000",
+  emailAndPassword: {
+    enabled: true,
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -14,6 +19,8 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    passkey(),
+    twoFactor({ allowPasswordless: true }),
     organization({
       teams: { enabled: true },
       schema: {

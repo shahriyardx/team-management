@@ -28,9 +28,42 @@ model User {
   comments        Comment[]
   notifications   Notification[]
   teamMemberships TeamMember[]
+  passkeys        Passkey[]
+  twoFactor       TwoFactor?
+  twoFactorEnabled Boolean      @default(false)
 
   @@unique([email])
   @@map("user")
+}
+
+model Passkey {
+  id           String   @id
+  name         String?
+  publicKey    String
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String   @unique
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime @default(now())
+  aaguid       String?
+
+  @@index([userId])
+  @@map("passkey")
+}
+
+model TwoFactor {
+  id         String   @id
+  secret     String
+  backupCodes String
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified   Boolean  @default(true)
+
+  @@index([userId])
+  @@map("two_factor")
 }
 
 model Organization {

@@ -71,13 +71,25 @@ export default function AddOrganizationPage() {
     async (data: OrgForm) => {
       try {
         const slug = data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
-        await authClient.organization.create({ name: data.name, slug })
+
+        let logo: string | undefined
+        if (logoFile) {
+          const body = new FormData()
+          body.set("file", logoFile)
+          const res = await fetch("/api/upload", { method: "POST", body })
+          if (res.ok) {
+            const json = await res.json()
+            logo = json.url
+          }
+        }
+
+        await authClient.organization.create({ name: data.name, slug, logo })
         router.replace("/dashboard")
       } catch {
         form.setError("name", { message: "Failed to create organization." })
       }
     },
-    [form, router],
+    [form, router, logoFile],
   )
 
   const nameValue = form.watch("name")

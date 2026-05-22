@@ -26,6 +26,7 @@ function StatCard({ icon: Icon, label, value, color }: {
 
 function TeamLeaderDashboard({ orgId, teamId }: { orgId: string; teamId: string }) {
   const { data: team } = api.team.getById.useQuery({ teamId, organizationId: orgId })
+  const { data: stats } = api.dashboard.teamStats.useQuery({ teamId, organizationId: orgId })
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -38,8 +39,8 @@ function TeamLeaderDashboard({ orgId, teamId }: { orgId: string; teamId: string 
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <StatCard icon={UsersThree} label="Members" value={team?.team.members.length ?? "—"} color="text-emerald-500" />
-        <StatCard icon={Target} label="Team OKR Progress" value="—" color="text-amber-500" />
-        <StatCard icon={ListChecks} label="Team Tasks" value="—" color="text-violet-500" />
+        <StatCard icon={Target} label="Team OKR Progress" value={stats ? `${stats.okrProgress}%` : "—"} color="text-amber-500" />
+        <StatCard icon={ListChecks} label="Team Tasks" value={stats?.taskCount ?? "—"} color="text-violet-500" />
       </div>
 
       <div className="border border-border p-4">
@@ -73,6 +74,8 @@ function TeamLeaderDashboard({ orgId, teamId }: { orgId: string; teamId: string 
 }
 
 function MemberDashboard({ orgId, teamId }: { orgId: string; teamId: string }) {
+  const { data: stats } = api.dashboard.memberStats.useQuery({ organizationId: orgId })
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
@@ -81,8 +84,8 @@ function MemberDashboard({ orgId, teamId }: { orgId: string; teamId: string }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <StatCard icon={Target} label="My OKR Progress" value="—" color="text-amber-500" />
-        <StatCard icon={ListChecks} label="My Tasks" value="—" color="text-violet-500" />
+        <StatCard icon={Target} label="My OKR Progress" value={stats ? `${stats.okrProgress}%` : "—"} color="text-amber-500" />
+        <StatCard icon={ListChecks} label="My Tasks" value={stats?.taskCount ?? "—"} color="text-violet-500" />
       </div>
 
       <div className="border border-border p-4">

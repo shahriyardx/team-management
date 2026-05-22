@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { CaretUpDownIcon, SignOutIcon } from "@phosphor-icons/react"
+import { CaretUpDownIcon, SignOutIcon, User } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
@@ -163,6 +163,11 @@ export function NavUser() {
                 </DropdownMenuSub>
               )
             })}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/profile")}>
+              <User />
+              Profile
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
               <SignOutIcon />

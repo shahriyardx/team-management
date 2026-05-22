@@ -27,6 +27,7 @@ function StatCard({ icon: Icon, label, value, color }: {
 
 function AdminDashboard({ orgId }: { orgId: string }) {
   const { data: teams } = api.team.list.useQuery({ organizationId: orgId })
+  const { data: stats } = api.dashboard.orgStats.useQuery({ organizationId: orgId })
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -35,10 +36,10 @@ function AdminDashboard({ orgId }: { orgId: string }) {
         <p className="text-xs text-muted-foreground mt-0.5">Org-wide overview and management.</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={Users} label="Members" value="—" color="text-blue-500" />
+        <StatCard icon={Users} label="Members" value={stats?.memberCount ?? "—"} color="text-blue-500" />
         <StatCard icon={UsersThree} label="Teams" value={teams?.teams.length ?? "—"} color="text-emerald-500" />
-        <StatCard icon={Target} label="OKR Cycles" value="—" color="text-amber-500" />
-        <StatCard icon={ListChecks} label="Tasks" value="—" color="text-violet-500" />
+        <StatCard icon={Target} label="OKR Cycles" value={stats?.cycleCount ?? "—"} color="text-amber-500" />
+        <StatCard icon={ListChecks} label="Tasks" value={stats?.taskCount ?? "—"} color="text-violet-500" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border border-border p-4">
