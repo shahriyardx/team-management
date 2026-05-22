@@ -245,8 +245,18 @@ export default function CyclesPage() {
         </div>
       ) : (
         <div className="border border-border">
+          {(() => {
+            const filtered = selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+            if (filtered.length === 0) {
+              return (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No cycles in {selectedYear}.
+                </div>
+              )
+            }
+            return (
           <div className="divide-y divide-border">
-            {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
+            {filtered.map((c) => (
               <div key={c.id} className="flex items-center justify-between px-4 py-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -303,6 +313,8 @@ export default function CyclesPage() {
               </div>
             ))}
           </div>
+            )
+          })()}
         </div>
       )}
 
