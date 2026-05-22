@@ -6,7 +6,7 @@ import { sendInvitationEmail } from "./email"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  baseURL: "http://localhost:3000/",
+  baseURL: "http://localhost:3000",
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -15,6 +15,14 @@ export const auth = betterAuth({
   },
   plugins: [
     organization({
+      teams: { enabled: true },
+      schema: {
+        teamMember: {
+          additionalFields: {
+            role: { type: "string" },
+          },
+        },
+      } as any,
       sendInvitationEmail: async (data) => {
         const url = `${process.env.BETTER_AUTH_URL}/invitations/accept?id=${data.id}`
         console.log(url)

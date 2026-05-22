@@ -35,7 +35,13 @@ export default function AddOrganizationPage() {
 
   useEffect(() => {
     if (sessionLoading) return
-    if (!session) router.replace("/")
+    if (!session) { router.replace("/"); return }
+    // If user already has an org, redirect to dashboard
+    authClient.organization.list().then((res) => {
+      if (res.data && res.data.length > 0) {
+        router.replace("/dashboard")
+      }
+    })
   }, [session, sessionLoading, router])
 
   const handleLogoSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,11 +72,7 @@ export default function AddOrganizationPage() {
       try {
         const slug = data.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
         await authClient.organization.create({ name: data.name, slug })
-        const res = await authClient.organization.list()
-        const orgs = res.data ?? []
-        if (orgs.length > 0) {
-          router.replace(`/dashboard/${orgs[0].slug}`)
-        }
+        router.replace("/dashboard")
       } catch {
         form.setError("name", { message: "Failed to create organization." })
       }

@@ -17,51 +17,46 @@ type OrgContextValue = {
 
 const OrgContext = createContext<OrgContextValue | null>(null)
 
-export function OrganizationProvider({
-  slug,
-  children,
-}: {
-  slug: string
-  children: React.ReactNode
-}) {
+export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { data: session, isPending: sessionLoading, refetch: refetchSession } = authClient.useSession()
   const [organizations, setOrganizations] = useState<Org[]>([])
-  const [orgsLoading, setOrgsLoading] = useState(true)
+  const [orgsLoaded, setOrgsLoaded] = useState(false)
 
   useEffect(() => {
     if (sessionLoading) return
-    if (!session) {
-      router.replace("/")
-      return
-    }
+    if (!session) { router.replace("/"); return }
+    if (orgsLoaded) return
 
     authClient.organization.list().then((res) => {
       const orgs = res.data ?? []
       setOrganizations(orgs)
+      setOrgsLoaded(true)
 
-      const match = orgs.find((o) => o.slug === slug)
-      if (!match) {
-        router.replace(orgs.length > 0 ? `/dashboard/${orgs[0].slug}` : "/dashboard")
+      if (orgs.length === 0) {
+        router.replace("/add-organization")
         return
       }
-      setOrgsLoading(false)
-    })
-  }, [session, sessionLoading, router, slug])
 
-  const organization = organizations.find((o) => o.slug === slug) ?? null
+      if (!session.session.activeOrganizationId) {
+        authClient.organization.setActive({ organizationId: orgs[0].id }).then(() => {
+          refetchSession()
+        })
+      }
+    })
+  }, [session, sessionLoading, router, orgsLoaded, refetchSession])
+
+  const organization = organizations.find((o) => o.id === session?.session?.activeOrganizationId) ?? null
 
   const onSwitchOrg = useCallback(
     async (orgId: string) => {
       await authClient.organization.setActive({ organizationId: orgId })
       await refetchSession()
-      const org = organizations.find((o) => o.id === orgId)
-      if (org) router.replace(`/dashboard/${org.slug}`)
     },
-    [refetchSession, router, organizations],
+    [refetchSession],
   )
 
-  const loading = sessionLoading || orgsLoading
+  const loading = sessionLoading || !orgsLoaded
 
   return (
     <OrgContext.Provider

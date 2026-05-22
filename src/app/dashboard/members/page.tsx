@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
@@ -32,9 +32,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useOrganization } from "@/lib/organization-context"
 import { authClient } from "@/lib/auth-client"
 
@@ -230,20 +235,24 @@ export default function MembersPage() {
                   )}
                 </Field>
 
-                <div>
-                  <Label htmlFor="invite-role" className="mb-2 block">
-                    Role
-                  </Label>
-                  <select
-                    id="invite-role"
-                    {...form.register("role")}
-                    disabled={form.formState.isSubmitting}
-                    className="flex h-9 w-full rounded-none border border-border bg-transparent px-3 py-1 text-xs outline-hidden focus:border-foreground disabled:opacity-50"
-                  >
-                    <option value="member">Member</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
+                <Field>
+                  <FieldLabel>Role</FieldLabel>
+                  <Controller
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange} disabled={form.formState.isSubmitting}>
+                        <SelectTrigger className="h-9 w-full rounded-none text-xs">
+                          {field.value === "member" ? "Member" : "Admin"}
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </Field>
               </div>
 
               <DialogFooter>

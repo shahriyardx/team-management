@@ -1,7 +1,9 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter, useParams, usePathname } from "next/navigation"
 import { CaretUpDownIcon, PlusIcon } from "@phosphor-icons/react"
+import { useOrganization } from "@/lib/organization-context"
+import { api } from "@/lib/trpc/client"
 
 import {
   DropdownMenu,
@@ -18,26 +20,54 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-export function TeamSwitcher({
-  organizations,
-  activeOrganizationId,
-  onSwitchOrg,
-}: {
-  organizations: { id: string; name: string; slug: string; logo?: React.ReactNode }[]
-  activeOrganizationId?: string
-  onSwitchOrg: (orgId: string) => void
-}) {
+export function TeamSwitcher() {
   const router = useRouter()
+  const params = useParams()
+  const pathname = usePathname()
   const { isMobile } = useSidebar()
+  const { session, organizations, organization: activeOrg, onSwitchOrg } = useOrganization()
 
-  const activeOrg = organizations.find((o) => o.id === activeOrganizationId) ?? organizations[0]
-  const displayOrgs = organizations.filter((o) => o.id !== activeOrganizationId)
+  const isTeamRoute = pathname.startsWith("/dashboard/team/")
+  const teamId = params?.teamId as string | undefined
 
-  if (!activeOrg) return null
+  const activeOrgId = session?.session.activeOrganizationId ?? undefined
+  const org = activeOrg ?? organizations.find((o) => o.id === activeOrgId) ?? organizations[0]
 
-  const logo = activeOrg.logo ?? (
+  // Teams for current org
+  const { data: myTeamsData } = api.team.getMyTeams.useQuery(
+    { organizationId: org?.id ?? "" },
+    { enabled: !!org && isTeamRoute },
+  )
+  const teams = (myTeamsData as { teams?: Array<{ id: string; name: string }> } | undefined)?.teams ?? []
+  const activeTeam = teams.find((t: { id: string }) => t.id === teamId)
+
+  if (!org) return null
+
+  // Team dashboard: static display showing org + team name
+  if (isTeamRoute && activeTeam) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" className="cursor-default hover:bg-transparent">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <span className="text-xs font-bold">{activeTeam.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{org.name}</span>
+              <span className="truncate text-xs">{activeTeam.name}</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
+
+  // Org switcher (admin/owner dashboard)
+  const displayOrgs = organizations.filter((o) => o.id !== activeOrgId)
+
+  const logo = (
     <span className="flex size-4 items-center justify-center text-xs font-bold">
-      {activeOrg.name.charAt(0).toUpperCase()}
+      {org.name.charAt(0).toUpperCase()}
     </span>
   )
 
@@ -54,7 +84,7 @@ export function TeamSwitcher({
                 {logo}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{activeOrg.name}</span>
+                <span className="truncate font-medium">{org.name}</span>
                 <span className="truncate text-xs">Organization</span>
               </div>
               <CaretUpDownIcon className="ml-auto" />
@@ -69,16 +99,16 @@ export function TeamSwitcher({
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               Organizations
             </DropdownMenuLabel>
-            {displayOrgs.map((org) => (
+            {displayOrgs.map((o) => (
               <DropdownMenuItem
-                key={org.id}
-                onClick={() => onSwitchOrg(org.id)}
+                key={o.id}
+                onClick={() => { onSwitchOrg(o.id) }}
                 className="gap-2 p-2"
               >
                 <span className="flex size-6 items-center justify-center rounded-md border text-xs">
-                  {org.name.charAt(0)}
+                  {o.name.charAt(0)}
                 </span>
-                {org.name}
+                {o.name}
               </DropdownMenuItem>
             ))}
             {displayOrgs.length > 0 && <DropdownMenuSeparator />}

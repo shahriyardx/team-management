@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   MultiSelect,
   MultiSelectContent,
@@ -123,6 +123,19 @@ const taskSchema = z.object({
 
 type TaskForm = z.infer<typeof taskSchema>
 
+const labelSchema = z.object({
+  name: z.string().min(1, "Name is required."),
+  color: z.string(),
+})
+
+type LabelForm = z.infer<typeof labelSchema>
+
+const commentSchema = z.object({
+  content: z.string().min(1, "Comment is required."),
+})
+
+type CommentForm = z.infer<typeof commentSchema>
+
 export function TaskTable({ mode }: { mode: "mine" | "all" }) {
   const { session, organization } = useOrganization()
 
@@ -164,8 +177,11 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
     onSuccess: () => utils.label.list.invalidate(),
   })
   const [labelCreateOpen, setLabelCreateOpen] = useState(false)
-  const [newLabelName, setNewLabelName] = useState("")
-  const [newLabelColor, setNewLabelColor] = useState("#6366f1")
+
+  const labelForm = useForm<LabelForm>({
+    resolver: zodResolver(labelSchema),
+    defaultValues: { name: "", color: "#6366f1" },
+  })
 
   const currentMember = members.find((m) => m.userId === session?.user?.id)
   const canEditAll =
@@ -326,11 +342,20 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
     { enabled: !!viewTask },
   )
   const comments = commentsData?.comments ?? []
-  const [newComment, setNewComment] = useState("")
+
+  const commentForm = useForm<CommentForm>({
+    resolver: zodResolver(commentSchema),
+    defaultValues: { content: "" },
+  })
+
+  useEffect(() => {
+    commentForm.reset()
+  }, [viewTask?.id, commentForm])
+
   const createCommentMutation = api.comment.create.useMutation({
     onSuccess: () => {
       utils.comment.list.invalidate({ taskId: viewTask?.id ?? "" })
-      setNewComment("")
+      commentForm.reset()
     },
   })
   const deleteCommentMutation = api.comment.delete.useMutation({
@@ -465,19 +490,18 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
 
             <Field>
               <FieldLabel htmlFor="task-desc">Description</FieldLabel>
-              <textarea
+              <Textarea
                 id="task-desc"
                 placeholder="Add details..."
                 {...form.register("description")}
                 rows={3}
-                className="flex w-full rounded-none border border-border bg-transparent px-3 py-2 text-xs outline-hidden focus:border-foreground disabled:opacity-50 resize-none"
               />
             </Field>
 
             <div className="grid grid-cols-2 gap-4">
               {editTask ? (
-                <div>
-                  <Label className="mb-2 block">Status</Label>
+                <Field>
+                  <FieldLabel>Status</FieldLabel>
                   <Controller
                     name="status"
                     control={form.control}
@@ -501,10 +525,10 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                       </Select>
                     )}
                   />
-                </div>
+                </Field>
               ) : null}
-              <div>
-                <Label className="mb-2 block">Priority</Label>
+              <Field>
+                <FieldLabel>Priority</FieldLabel>
                 <Controller
                   name="priority"
                   control={form.control}
@@ -524,21 +548,15 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                     </Select>
                   )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="task-due" className="mb-2 block">
-                  Due date
-                </Label>
-                <Input
-                  id="task-due"
-                  type="date"
-                  {...form.register("dueDate")}
-                />
-              </div>
+              </Field>
+              <Field>
+                <FieldLabel>Due date</FieldLabel>
+                <Input type="date" {...form.register("dueDate")} />
+              </Field>
             </div>
 
-            <div>
-              <Label className="mb-2 block">Assignees</Label>
+            <Field>
+              <FieldLabel>Assignees</FieldLabel>
               <Controller
                 name="assigneeIds"
                 control={form.control}
@@ -564,10 +582,10 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                   </MultiSelect>
                 )}
               />
-            </div>
+            </Field>
 
-            <div>
-              <Label className="mb-2 block">Labels</Label>
+            <Field>
+              <FieldLabel>Labels</FieldLabel>
               {availableLabels.length > 0 ? (
                 <Controller
                   name="labelIds"
@@ -601,47 +619,41 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                 <div className="mt-2">
                   {labelCreateOpen ? (
                     <div className="flex items-center gap-2">
-                      <input
-                        type="text"
+                      <Input
                         placeholder="Label name"
-                        value={newLabelName}
-                        onChange={(e) => setNewLabelName(e.target.value)}
-                        className="h-7 flex-1 rounded-none border border-border bg-transparent px-2 text-xs outline-hidden focus:border-foreground"
+                        {...labelForm.register("name")}
+                        className="h-7 flex-1 rounded-none text-xs"
                       />
-                      <input
+                      <Input
                         type="color"
-                        value={newLabelColor}
-                        onChange={(e) => setNewLabelColor(e.target.value)}
+                        {...labelForm.register("color")}
                         className="h-7 w-8 cursor-pointer rounded-none border border-border bg-transparent p-0.5"
                       />
                       <Button
                         size="sm"
-                        onClick={() => {
-                          if (newLabelName.trim() && organization) {
+                        onClick={labelForm.handleSubmit((data) => {
+                          if (organization) {
                             createLabelMutation.mutate(
                               {
-                                name: newLabelName.trim(),
-                                color: newLabelColor,
+                                name: data.name.trim(),
+                                color: data.color,
                                 organizationId: organization.id,
                               },
                               {
                                 onSuccess: () => {
-                                  setNewLabelName("")
-                                  setNewLabelColor("#6366f1")
+                                  labelForm.reset()
                                   setLabelCreateOpen(false)
                                 },
                               },
                             )
                           }
-                        }}
-                        disabled={
-                          !newLabelName.trim() || createLabelMutation.isPending
-                        }
+                        })}
+                        disabled={createLabelMutation.isPending}
                       >
                         Add
                       </Button>
                       <button
-                        onClick={() => setLabelCreateOpen(false)}
+                        onClick={() => { setLabelCreateOpen(false); labelForm.reset() }}
                         className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
                         Cancel
@@ -657,7 +669,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                   )}
                 </div>
               )}
-            </div>
+            </Field>
           </div>
 
           <DialogFooter>
@@ -826,26 +838,23 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
                 )}
               </div>
               <div className="flex gap-2">
-                <textarea
+                <Textarea
                   placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  {...commentForm.register("content")}
                   rows={2}
-                  className="flex min-h-0 flex-1 rounded-none border border-border bg-transparent px-2 py-1.5 text-xs outline-hidden focus:border-foreground resize-none"
+                  className="flex min-h-0 flex-1 resize-none"
                 />
                 <Button
                   size="sm"
-                  onClick={() => {
-                    if (viewTask && newComment.trim()) {
+                  onClick={commentForm.handleSubmit((data) => {
+                    if (viewTask) {
                       createCommentMutation.mutate({
                         taskId: viewTask.id,
-                        content: newComment.trim(),
+                        content: data.content.trim(),
                       })
                     }
-                  }}
-                  disabled={
-                    !newComment.trim() || createCommentMutation.isPending
-                  }
+                  })}
+                  disabled={createCommentMutation.isPending}
                 >
                   Send
                 </Button>

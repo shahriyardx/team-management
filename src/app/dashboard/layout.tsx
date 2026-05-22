@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Bell } from "@phosphor-icons/react"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -31,12 +31,7 @@ function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7"
-        onClick={() => setOpen(!open)}
-      >
+      <Button variant="ghost" size="icon" className="size-7" onClick={() => setOpen(!open)}>
         <Bell className="size-4" />
         {notifications.length > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-medium text-destructive-foreground">
@@ -59,9 +54,7 @@ function NotificationBell() {
           </div>
           <div className="max-h-64 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-                No notifications
-              </p>
+              <p className="px-3 py-6 text-center text-xs text-muted-foreground">No notifications</p>
             ) : (
               notifications.map((n) => (
                 <button
@@ -82,7 +75,7 @@ function NotificationBell() {
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { session, organizations, onSwitchOrg, loading } = useOrganization()
+  const { session, loading } = useOrganization()
 
   if (loading) {
     return (
@@ -94,11 +87,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar
-        session={session}
-        organizations={organizations}
-        onSwitchOrg={onSwitchOrg}
-      />
+      <AppSidebar session={session} />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b border-border px-4">
           <SidebarTrigger />
@@ -113,17 +102,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function OrgDashboardLayout({
-  params,
-  children,
-}: {
-  params: Promise<{ slug: string }>
-  children: React.ReactNode
-}) {
-  const { slug } = use(params)
-
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <OrganizationProvider slug={slug}>
+    <OrganizationProvider>
       <DashboardShell>{children}</DashboardShell>
     </OrganizationProvider>
   )

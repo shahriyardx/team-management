@@ -1,0 +1,1 @@
+ALTER TABLE "okr_cycle" ADD COLUMN "locked" BOOLEAN NOT NULL DEFAULT false;
