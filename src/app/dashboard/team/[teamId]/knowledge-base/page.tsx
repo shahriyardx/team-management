@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { Plus } from "@phosphor-icons/react"
+import { PlusIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -31,10 +31,13 @@ export default function TeamKnowledgeTimelinePage() {
     { enabled: !!organization },
   )
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("__all__")
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState<string>("__all__")
   const categories = catData?.categories ?? []
 
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
+    new Set(),
+  )
 
   function toggleCategory(id: string) {
     setCollapsedCategories((prev) => {
@@ -48,7 +51,8 @@ export default function TeamKnowledgeTimelinePage() {
   const { data: itemsData, isLoading } = api.knowledgeBase.itemList.useQuery(
     {
       organizationId: organization?.id ?? "",
-      categoryId: selectedCategoryId === "__all__" ? undefined : selectedCategoryId,
+      categoryId:
+        selectedCategoryId === "__all__" ? undefined : selectedCategoryId,
       teamId,
       take: 100,
     },
@@ -63,19 +67,35 @@ export default function TeamKnowledgeTimelinePage() {
     const result: Array<{
       categoryId: string
       categoryName: string
-      subcategories: Array<{ subcategoryId: string; subcategoryName: string; items: KbItem[] }>
+      subcategories: Array<{
+        subcategoryId: string
+        subcategoryName: string
+        items: KbItem[]
+      }>
     }> = []
 
     for (const cat of categories) {
-      const subEntries: Array<{ subcategoryId: string; subcategoryName: string; items: KbItem[] }> = []
+      const subEntries: Array<{
+        subcategoryId: string
+        subcategoryName: string
+        items: KbItem[]
+      }> = []
       for (const sub of cat.subcategories) {
         const subItems = items.filter((i) => i.subcategory.id === sub.id)
         if (subItems.length > 0) {
-          subEntries.push({ subcategoryId: sub.id, subcategoryName: sub.name, items: subItems })
+          subEntries.push({
+            subcategoryId: sub.id,
+            subcategoryName: sub.name,
+            items: subItems,
+          })
         }
       }
       if (subEntries.length > 0) {
-        result.push({ categoryId: cat.id, categoryName: cat.name, subcategories: subEntries })
+        result.push({
+          categoryId: cat.id,
+          categoryName: cat.name,
+          subcategories: subEntries,
+        })
       }
     }
 
@@ -85,7 +105,12 @@ export default function TeamKnowledgeTimelinePage() {
   const showAll = selectedCategoryId === "__all__"
 
   function ItemRow({ item }: { item: KbItem }) {
-    return <KbItemRow item={item} baseHref={`/dashboard/team/${teamId}/knowledge-base`} />
+    return (
+      <KbItemRow
+        item={item}
+        baseHref={`/dashboard/team/${teamId}/knowledge-base`}
+      />
+    )
   }
 
   if (roleLoading) {
@@ -99,7 +124,9 @@ export default function TeamKnowledgeTimelinePage() {
   if (role !== "team_leader" && role !== "member") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
-        <p className="text-xs text-muted-foreground">You don't have access to this team's knowledge base.</p>
+        <p className="text-xs text-muted-foreground">
+          You don't have access to this team's knowledge base.
+        </p>
       </div>
     )
   }
@@ -113,26 +140,30 @@ export default function TeamKnowledgeTimelinePage() {
             Knowledge shared within your team.
           </p>
         </div>
-        <Link href={`/dashboard/team/${teamId}/knowledge-base/add`}>
-          <Button size="sm">
-            <Plus className="mr-1.5 size-3.5" />
-            Add Knowledge
-          </Button>
-        </Link>
-      </div>
-
-      <div className="mb-10 max-w-xs">
-        <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select
+            value={selectedCategoryId}
+            onValueChange={setSelectedCategoryId}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link href={`/dashboard/team/${teamId}/knowledge-base/add`}>
+            <Button>
+              <PlusIcon className="mr-1.5 size-3.5" />
+              Add Knowledge
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (
@@ -141,7 +172,9 @@ export default function TeamKnowledgeTimelinePage() {
         </div>
       ) : timelineGroups.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20">
-          <p className="text-xs text-muted-foreground">No knowledge items found for this team.</p>
+          <p className="text-xs text-muted-foreground">
+            No knowledge items found for this team.
+          </p>
         </div>
       ) : showAll ? (
         <KbAllCategoriesView

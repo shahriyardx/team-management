@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Plus, CaretDown } from "@phosphor-icons/react"
+import { PlusIcon } from "@phosphor-icons/react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -123,33 +123,32 @@ export default function KnowledgeTimelinePage() {
           </p>
         </div>
 
-        <Link href="/dashboard/knowledge-base/add">
-          <Button size="sm">
-            <Plus className="mr-1.5 size-3.5" />
-            Add Knowledge
-          </Button>
-        </Link>
-      </div>
+        <div className="flex gap-2">
+          <Select
+            value={selectedCategoryId}
+            onValueChange={setSelectedCategoryId}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
 
-      <div className="mb-10 max-w-xs">
-        <Select
-          value={selectedCategoryId}
-          onValueChange={setSelectedCategoryId}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Categories</SelectItem>
 
-          <SelectContent>
-            <SelectItem value="__all__">All Categories</SelectItem>
-
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link href="/dashboard/knowledge-base/add">
+            <Button>
+              <PlusIcon className="mr-1.5 size-3.5" />
+              Add Knowledge
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {roleLoading ? (
@@ -158,7 +157,9 @@ export default function KnowledgeTimelinePage() {
         </div>
       ) : role !== "owner" && role !== "admin" ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <p className="text-xs text-muted-foreground">You don't have access to org-wide knowledge.</p>
+          <p className="text-xs text-muted-foreground">
+            You don't have access to org-wide knowledge.
+          </p>
         </div>
       ) : isLoading ? (
         <div className="flex items-center justify-center py-20">
