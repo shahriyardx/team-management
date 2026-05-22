@@ -38,7 +38,7 @@ const baseNavItems: NavItem[] = [
     icon: Gear,
     roles: ["owner", "admin"],
     items: [
-      { title: "General", url: "#", roles: ["owner", "admin"] },
+      { title: "General", url: "/dashboard/settings/general", roles: ["owner", "admin"] },
       { title: "Billing", url: "#", roles: ["owner", "admin"] },
     ],
   },

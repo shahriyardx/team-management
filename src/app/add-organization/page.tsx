@@ -36,12 +36,6 @@ export default function AddOrganizationPage() {
   useEffect(() => {
     if (sessionLoading) return
     if (!session) { router.replace("/"); return }
-    // If user already has an org, redirect to dashboard
-    authClient.organization.list().then((res) => {
-      if (res.data && res.data.length > 0) {
-        router.replace("/dashboard")
-      }
-    })
   }, [session, sessionLoading, router])
 
   const handleLogoSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

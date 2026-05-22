@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 
-type Org = { id: string; name: string; slug: string }
+type Org = { id: string; name: string; slug: string; logo?: string | null }
 
 type OrgContextValue = {
   organizations: Org[]
@@ -13,6 +13,7 @@ type OrgContextValue = {
   loading: boolean
   onSwitchOrg: (orgId: string) => Promise<void>
   refetchSession: () => Promise<void>
+  refetchOrganizations: () => Promise<void>
 }
 
 const OrgContext = createContext<OrgContextValue | null>(null)
@@ -56,6 +57,11 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     [refetchSession],
   )
 
+  const refetchOrganizations = useCallback(async () => {
+    const res = await authClient.organization.list()
+    setOrganizations(res.data ?? [])
+  }, [])
+
   const loading = sessionLoading || !orgsLoaded
 
   return (
@@ -67,6 +73,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         loading,
         onSwitchOrg,
         refetchSession,
+        refetchOrganizations,
       }}
     >
       {children}

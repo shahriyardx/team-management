@@ -4,6 +4,7 @@ import { useRouter, useParams, usePathname } from "next/navigation"
 import { CaretUpDownIcon, PlusIcon } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import {
   DropdownMenu,
@@ -49,9 +50,12 @@ export function TeamSwitcher() {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" className="cursor-default hover:bg-transparent">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <span className="text-xs font-bold">{activeTeam.name.charAt(0).toUpperCase()}</span>
-            </div>
+            <Avatar className="size-8 rounded-lg">
+              <AvatarImage src={org.logo ?? undefined} className="rounded-lg" />
+              <AvatarFallback className="rounded-lg text-xs font-bold bg-sidebar-primary text-sidebar-primary-foreground">
+                {activeTeam.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{org.name}</span>
               <span className="truncate text-xs">{activeTeam.name}</span>
@@ -65,12 +69,6 @@ export function TeamSwitcher() {
   // Org switcher (admin/owner dashboard)
   const displayOrgs = organizations.filter((o) => o.id !== activeOrgId)
 
-  const logo = (
-    <span className="flex size-4 items-center justify-center text-xs font-bold">
-      {org.name.charAt(0).toUpperCase()}
-    </span>
-  )
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -80,9 +78,12 @@ export function TeamSwitcher() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                {logo}
-              </div>
+              <Avatar className="size-8 rounded-lg">
+                <AvatarImage src={org.logo ?? undefined} className="rounded-lg" />
+                <AvatarFallback className="rounded-lg text-xs font-bold bg-sidebar-primary text-sidebar-primary-foreground">
+                  {org.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{org.name}</span>
                 <span className="truncate text-xs">Organization</span>
@@ -105,9 +106,12 @@ export function TeamSwitcher() {
                 onClick={() => { onSwitchOrg(o.id) }}
                 className="gap-2 p-2"
               >
-                <span className="flex size-6 items-center justify-center rounded-md border text-xs">
-                  {o.name.charAt(0)}
-                </span>
+                <Avatar className="size-6 rounded-md">
+                  <AvatarImage src={o.logo ?? undefined} className="rounded-md" />
+                  <AvatarFallback className="rounded-md text-[10px] font-medium border">
+                    {o.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
                 {o.name}
               </DropdownMenuItem>
             ))}
