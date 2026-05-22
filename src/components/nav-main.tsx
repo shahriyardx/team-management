@@ -31,7 +31,16 @@ interface NavItem {
 const baseNavItems: NavItem[] = [
   { title: "Dashboard", icon: House, roles: ["owner", "admin", "team_leader", "member", "pending"] },
   { title: "Teams", icon: UsersThree, roles: ["owner", "admin"] },
-  { title: "Knowledge Base", icon: BookBookmark, roles: ["team_leader", "member"] },
+  {
+    title: "Knowledge Base",
+    icon: BookBookmark,
+    roles: ["owner", "admin"],
+    items: [
+      { title: "View", url: "/dashboard/knowledge-base", roles: ["owner", "admin"] },
+      { title: "Add Knowledge", url: "/dashboard/knowledge-base/add", roles: ["owner", "admin"] },
+      { title: "Categories", url: "/dashboard/knowledge-base/categories", roles: ["owner", "admin"] },
+    ],
+  },
   { title: "Members", icon: Users, roles: ["owner", "admin", "team_leader", "member"] },
   {
     title: "Settings",
@@ -43,6 +52,20 @@ const baseNavItems: NavItem[] = [
     ],
   },
 ]
+
+function getTeamKnowledgeItem(teamId?: string): NavItem | null {
+  if (!teamId) return null
+  return {
+    title: "Team Knowledge",
+    icon: BookBookmark,
+    roles: ["team_leader", "member"],
+    items: [
+      { title: "View", url: `/dashboard/team/${teamId}/knowledge-base`, roles: ["team_leader", "member"] },
+      { title: "Add Knowledge", url: `/dashboard/team/${teamId}/knowledge-base/add`, roles: ["team_leader", "member"] },
+      { title: "Categories", url: `/dashboard/team/${teamId}/knowledge-base/categories`, roles: ["team_leader", "member"] },
+    ],
+  }
+}
 
 function getTasksItem(teamId?: string): NavItem | null {
   if (!teamId) return null
@@ -108,9 +131,11 @@ export function NavMain() {
 
   const okrItem = getOkrItem(role ?? null, teamId)
   const tasksItem = getTasksItem(teamId)
+  const teamKnowledgeItem = getTeamKnowledgeItem(teamId)
 
   let navItems: NavItem[] = [...baseNavItems]
   if (tasksItem) navItems.push(tasksItem)
+  if (teamKnowledgeItem) navItems.push(teamKnowledgeItem)
   if (okrItem) navItems.push(okrItem)
 
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
@@ -158,6 +183,8 @@ export function NavMain() {
         }
         return pathname === "/dashboard/members"
       }
+      case "Knowledge Base": return pathname.startsWith("/dashboard/knowledge-base")
+      case "Team Knowledge": return pathname.startsWith(`/dashboard/team/${teamId}/knowledge-base`)
       default: return false
     }
   }

@@ -14,7 +14,7 @@ function getClient() {
   })
 }
 
-export async function uploadToR2(file: File): Promise<string | null> {
+export async function uploadToR2(file: File, folder = "logos"): Promise<string | null> {
   const client = getClient()
   if (!client) return null
 
@@ -23,7 +23,7 @@ export async function uploadToR2(file: File): Promise<string | null> {
   if (!bucket || !publicUrl) return null
 
   const ext = file.name.split(".").pop() ?? "png"
-  const key = `logos/${crypto.randomUUID()}.${ext}`
+  const key = `${folder}/${crypto.randomUUID()}.${ext}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
 

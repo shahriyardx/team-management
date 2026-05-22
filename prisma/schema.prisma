@@ -31,6 +31,7 @@ model User {
   passkeys        Passkey[]
   twoFactor       TwoFactor?
   twoFactorEnabled Boolean      @default(false)
+  kbItems         KbItem[]
 
   @@unique([email])
   @@map("user")
@@ -83,6 +84,9 @@ model Organization {
   keyResults    KeyResult[]
   checkIns      CheckIn[]
   teams         Team[]
+  kbCategories  KbCategory[]
+  kbSubcategories KbSubcategory[]
+  kbItems       KbItem[]
 
   @@map("organization")
 }
@@ -349,6 +353,8 @@ model Team {
   members        TeamMember[]
   invitations    Invitation[]
   objectives     Objective[]
+  kbItems        KbItem[]
+  kbCategories   KbCategory[]
 
   @@index([organizationId])
   @@map("team")
@@ -386,4 +392,79 @@ model CheckIn {
   @@index([authorId])
   @@index([organizationId])
   @@map("check_in")
+}
+
+model KbCategory {
+  id             String          @id @default(cuid())
+  name           String
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  subcategories  KbSubcategory[]
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@map("kb_category")
+}
+
+model KbSubcategory {
+  id             String       @id @default(cuid())
+  name           String
+  categoryId     String
+  category       KbCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items          KbItem[]
+
+  @@index([categoryId])
+  @@index([organizationId])
+  @@map("kb_subcategory")
+}
+
+model KbItem {
+  id             String          @id @default(cuid())
+  title          String
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  subcategoryId  String
+  subcategory    KbSubcategory   @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  attachments    KbAttachment[]
+  links          KbLink[]
+
+  @@index([subcategoryId])
+  @@index([organizationId])
+  @@index([teamId])
+  @@map("kb_item")
+}
+
+model KbAttachment {
+  id      String @id @default(cuid())
+  name    String
+  url     String
+  type    String
+  size    Int
+  kbItemId String
+  kbItem  KbItem @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+
+  @@index([kbItemId])
+  @@map("kb_attachment")
+}
+
+model KbLink {
+  id       String @id @default(cuid())
+  url      String
+  title    String
+  kbItemId String
+  kbItem   KbItem @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+
+  @@index([kbItemId])
+  @@map("kb_link")
 }

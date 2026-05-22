@@ -7,6 +7,7 @@ ALTER TABLE IF EXISTS "team_member" DROP CONSTRAINT IF EXISTS "team_member_membe
 ALTER TABLE IF EXISTS "team_member" DROP CONSTRAINT IF EXISTS "team_member_teamId_fkey";
 ALTER TABLE IF EXISTS "team" DROP CONSTRAINT IF EXISTS "team_leaderId_fkey";
 ALTER TABLE IF EXISTS "team" DROP CONSTRAINT IF EXISTS "team_organizationId_fkey";
+ALTER TABLE IF EXISTS "invitation" DROP CONSTRAINT IF EXISTS "invitation_teamId_fkey";
 DROP TABLE IF EXISTS "team_member";
 DROP TABLE IF EXISTS "team";
 
@@ -56,3 +57,6 @@ ALTER TABLE "team_member" ADD CONSTRAINT "team_member_teamId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "team_member" ADD CONSTRAINT "team_member_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey (re-add after dropping earlier)
+ALTER TABLE "invitation" ADD CONSTRAINT "invitation_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "team"("id") ON DELETE SET NULL ON UPDATE CASCADE;
