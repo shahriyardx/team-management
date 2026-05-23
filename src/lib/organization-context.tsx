@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 
-type Org = { id: string; name: string; slug: string; logo?: string | null }
+type Org = { id: string; name: string; slug: string; logo?: string | null; websiteUrl?: string | null; department?: string | null; teamSize?: string | null }
 
 type OrgContextValue = {
   organizations: Org[]
@@ -35,7 +35,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       setOrgsLoaded(true)
 
       if (orgs.length === 0) {
-        router.replace("/add-organization")
+        router.replace("/onboard/add-organization")
         return
       }
 

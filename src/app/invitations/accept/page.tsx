@@ -31,7 +31,7 @@ function AcceptContent() {
     try {
       await authClient.organization.acceptInvitation({ invitationId })
       setStatus("success")
-      setTimeout(() => router.replace("/dashboard"), 2000)
+      setTimeout(() => router.replace("/onboard"), 2000)
     } catch (err: unknown) {
       setStatus("error")
       setError(
@@ -80,7 +80,7 @@ function AcceptContent() {
             <Button
               variant="link"
               size="sm"
-              onClick={() => router.replace("/dashboard")}
+              onClick={() => router.replace("/onboard")}
             >
               Go to dashboard
             </Button>

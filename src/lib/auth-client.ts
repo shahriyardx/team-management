@@ -15,3 +15,9 @@ export const authClient = createAuthClient({
     }),
   ],
 })
+
+export type OrgAdditionalFields = {
+  websiteUrl?: string | null
+  department?: string | null
+  teamSize?: string | null
+}

@@ -1,7 +1,6 @@
 "use client"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -28,7 +27,6 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain />
-        <NavProjects />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

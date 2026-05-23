@@ -2,13 +2,21 @@
 
 import { useCallback, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -18,6 +26,7 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -26,19 +35,55 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   })
 
-  const handleEmailSignIn = useCallback(async (data: LoginForm) => {
-    setError(null)
-    setLoading(true)
-    const res = await authClient.signIn.email(data)
-    if (res.error) {
-      setError(res.error.message || res.error.statusText || "Invalid email or password.")
-      setLoading(false)
-    }
-  }, [])
+  const handleEmailSignIn = useCallback(
+    async (data: LoginForm) => {
+      setError(null)
+      setLoading(true)
+      const res = await authClient.signIn.email(data)
+      if (res.error) {
+        setError(
+          res.error.message ||
+            res.error.statusText ||
+            "Invalid email or password.",
+        )
+        setLoading(false)
+        return
+      }
+
+      // Auto-redirect if user has orgs
+      try {
+        const { data: orgs } = await authClient.organization.list()
+
+        if (orgs && orgs.length > 0) {
+          const org = orgs[0]
+          await authClient.organization.setActive({ organizationId: org.id })
+          const { data: member } =
+            await authClient.organization.getActiveMember()
+          const role =
+            member && typeof member === "object" && "role" in member
+              ? (member as { role: string }).role
+              : null
+          if (role === "owner" || role === "admin")
+            router.replace(`/${org.slug}`)
+          else if (role === "team_leader")
+            router.replace(`/${org.slug}/manage-team`)
+          else if (role === "pending") router.replace(`/${org.slug}/org`)
+          else router.replace(`/${org.slug}/team`)
+          return
+        }
+      } catch {}
+
+      router.push("/onboard")
+    },
+    [router],
+  )
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true)
-    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" })
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/onboard",
+    })
   }, [])
 
   const handlePasskeySignIn = useCallback(async () => {
@@ -48,16 +93,43 @@ export default function LoginPage() {
     if (res?.error) {
       setError(res.error.message || "Passkey sign-in failed.")
       setLoading(false)
+      return
     }
-  }, [])
+
+    try {
+      const { data: orgs } = await authClient.organization.list()
+      if (orgs && orgs.length > 0) {
+        const org = orgs[0]
+        await authClient.organization.setActive({ organizationId: org.id })
+        const { data: member } = await authClient.organization.getActiveMember()
+        const role =
+          member && typeof member === "object" && "role" in member
+            ? (member as { role: string }).role
+            : null
+        if (role === "owner" || role === "admin") router.replace(`/${org.slug}`)
+        else if (role === "team_leader")
+          router.replace(`/${org.slug}/manage-team`)
+        else if (role === "pending") router.replace(`/${org.slug}/org`)
+        else router.replace(`/${org.slug}/team`)
+        return
+      }
+    } catch {}
+
+    router.push("/onboard")
+  }, [router])
 
   return (
     <div className="w-full max-w-sm mx-auto">
       <h2 className="text-lg font-semibold text-foreground">Sign in</h2>
-      <p className="mb-8 mt-1 text-sm text-muted-foreground">Sign in to your account to continue.</p>
+      <p className="mb-8 mt-1 text-sm text-muted-foreground">
+        Sign in to your account to continue.
+      </p>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleEmailSignIn)} className="space-y-4">
+        <form
+          onSubmit={form.handleSubmit(handleEmailSignIn)}
+          className="space-y-4"
+        >
           <FormField
             control={form.control}
             name="email"
@@ -65,7 +137,11 @@ export default function LoginPage() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="you@example.com" {...field} />
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -78,7 +154,11 @@ export default function LoginPage() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Enter your password" {...field} />
+                  <Input
+                    type="password"
+                    placeholder="Enter your password"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -101,11 +181,21 @@ export default function LoginPage() {
       </div>
 
       <div className="space-y-3">
-        <Button variant="outline" className="w-full gap-3" onClick={handleGoogleSignIn} disabled={loading}>
+        <Button
+          variant="outline"
+          className="w-full gap-3"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+        >
           <GoogleIcon />
           Sign in with Google
         </Button>
-        <Button variant="outline" className="w-full gap-3" onClick={handlePasskeySignIn} disabled={loading}>
+        <Button
+          variant="outline"
+          className="w-full gap-3"
+          onClick={handlePasskeySignIn}
+          disabled={loading}
+        >
           <PasskeyIcon />
           Sign in with passkey
         </Button>
@@ -113,7 +203,10 @@ export default function LoginPage() {
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link href="/auth/register" className="text-foreground underline underline-offset-4 hover:text-muted-foreground">
+        <Link
+          href="/auth/register"
+          className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+        >
           Create one
         </Link>
       </p>
@@ -123,7 +216,13 @@ export default function LoginPage() {
 
 function GoogleIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4" fill="currentColor">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="currentColor"
+    >
+      <title>Google Icon</title>
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -134,7 +233,17 @@ function GoogleIcon() {
 
 function PasskeyIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <title>Lock Icon</title>
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       <circle cx="12" cy="16" r="1" />

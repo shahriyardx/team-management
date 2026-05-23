@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma"
 import { organization } from "better-auth/plugins/organization"
 import { twoFactor } from "better-auth/plugins"
 import { passkey } from "@better-auth/passkey"
+import { haveIBeenPwned } from "better-auth/plugins/haveibeenpwned"
 import { prisma } from "./prisma"
 import { sendInvitationEmail } from "./email"
 
@@ -19,17 +20,27 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    haveIBeenPwned(),
     passkey(),
     twoFactor({ allowPasswordless: true }),
     organization({
       teams: { enabled: true },
+      requireEmailVerificationOnInvitation: false,
       schema: {
+        organization: {
+          additionalFields: {
+            websiteUrl: { type: "string", required: false },
+            department: { type: "string", required: false },
+            teamSize: { type: "string", required: false },
+          },
+        },
         teamMember: {
+          // @ts-expect-error: idk
           additionalFields: {
             role: { type: "string" },
           },
         },
-      } as any,
+      },
       sendInvitationEmail: async (data) => {
         const url = `${process.env.BETTER_AUTH_URL}/invitations/accept?id=${data.id}`
         console.log(url)

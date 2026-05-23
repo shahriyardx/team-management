@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import { User, Devices, Key, ShieldCheck, LockKeyOpen, ArrowLeft } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 
 const navItems = [
   { href: "/profile", label: "Profile", icon: User, exact: true },

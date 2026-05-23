@@ -19,128 +19,119 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { CaretRightIcon, BookBookmark, Gear, House, ListChecks, Target, Users, UsersThree } from "@phosphor-icons/react"
-import { useMemberRole, type EffectiveRole } from "@/lib/use-member-role"
 
 interface NavItem {
   title: string
+  url?: string
   icon: React.ComponentType<{ className?: string }>
-  roles: EffectiveRole[]
-  items?: { title: string; url: string; roles: EffectiveRole[] }[]
+  items?: { title: string; url: string }[]
 }
 
-const baseNavItems: NavItem[] = [
-  { title: "Dashboard", icon: House, roles: ["owner", "admin", "team_leader", "member", "pending"] },
-  { title: "Teams", icon: UsersThree, roles: ["owner", "admin"] },
-  {
-    title: "Knowledge Base",
-    icon: BookBookmark,
-    roles: ["owner", "admin"],
-    items: [
-      { title: "View", url: "/dashboard/knowledge-base", roles: ["owner", "admin"] },
-      { title: "Add Knowledge", url: "/dashboard/knowledge-base/add", roles: ["owner", "admin"] },
-      { title: "Categories", url: "/dashboard/knowledge-base/categories", roles: ["owner", "admin"] },
-    ],
-  },
-  { title: "Members", icon: Users, roles: ["owner", "admin", "team_leader", "member"] },
-  {
-    title: "Settings",
-    icon: Gear,
-    roles: ["owner", "admin"],
-    items: [
-      { title: "General", url: "/dashboard/settings/general", roles: ["owner", "admin"] },
-      { title: "Billing", url: "#", roles: ["owner", "admin"] },
-    ],
-  },
-]
-
-function getTeamKnowledgeItem(teamId?: string): NavItem | null {
-  if (!teamId) return null
-  return {
-    title: "Team Knowledge",
-    icon: BookBookmark,
-    roles: ["team_leader", "member"],
-    items: [
-      { title: "View", url: `/dashboard/team/${teamId}/knowledge-base`, roles: ["team_leader", "member"] },
-      { title: "Add Knowledge", url: `/dashboard/team/${teamId}/knowledge-base/add`, roles: ["team_leader", "member"] },
-      { title: "Categories", url: `/dashboard/team/${teamId}/knowledge-base/categories`, roles: ["team_leader", "member"] },
-    ],
-  }
+function ownerItems(slug: string): NavItem[] {
+  return [
+    { title: "Dashboard", url: `/${slug}`, icon: House },
+    {
+      title: "OKRs", icon: Target,
+      items: [
+        { title: "Org OKRs", url: `/${slug}/okr` },
+        { title: "Team OKRs", url: `/${slug}/okr/team` },
+        { title: "Cycles", url: `/${slug}/okr/cycles` },
+      ],
+    },
+    {
+      title: "Knowledge Base", icon: BookBookmark,
+      items: [
+        { title: "View", url: `/${slug}/knowledge-base` },
+        { title: "Add Knowledge", url: `/${slug}/knowledge-base/add` },
+        { title: "Categories", url: `/${slug}/knowledge-base/categories` },
+      ],
+    },
+    { title: "Teams", url: `/${slug}/teams`, icon: UsersThree },
+    { title: "Members", url: `/${slug}/members`, icon: Users },
+    {
+      title: "Settings", icon: Gear,
+      items: [
+        { title: "General", url: `/${slug}/settings/general` },
+        { title: "Billing", url: "#" },
+      ],
+    },
+  ]
 }
 
-function getTasksItem(teamId?: string): NavItem | null {
-  if (!teamId) return null
-  return {
-    title: "Tasks",
-    icon: ListChecks,
-    roles: ["team_leader", "member"],
-    items: [
-      { title: "My tasks", url: `/dashboard/team/${teamId}/tasks`, roles: ["team_leader", "member"] },
-      { title: "All team tasks", url: `/dashboard/team/${teamId}/tasks/all`, roles: ["team_leader", "member"] },
-    ],
-  }
+function leaderItems(slug: string): NavItem[] {
+  return [
+    { title: "Dashboard", url: `/${slug}/manage-team`, icon: House },
+    {
+      title: "OKRs", icon: Target,
+      items: [
+        { title: "Team OKR", url: `/${slug}/manage-team/okr` },
+        { title: "Members OKR", url: `/${slug}/manage-team/okr/members` },
+      ],
+    },
+    {
+      title: "Knowledge Base", icon: BookBookmark,
+      items: [
+        { title: "View", url: `/${slug}/manage-team/knowledge-base` },
+        { title: "Add Knowledge", url: `/${slug}/manage-team/knowledge-base/add` },
+        { title: "Categories", url: `/${slug}/manage-team/knowledge-base/categories` },
+      ],
+    },
+    {
+      title: "Tasks", icon: ListChecks,
+      items: [
+        { title: "My tasks", url: `/${slug}/manage-team/tasks` },
+        { title: "All team tasks", url: `/${slug}/manage-team/tasks/all` },
+      ],
+    },
+    { title: "Members", url: `/${slug}/manage-team/members`, icon: Users },
+  ]
 }
 
-function getOkrItem(role: EffectiveRole | null, teamId?: string): NavItem | null {
-  if (!role || role === "pending") return null
-
-  if (role === "owner" || role === "admin") {
-    return {
-      title: "OKRs",
-      icon: Target,
-      roles: ["owner", "admin"],
+function memberItems(slug: string): NavItem[] {
+  return [
+    { title: "Dashboard", url: `/${slug}/team`, icon: House },
+    {
+      title: "OKRs", icon: Target,
       items: [
-        { title: "Org OKRs", url: "/dashboard/okrs/org", roles: ["owner", "admin"] },
-        { title: "Team OKRs", url: "/dashboard/okrs/team", roles: ["owner", "admin"] },
-        { title: "Cycles", url: "/dashboard/okrs/cycles", roles: ["owner", "admin"] },
+        { title: "My OKRs", url: `/${slug}/team/okr` },
       ],
-    }
-  }
-
-  if (role === "team_leader" && teamId) {
-    return {
-      title: "OKRs",
-      icon: Target,
-      roles: ["team_leader"],
+    },
+    {
+      title: "Knowledge Base", icon: BookBookmark,
       items: [
-        { title: "Team OKR", url: `/dashboard/team/${teamId}/okrs/team`, roles: ["team_leader"] },
-        { title: "Members OKR", url: `/dashboard/team/${teamId}/okrs/members`, roles: ["team_leader"] },
+        { title: "View", url: `/${slug}/team/knowledge-base` },
+        { title: "Add Knowledge", url: `/${slug}/team/knowledge-base/add` },
+        { title: "Categories", url: `/${slug}/team/knowledge-base/categories` },
       ],
-    }
-  }
-
-  if (role === "member" && teamId) {
-    return {
-      title: "OKRs",
-      icon: Target,
-      roles: ["member"],
+    },
+    {
+      title: "Tasks", icon: ListChecks,
       items: [
-        { title: "My OKRs", url: `/dashboard/team/${teamId}/okrs`, roles: ["member"] },
+        { title: "My tasks", url: `/${slug}/team/tasks` },
       ],
-    }
-  }
-
-  return { title: "OKRs", icon: Target, roles: [role] }
+    },
+    { title: "Members", url: `/${slug}/team/members`, icon: Users },
+  ]
 }
 
 export function NavMain() {
   const router = useRouter()
   const pathname = usePathname()
   const params = useParams()
-  const { role, loading } = useMemberRole()
-  const teamId = params?.teamId as string | undefined
+  const slug = params.companySlug as string | undefined
 
-  const okrItem = getOkrItem(role ?? null, teamId)
-  const tasksItem = getTasksItem(teamId)
-  const teamKnowledgeItem = getTeamKnowledgeItem(teamId)
+  let branch: "owner" | "leader" | "member" = "owner"
+  if (slug && pathname.startsWith(`/${slug}/manage-team`)) branch = "leader"
+  else if (slug && (pathname === `/${slug}/team` || pathname.startsWith(`/${slug}/team/`))) branch = "member"
 
-  let navItems: NavItem[] = [...baseNavItems]
-  if (tasksItem) navItems.push(tasksItem)
-  if (teamKnowledgeItem) navItems.push(teamKnowledgeItem)
-  if (okrItem) navItems.push(okrItem)
+  const navItems = slug
+    ? branch === "leader" ? leaderItems(slug)
+      : branch === "member" ? memberItems(slug)
+      : ownerItems(slug)
+    : []
 
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
 
-  // Auto-open collapsible when navigating to a sub-item page
   useEffect(() => {
     setOpenItems((prev) => {
       const next = { ...prev }
@@ -153,51 +144,24 @@ export function NavMain() {
     })
   }, [pathname])
 
-  function handleNav(title: string) {
-    switch (title) {
-      case "Dashboard": router.push("/dashboard"); break
-      case "Members": {
-        if (teamId && (role === "team_leader" || role === "member")) {
-          router.push(`/dashboard/team/${teamId}/members`)
-        } else {
-          router.push("/dashboard/members")
-        }
-        break
-      }
-      case "Teams":     router.push("/dashboard/teams"); break
-    }
+  function handleNav(item: NavItem) {
+    if (item.url) router.push(item.url)
   }
 
   function isItemActive(item: NavItem): boolean {
     if (item.items) {
-      // Items with sub-items: active when any sub URL matches
       return item.items.some((sub) => pathname === sub.url)
     }
-    // Items without sub-items: direct path match
-    switch (item.title) {
-      case "Dashboard": return pathname === "/dashboard"
-      case "Teams": return pathname === "/dashboard/teams" || pathname.startsWith("/dashboard/team/")
-      case "Members": {
-        if (teamId && (role === "team_leader" || role === "member")) {
-          return pathname === `/dashboard/team/${teamId}/members`
-        }
-        return pathname === "/dashboard/members"
-      }
-      case "Knowledge Base": return pathname.startsWith("/dashboard/knowledge-base")
-      case "Team Knowledge": return pathname.startsWith(`/dashboard/team/${teamId}/knowledge-base`)
-      default: return false
-    }
+    return pathname === item.url
   }
 
-  const visible = role
-    ? navItems.filter((item) => item.roles.includes(role))
-    : loading ? [] : navItems
+  if (!slug) return null
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
-        {visible.map((item) => {
+        {navItems.map((item) => {
           const hasSubItems = !!item.items
           const isOpen = openItems[item.title] ?? false
 
@@ -211,7 +175,7 @@ export function NavMain() {
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.title} isActive={isItemActive(item)} onClick={() => handleNav(item.title)}>
+                  <SidebarMenuButton tooltip={item.title} isActive={isItemActive(item)} onClick={() => handleNav(item)}>
                     <item.icon />
                     <span>{item.title}</span>
                     {hasSubItems && (
@@ -222,15 +186,13 @@ export function NavMain() {
                 {hasSubItems && (
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {item.items!
-                        .filter((sub) => sub.roles.includes(role ?? "member"))
-                        .map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                              <Link href={subItem.url}>{subItem.title}</Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
+                      {item.items!.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                            <Link href={subItem.url}>{subItem.title}</Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 )}

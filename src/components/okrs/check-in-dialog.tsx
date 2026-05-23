@@ -91,7 +91,7 @@ export function CheckInDialog({ open, onOpenChange, cycleId, kr }: CheckInDialog
                 <Controller control={form.control} name="newValue" render={({ field }) => (
                   <div className="flex items-center gap-3">
                     <Slider value={[field.value ?? 0]} onValueChange={([val]) => field.onChange(val)} min={0} max={100} step={1} className="flex-1" />
-                    <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">{Math.round(field.value ?? 0)}%</span>
+                    <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{Math.round(field.value ?? 0)}%</span>
                   </div>
                 )} />
               ) : kr?.unit === "number" || kr?.unit === "currency" ? (
@@ -99,14 +99,15 @@ export function CheckInDialog({ open, onOpenChange, cycleId, kr }: CheckInDialog
                   <Controller control={form.control} name="newValue" render={({ field }) => (
                     <Input type="number" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.valueAsNumber)} step="any" />
                   )} />
-                  {kr?.maxValue != null && kr.maxValue > 0 && (
-                    <Controller control={form.control} name="newValue" render={({ field }) => (
+                  <Controller control={form.control} name="newValue" render={({ field }) => {
+                    const maxVal = (kr?.maxValue ?? kr?.targetValue ?? 100)
+                    return (
                       <div className="flex items-center gap-3">
-                        <Slider value={[field.value ?? 0]} onValueChange={([val]) => field.onChange(val)} min={0} max={kr.maxValue ?? undefined} step={1} className="flex-1" />
-                        <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">{Math.round(field.value ?? 0)} / {Math.round(kr.maxValue ?? 0)}</span>
+                        <Slider value={[field.value ?? 0]} onValueChange={([val]) => field.onChange(val)} min={0} max={maxVal} step={1} className="flex-1" />
+                        <span className="w-20 text-right text-xs tabular-nums text-muted-foreground shrink-0">{Math.round(field.value ?? 0)} / {Math.round(maxVal)}</span>
                       </div>
-                    )} />
-                  )}
+                    )
+                  }} />
                 </div>
               ) : (
                 <Controller control={form.control} name="newValue" render={({ field }) => (

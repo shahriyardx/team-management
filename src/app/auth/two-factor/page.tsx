@@ -25,7 +25,7 @@ export default function TwoFactorVerificationPage() {
       setVerifying(false)
       return
     }
-    router.push("/dashboard")
+    router.push("/onboard")
   }, [code, backupCode, method, router])
 
   return (

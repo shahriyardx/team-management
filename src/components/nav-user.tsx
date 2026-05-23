@@ -39,7 +39,6 @@ export function NavUser() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [orgTeams, setOrgTeams] = useState<Record<string, Array<{ id: string; name: string }>>>({})
 
-  // Fetch teams for all orgs when dropdown opens
   useEffect(() => {
     if (!menuOpen || organizations.length === 0) return
     let cancelled = false
@@ -65,8 +64,15 @@ export function NavUser() {
     router.replace("/")
   }
 
-  async function handleSwitchOrg(orgId: string) {
-    await onSwitchOrg(orgId)
+  async function handleTeamClick(orgId: string, teamId: string) {
+    const targetOrg = organizations.find((o) => o.id === orgId)
+    if (!targetOrg) return
+
+    if (orgId !== activeOrg?.id) {
+      await onSwitchOrg(orgId)
+    }
+    await authClient.organization.setActiveTeam({ teamId })
+    router.push(`/${targetOrg.slug}/manage-team`)
   }
 
   if (!user) return null
@@ -125,7 +131,10 @@ export function NavUser() {
                 return (
                   <DropdownMenuItem
                     key={org.id}
-                    onClick={() => handleSwitchOrg(org.id)}
+                    onClick={() => {
+                      const newSlug = org.slug
+                      onSwitchOrg(org.id).then(() => router.push(`/${newSlug}`))
+                    }}
                     className="gap-2 p-2"
                   >
                     <span className="flex size-6 items-center justify-center rounded-md border text-xs">
@@ -150,7 +159,7 @@ export function NavUser() {
                     {teams.map((team) => (
                       <DropdownMenuItem
                         key={team.id}
-                        onClick={() => router.push(`/dashboard/team/${team.id}`)}
+                        onClick={() => handleTeamClick(org.id, team.id)}
                         className="gap-2 p-2"
                       >
                         <span className="flex size-5 items-center justify-center rounded border text-[10px]">

@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Team Pulse",
+  title: "WeirdTeams",
   description:
     "Team management platform — tasks, knowledge base, and collaboration in one place.",
 }

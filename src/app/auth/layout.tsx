@@ -28,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="flex min-h-screen flex-col lg:flex-row">
       <div className="flex flex-col justify-between bg-linear-to-br from-zinc-950 via-zinc-900 to-indigo-950 px-8 py-12 sm:px-12 sm:py-16 lg:w-1/2 lg:px-16">
         <div>
-          <h1 className="text-4xl font-bold tracking-[0.15em] text-white sm:text-5xl">PULSE</h1>
+          <h1 className="text-4xl font-bold tracking-[0.15em] text-white sm:text-5xl">WEIRDTEAMS</h1>
           <p className="mt-2 text-sm text-zinc-400">Your team, in sync.</p>
         </div>
 
@@ -46,7 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           ))}
         </div>
 
-        <p className="text-xs text-zinc-600">&copy; 2026 Team Pulse</p>
+        <p className="text-xs text-zinc-600">&copy; 2026 WeirdTeams</p>
       </div>
 
       <div className="flex flex-1 items-center justify-center bg-background px-6 py-16 lg:w-1/2">

@@ -1,5 +1,6 @@
 "use client"
 
+import { type ReactNode } from "react"
 import { ObjectiveCard, type ObjectiveItem } from "@/components/okrs/objective-card"
 import { KrRow, type KrRowItem } from "@/components/okrs/kr-row"
 
@@ -10,6 +11,7 @@ interface ObjectiveCardWithKRsProps {
   onAddKr?: (objectiveId: string) => void
   onDeleteObjective?: (id: string) => void
   onEditObjective?: (id: string, title: string) => void
+  krRenderer?: (kr: KrRowItem) => ReactNode
 }
 
 export function ObjectiveCardWithKRs({
@@ -17,6 +19,7 @@ export function ObjectiveCardWithKRs({
   onAddKr,
   onDeleteObjective,
   onEditObjective,
+  krRenderer,
 }: ObjectiveCardWithKRsProps) {
   return (
     <ObjectiveCard
@@ -24,7 +27,7 @@ export function ObjectiveCardWithKRs({
       onAddKr={onAddKr}
       onEdit={onEditObjective}
       onDelete={onDeleteObjective}
-      krRenderer={(kr) => <KrRow kr={kr as KrRowItem} />}
+      krRenderer={krRenderer as any ?? ((kr) => <KrRow kr={kr as KrRowItem} />)}
     />
   )
 }

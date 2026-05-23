@@ -72,6 +72,9 @@ model Organization {
   name          String
   slug          String         @unique
   logo          String?
+  websiteUrl    String?
+  department    String?
+  teamSize      String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   members       Member[]
@@ -173,6 +176,7 @@ model Session {
   userId               String
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId String?
+  activeTeamId         String?
 
   @@unique([token])
   @@index([userId])

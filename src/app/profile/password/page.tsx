@@ -14,7 +14,7 @@ type AccountInfo = {
 }
 
 export default function PasswordPage() {
-  const { data: session, isPending: sessionLoading } = authClient.useSession()
+  const { isPending: sessionLoading } = authClient.useSession()
 
   const [accounts, setAccounts] = useState<AccountInfo[]>([])
   const [accountsLoading, setAccountsLoading] = useState(true)
