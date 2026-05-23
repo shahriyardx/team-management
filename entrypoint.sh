@@ -3,7 +3,9 @@ set -e
 
 # ── Required environment variables ──────────────────────────
 #
-# See selfhost.md for setup instructions.
+# If you're missing any of these, see selfhost.md or the
+# project README on GitHub:
+#   https://github.com/shahriyardx/team-management
 
 missing=""
 
@@ -17,7 +19,8 @@ check_env() {
     if [ -n "$hint" ]; then
       missing="$missing  → $hint"
     fi
-    missing="$missing\n"
+    missing="$missing
+"
   fi
 }
 
@@ -35,8 +38,8 @@ if [ -n "$missing" ]; then
   echo "  ╔══════════════════════════════════════════════════════╗"
   echo "  ║  Missing required environment variables              ║"
   echo "  ╚══════════════════════════════════════════════════════╝"
-  printf "%b" "$missing"
   echo ""
+  echo "$missing"
   echo ""
   exit 1
 fi
@@ -46,8 +49,12 @@ fi
 echo "  → Running database migrations..."
 bun prisma migrate deploy 2>&1 || {
   echo ""
-  echo "  Database migration failed."
-  echo "  Make sure your PostgreSQL server is running and DATABASE_URL is correct."
+  echo "  ╔══════════════════════════════════════════════════════╗"
+  echo "  ║  Database migration failed                           ║"
+  echo "  ╚══════════════════════════════════════════════════════╝"
+  echo ""
+  echo "  Make sure your PostgreSQL server is running and"
+  echo "  DATABASE_URL is correct."
   echo ""
   exit 1
 }
