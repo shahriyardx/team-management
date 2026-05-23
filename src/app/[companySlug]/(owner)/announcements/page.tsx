@@ -3,5 +3,5 @@
 import { AnnouncementList } from "@/components/announcements/announcement-list"
 
 export default function Page() {
-  return <AnnouncementList />
+  return <AnnouncementList scope="org" />
 }

@@ -2,6 +2,7 @@ import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
 import { router, protectedProcedure } from "./server"
+import { deleteFromR2 } from "@/lib/r2"
 
 export const announcementRouter = router({
   list: protectedProcedure
@@ -9,6 +10,10 @@ export const announcementRouter = router({
       z.object({
         organizationId: z.string(),
         teamId: z.string().optional(),
+        scope: z.enum(["org", "team"]).optional(),
+        search: z.string().optional(),
+        cursor: z.number().optional(),
+        take: z.number().optional().default(20),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -22,8 +27,6 @@ export const announcementRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      // Owner/admin: see org-wide + all team announcements
-      // Team leader/member: see org-wide + their team's announcements
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
 
       const userTeamIds = isOrgAdmin
@@ -36,25 +39,45 @@ export const announcementRouter = router({
           ).map((tm) => tm.teamId)
 
       const where: Record<string, unknown> = { organizationId: input.organizationId }
-      if (!isOrgAdmin && userTeamIds) {
+
+      if (input.search) {
+        where.title = { contains: input.search, mode: "insensitive" }
+      }
+
+      // scope="org": only org-wide announcements
+      if (input.scope === "org") {
+        where.teamId = null
+      } else if (input.scope === "team") {
+        if (userTeamIds && userTeamIds.length > 0) {
+          where.teamId = { in: userTeamIds }
+        } else {
+          where.id = "none"
+        }
+      } else if (input.teamId) {
+        where.teamId = input.teamId
+      } else if (!isOrgAdmin && userTeamIds) {
         where.OR = [
           { teamId: null },
           { teamId: { in: userTeamIds } },
         ]
       }
-      if (input.teamId) {
-        delete where.OR
-        where.teamId = input.teamId
-      }
 
-      const announcements = await prisma.announcement.findMany({
-        where,
-        include: {
-          author: { select: { id: true, name: true, image: true } },
-          _count: { select: { comments: true, likes: true } },
-        },
-        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-      })
+      const [announcements, total] = await Promise.all([
+        prisma.announcement.findMany({
+          where,
+          include: {
+            author: { select: { id: true, name: true, image: true } },
+            _count: { select: { comments: true, likes: true } },
+          },
+          orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+          skip: input.cursor ?? 0,
+          take: input.take + 1,
+        }),
+        prisma.announcement.count({ where }),
+      ])
+
+      const hasMore = announcements.length > input.take
+      if (hasMore) announcements.pop()
 
       // Check if current user liked each announcement
       const likedSet = new Set(
@@ -74,6 +97,8 @@ export const announcementRouter = router({
           ...a,
           liked: likedSet.has(a.id),
         })),
+        total,
+        hasMore,
       }
     }),
 
@@ -242,6 +267,10 @@ export const announcementRouter = router({
         enableComments: z.boolean().optional(),
         enableLikes: z.boolean().optional(),
         pinned: z.boolean().optional(),
+        links: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
+        attachments: z
+          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number() }))
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -265,10 +294,21 @@ export const announcementRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const { id, organizationId: _orgId, ...data } = input
+      const { id, organizationId: _orgId, links: _links, attachments: _newAttachments, ...data } = input
+
+      const updateData: Record<string, unknown> = { ...data }
+
+      if (_links) {
+        updateData.links = { deleteMany: {}, create: _links }
+      }
+
+      if (_newAttachments) {
+        updateData.attachments = { create: _newAttachments }
+      }
+
       const announcement = await prisma.announcement.update({
         where: { id: input.id },
-        data,
+        data: updateData,
         include: {
           author: { select: { id: true, name: true, image: true } },
           _count: { select: { comments: true, likes: true } },
@@ -306,6 +346,34 @@ export const announcementRouter = router({
       }
 
       await prisma.announcement.delete({ where: { id: input.id } })
+      return { success: true }
+    }),
+
+  deleteAttachment: protectedProcedure
+    .input(z.object({ id: z.string(), organizationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const attachment = await prisma.announcementAttachment.findUnique({
+        where: { id: input.id },
+        include: { announcement: { select: { authorId: true, organizationId: true } } },
+      })
+      if (!attachment) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const isOrgAdmin = member.role === "owner" || member.role === "admin"
+      const isAuthor = attachment.announcement.authorId === ctx.session.user.id
+      if (!isOrgAdmin && !isAuthor) throw new TRPCError({ code: "FORBIDDEN" })
+
+      await deleteFromR2(attachment.url)
+      await prisma.announcementAttachment.delete({ where: { id: input.id } })
       return { success: true }
     }),
 
@@ -390,11 +458,30 @@ export const announcementRouter = router({
   commentDelete: protectedProcedure
     .input(z.object({ id: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.announcementComment.findUnique({ where: { id: input.id } })
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const existing = await prisma.announcementComment.findUnique({
+        where: { id: input.id },
+        include: { announcement: { select: { authorId: true } } },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
-      if (existing.authorId !== ctx.session.user.id) {
+
+      const isOrgAdmin = member.role === "owner" || member.role === "admin"
+      const isCommentAuthor = existing.authorId === ctx.session.user.id
+      const isAnnouncementAuthor = existing.announcement.authorId === ctx.session.user.id
+
+      if (!isOrgAdmin && !isCommentAuthor && !isAnnouncementAuthor) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
+
       await prisma.announcementComment.delete({ where: { id: input.id } })
       return { success: true }
     }),

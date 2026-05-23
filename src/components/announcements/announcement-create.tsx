@@ -5,7 +5,7 @@ import { useRouter, useParams, usePathname } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowLeft, Plus, X } from "@phosphor-icons/react"
+import { ArrowLeft, Plus, X, File, FileImage, FilePdf, FileDoc, FileXls, FileCsv, FilePpt, FileText, FileCode, FileMd, FileArchive } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
@@ -23,6 +23,38 @@ import {
 } from "@/components/ui/select"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { FileDropzone } from "@/components/file-dropzone"
+
+const FILE_ICONS: Record<string, typeof File> = {
+  "image/": FileImage,
+  "application/pdf": FilePdf,
+  "application/msword": FileDoc,
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": FileDoc,
+  "application/vnd.ms-excel": FileXls,
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileXls,
+  "application/vnd.ms-powerpoint": FilePpt,
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": FilePpt,
+  "text/csv": FileCsv,
+  "text/plain": FileText,
+  "text/markdown": FileMd,
+  "application/json": FileCode,
+  "application/rtf": FileText,
+  "application/zip": FileArchive,
+  "application/x-rar-compressed": FileArchive,
+  "application/x-7z-compressed": FileArchive,
+}
+
+function getFileIcon(type: string) {
+  for (const [prefix, Icon] of Object.entries(FILE_ICONS)) {
+    if (type.startsWith(prefix)) return Icon
+  }
+  return File
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -69,7 +101,7 @@ export function AnnouncementForm({ announcementId }: Props) {
   const [newLinkUrl, setNewLinkUrl] = useState("")
   const [newLinkTitle, setNewLinkTitle] = useState("")
   const [thumbnailFile, setThumbnailFile] = useState<
-    Array<{ name: string; url?: string; uploading?: boolean; error?: string }>
+    Array<{ name: string; url?: string; uploading?: boolean; error?: string; id?: string }>
   >([])
   const [selectedFiles, setSelectedFiles] = useState<
     Array<{
@@ -79,6 +111,9 @@ export function AnnouncementForm({ announcementId }: Props) {
       url?: string
       error?: string
     }>
+  >([])
+  const [existingAttachments, setExistingAttachments] = useState<
+    Array<{ id: string; name: string; url: string; type: string; size: number }>
   >([])
   const [uploadError, setUploadError] = useState("")
   const [isUploading, setIsUploading] = useState(false)
@@ -109,6 +144,9 @@ export function AnnouncementForm({ announcementId }: Props) {
       const existing = a.links.map((l: { url: string; title: string }) => ({ url: l.url, title: l.title }))
       setLinks(existing)
     }
+    if (a.attachments?.length) {
+      setExistingAttachments(a.attachments)
+    }
   }, [existingData, form])
 
   const { data: teamsData } = api.team.list.useQuery(
@@ -131,6 +169,7 @@ export function AnnouncementForm({ announcementId }: Props) {
       router.back()
     },
   })
+  const deleteAttachmentMutation = api.announcement.deleteAttachment.useMutation()
 
   const uploadFile = async (file: File): Promise<string> => {
     const body = new FormData()
@@ -174,8 +213,8 @@ export function AnnouncementForm({ announcementId }: Props) {
   }
 
   const addLink = () => {
-    if (!newLinkUrl.trim() || !newLinkTitle.trim()) return
-    setLinks([...links, { url: newLinkUrl.trim(), title: newLinkTitle.trim() }])
+    if (!newLinkUrl.trim()) return
+    setLinks([...links, { url: newLinkUrl.trim(), title: newLinkTitle.trim() || newLinkUrl.trim() }])
     setNewLinkUrl("")
     setNewLinkTitle("")
   }
@@ -231,6 +270,8 @@ export function AnnouncementForm({ announcementId }: Props) {
         enableComments: values.enableComments,
         enableLikes: values.enableLikes,
         thumbnail: values.thumbnail || null,
+        links: links.length > 0 ? links : [],
+        attachments,
       })
     } else {
       createMutation.mutate({
@@ -374,32 +415,74 @@ export function AnnouncementForm({ announcementId }: Props) {
           )}
         </Field>
 
-        {/* Attachments (create only) */}
-        {!isEdit && (
-          <Field>
-            <FieldLabel>Attachments (optional)</FieldLabel>
-            <FileDropzone
-              onDrop={onAttachmentsDrop}
-              onRemove={removeAttachment}
-              files={selectedFiles}
-              accept={{
-                "image/*": [],
-                "application/pdf": [],
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                  [],
-                "text/plain": [],
-                "text/csv": [],
-                "application/vnd.ms-excel": [],
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                  [],
-              }}
-              multiple
-            />
-            {uploadError && (
-              <p className="text-xs text-red-500 mt-1">{uploadError}</p>
-            )}
-          </Field>
-        )}
+        {/* Attachments */}
+        <Field>
+          <FieldLabel>Attachments (optional)</FieldLabel>
+
+          {/* Existing attachments (edit mode) */}
+          {isEdit && existingAttachments.length > 0 && (
+            <div className="mb-3 space-y-1">
+              <p className="text-[11px] text-muted-foreground">Existing attachments</p>
+              {existingAttachments.map((att) => {
+                const Icon = getFileIcon(att.type)
+                return (
+                  <div
+                    key={att.id}
+                    className="flex items-center gap-3 border border-border px-3 py-2.5"
+                  >
+                    <Icon className="size-5 shrink-0 text-muted-foreground" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{att.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatSize(att.size)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        deleteAttachmentMutation.mutate(
+                          { id: att.id, organizationId: organization?.id ?? "" },
+                          {
+                            onSuccess: () =>
+                              setExistingAttachments((prev) =>
+                                prev.filter((a) => a.id !== att.id),
+                              ),
+                          },
+                        )
+                      }}
+                      className="text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <FileDropzone
+            onDrop={onAttachmentsDrop}
+            onRemove={removeAttachment}
+            files={selectedFiles}
+            accept={{
+              "image/*": [],
+              "application/pdf": [],
+              "application/msword": [],
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [],
+              "application/vnd.ms-excel": [],
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [],
+              "application/vnd.ms-powerpoint": [],
+              "application/vnd.openxmlformats-officedocument.presentationml.presentation": [],
+              "text/plain": [],
+              "text/csv": [],
+              "text/markdown": [],
+              "application/rtf": [],
+              "application/json": [],
+            }}
+            multiple
+          />
+          {uploadError && (
+            <p className="text-xs text-red-500 mt-1">{uploadError}</p>
+          )}
+        </Field>
 
         <div className="flex flex-wrap items-center gap-6">
           <Controller

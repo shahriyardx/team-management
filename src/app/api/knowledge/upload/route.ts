@@ -4,11 +4,17 @@ import { uploadToR2 } from "@/lib/r2"
 const ALLOWED_TYPES = [
   "image/",
   "application/pdf",
+  "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "text/csv",
   "text/plain",
+  "text/markdown",
+  "application/rtf",
+  "application/json",
 ]
 
 export async function POST(req: NextRequest) {
@@ -17,6 +23,10 @@ export async function POST(req: NextRequest) {
 
   if (!file) {
     return NextResponse.json({ error: "No file provided." }, { status: 400 })
+  }
+
+  if (!file.name.includes(".")) {
+    return NextResponse.json({ error: "File must have an extension." }, { status: 400 })
   }
 
   const allowed = ALLOWED_TYPES.some((t) => file.type.startsWith(t) || file.type === t)

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { format } from "date-fns"
 import { useRouter, usePathname } from "next/navigation"
-import { ArrowLeft, Heart, PencilSimple, Trash } from "@phosphor-icons/react"
+import { ArrowLeft, Heart, PencilSimple, Trash, FileImage as FileImageIcon, FilePdf, FileDoc, FileXls, FileCsv, FilePpt, FileText, FileCode, FileMd, FileArchive } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
@@ -22,6 +22,38 @@ import {
 import { AnnouncementComments } from "./announcement-comments"
 import { MarkdownRenderer } from "@/components/knowledge-base/markdown-renderer"
 import type { AnnouncementDetail as AnnouncementDetailType } from "./types"
+
+const FILE_ICONS: Record<string, typeof FileImageIcon> = {
+  "image/": FileImageIcon,
+  "application/pdf": FilePdf,
+  "application/msword": FileDoc,
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": FileDoc,
+  "application/vnd.ms-excel": FileXls,
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileXls,
+  "application/vnd.ms-powerpoint": FilePpt,
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": FilePpt,
+  "text/csv": FileCsv,
+  "text/plain": FileText,
+  "text/markdown": FileMd,
+  "application/json": FileCode,
+  "application/rtf": FileText,
+  "application/zip": FileArchive,
+  "application/x-rar-compressed": FileArchive,
+  "application/x-7z-compressed": FileArchive,
+}
+
+function getFileIcon(type: string) {
+  for (const [prefix, Icon] of Object.entries(FILE_ICONS)) {
+    if (type.startsWith(prefix)) return Icon
+  }
+  return FileImageIcon
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 interface Props {
   announcementId: string
@@ -57,6 +89,7 @@ export function AnnouncementDetail({ announcementId }: Props) {
   })
 
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const userId = sessionData?.user?.id
   const isAuthor = announcement?.authorId === userId
@@ -142,11 +175,29 @@ export function AnnouncementDetail({ announcementId }: Props) {
       {announcement.attachments.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Attachments</p>
-          {announcement.attachments.map((att) => (
-            <div key={att.id} className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">{att.name}</span>
-            </div>
-          ))}
+          <div className="grid gap-2 sm:grid-cols-2">
+            {announcement.attachments.map((att) => {
+              const isImage = att.type?.startsWith("image/")
+              const Icon = getFileIcon(att.type)
+              return (
+                <button
+                  key={att.id}
+                  type="button"
+                  onClick={() => {
+                    if (isImage) setLightboxUrl(att.url)
+                    else window.open(att.url, "_blank", "noopener,noreferrer")
+                  }}
+                  className="flex items-center gap-3 border border-border px-3 py-2.5 text-xs text-left text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <Icon className="size-5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{att.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatSize(att.size)}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
@@ -188,6 +239,7 @@ export function AnnouncementDetail({ announcementId }: Props) {
         <div className="border-t border-border pt-4">
           <AnnouncementComments
             announcementId={announcement.id}
+            announcementAuthorId={announcement.authorId}
             comments={announcement.comments}
             organizationId={announcement.organizationId}
           />
@@ -210,6 +262,19 @@ export function AnnouncementDetail({ announcementId }: Props) {
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image lightbox */}
+      <Dialog open={!!lightboxUrl} onOpenChange={(o) => { if (!o) setLightboxUrl(null) }}>
+        <DialogContent className="max-w-4xl p-1 bg-black/90 border-none">
+          {lightboxUrl && (
+            <img
+              src={lightboxUrl}
+              alt=""
+              className="max-h-[85vh] w-full object-contain"
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

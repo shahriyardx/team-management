@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { Trash, ArrowBendRightDown } from "@phosphor-icons/react"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
+import { useMemberRole } from "@/lib/use-member-role"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Field, FieldError } from "@/components/ui/field"
@@ -40,6 +41,7 @@ interface CommentItem {
 
 interface Props {
   announcementId: string
+  announcementAuthorId: string
   comments: CommentItem[]
   organizationId: string
 }
@@ -62,11 +64,16 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
   )
 }
 
-export function AnnouncementComments({ announcementId, comments, organizationId }: Props) {
+export function AnnouncementComments({ announcementId, announcementAuthorId, comments, organizationId }: Props) {
   const utils = api.useUtils()
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const { data: sessionData } = authClient.useSession()
+  const { role } = useMemberRole()
   const userId = sessionData?.user?.id
+  const isOrgAdmin = role === "owner" || role === "admin"
+
+  const canDeleteComment = (commentAuthorId: string) =>
+    isOrgAdmin || commentAuthorId === userId || announcementAuthorId === userId
 
   const commentForm = useForm<CommentForm>({
     resolver: zodResolver(commentSchema),
@@ -164,7 +171,7 @@ export function AnnouncementComments({ announcementId, comments, organizationId 
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(comment.createdAt), "MMM d, yyyy")}
                     </span>
-                    {comment.author.id === userId && (
+                    {canDeleteComment(comment.author.id) && (
                       <button
                         type="button"
                         onClick={() =>
@@ -234,7 +241,7 @@ export function AnnouncementComments({ announcementId, comments, organizationId 
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(reply.createdAt), "MMM d")}
                             </span>
-                            {reply.author.id === userId && (
+                            {canDeleteComment(reply.author.id) && (
                               <button
                                 type="button"
                                 onClick={() =>
