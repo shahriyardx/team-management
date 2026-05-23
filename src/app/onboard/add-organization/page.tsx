@@ -143,7 +143,7 @@ export default function AddOrganizationPage() {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Left: Setup illustration */}
-      <div className="relative flex flex-col justify-between overflow-hidden bg-linear-to-br from-indigo-950 via-zinc-900 to-zinc-950 px-8 py-12 sm:px-12 sm:py-16 lg:w-1/2 lg:px-16">
+      <div className="hidden lg:flex lg:flex-col lg:justify-between overflow-hidden bg-linear-to-br from-indigo-950 via-zinc-900 to-zinc-950 px-8 py-12 sm:px-12 sm:py-16 lg:w-1/2 lg:px-16">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_50%)]" />
         <div className="pointer-events-none absolute -bottom-40 -left-40 size-96 rounded-full bg-indigo-500/5 blur-3xl" />
 
