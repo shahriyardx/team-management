@@ -41,6 +41,15 @@ interface KrRowProps {
   kr: KrRowItem
 }
 
+const statusBorderColor: Record<string, string> = {
+  not_started: "border-l-muted-foreground/20",
+  on_track: "border-l-emerald-500/30",
+  at_risk: "border-l-amber-500/30",
+  behind: "border-l-red-500/30",
+  achieved: "border-l-emerald-500/30",
+  completed: "border-l-emerald-500/30",
+}
+
 export function KrRow({ kr }: KrRowProps) {
   const { organization } = useOrganization()
   const utils = api.useUtils()
@@ -96,7 +105,7 @@ export function KrRow({ kr }: KrRowProps) {
 
   return (
     <>
-      <div className="border border-muted-foreground/20 border-l-2 border-l-amber-500/30 px-3 py-2">
+      <div className={"border border-muted-foreground/20 border-l-2 px-3 py-2 " + (statusBorderColor[kr.status] ?? "border-l-muted-foreground/20")}>
         <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2 min-w-0">
