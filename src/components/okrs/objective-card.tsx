@@ -3,11 +3,10 @@
 import { useState } from "react"
 import { type ReactNode } from "react"
 import { CaretDown, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/okrs/progress-bar"
 import { EditObjectiveDialog } from "@/components/okrs/edit-objective-dialog"
+import { StatusBadge } from "@/components/okrs/status-badge"
 
 export type KrItem = {
   id: string
@@ -23,15 +22,6 @@ export type ObjectiveItem = {
   status: string
   progress: number
   keyResults: KrItem[]
-}
-
-const statusBadge: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  not_started: "outline",
-  on_track: "default",
-  at_risk: "secondary",
-  behind: "destructive",
-  achieved: "default",
-  completed: "default",
 }
 
 interface ObjectiveCardProps {
@@ -65,12 +55,7 @@ export function ObjectiveCard({
               : <CaretRight className="size-3 text-muted-foreground" />}
             <span className="text-xs font-medium">{objective.title}</span>
           </button>
-          <Badge
-            variant={statusBadge[objective.status] ?? "outline"}
-            className={cn("text-[10px]", objective.status === "completed" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", objective.status === "at_risk" && "bg-amber-500/10 text-amber-500 border-amber-500/20")}
-          >
-            {objective.status.replace(/_/g, " ")}
-          </Badge>
+          <StatusBadge status={objective.status} />
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="sm:w-64">
