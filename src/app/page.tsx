@@ -1,13 +1,10 @@
-"use client"
-
-import { useState } from "react"
 import Link from "next/link"
+import type { Metadata } from "next"
 import {
   ArrowRight,
   BarChart3,
   BookOpen,
   Check,
-  ChevronDown,
   ListChecks,
   MessageSquare,
   Target,
@@ -15,6 +12,18 @@ import {
 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { Footer } from "@/components/footer"
+import { FAQItem } from "@/components/faq-item"
+
+export const metadata: Metadata = {
+  title: "WeirdTeams — Team Management Platform",
+  description:
+    "A simple workspace for teams that want to move faster. Tasks, knowledge base, OKR tracking, and member management in one place.",
+  openGraph: {
+    title: "WeirdTeams — Team Management Platform",
+    description:
+      "A simple workspace for teams that want to move faster. Tasks, knowledge base, OKR tracking, and member management in one place.",
+  },
+}
 
 const features = [
   {
@@ -123,31 +132,6 @@ const faqs = [
   },
 ]
 
-function FAQItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="border-t border-border">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-4 text-left text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
-      >
-        {q}
-        <ChevronDown
-          className={`size-3.5 text-muted-foreground transition-transform duration-200 shrink-0 ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-      {open && (
-        <div className="pb-4">
-          <p className="text-xs leading-relaxed text-muted-foreground">{a}</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -156,16 +140,16 @@ export default function Home() {
       {/* Hero */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-6xl px-6 py-28 sm:px-8 sm:py-36 lg:py-44">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="max-w-4xl">
             <h1 className="text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-7xl lg:text-8xl">
               Teams that ship.
               <br />
               Teams that win.
             </h1>
-            <p className="mt-6 text-sm leading-relaxed text-muted-foreground sm:text-base max-w-lg mx-auto">
+            <p className="mt-6 text-sm leading-relaxed text-muted-foreground sm:text-base max-w-lg">
               Tasks. Knowledge. OKRs. One workspace. No noise.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-10 flex items-center gap-3 sm:gap-4">
               <Link
                 href="/auth/register"
                 className="inline-flex h-11 items-center gap-1.5 rounded-md bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors"
@@ -238,7 +222,7 @@ export default function Home() {
               / simple pricing
             </p>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 max-w-2xl mx-auto">
+          <div className="grid gap-5 sm:grid-cols-2 max-w-2xl">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -302,8 +286,8 @@ export default function Home() {
 
       {/* CTA */}
       <section className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-32 text-center">
-          <div className="max-w-xl mx-auto">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 sm:py-32">
+          <div className="max-w-xl">
             <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground">
               / ready?
             </p>
@@ -313,7 +297,7 @@ export default function Home() {
             <p className="mt-3 text-sm text-muted-foreground">
               Free for small teams. No credit card required.
             </p>
-            <div className="mt-8 flex items-center justify-center gap-3">
+            <div className="mt-8 flex items-center gap-3">
               <Link
                 href="/auth/register"
                 className="inline-flex h-11 items-center gap-1.5 rounded-md bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors"

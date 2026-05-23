@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Check, X } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
+import { PublicHeader } from "@/components/public-header"
+import { Footer } from "@/components/footer"
 
 function AcceptContent() {
   const router = useRouter()
@@ -45,8 +47,10 @@ function AcceptContent() {
   }, [accept])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm rounded-none border border-border p-8 text-center">
+    <div className="flex min-h-screen flex-col bg-background">
+      <PublicHeader />
+      <div className="flex flex-1 items-center justify-center">
+        <div className="w-full max-w-sm rounded-none border border-border p-8 text-center">
         {status === "loading" && (
           <div className="flex flex-col items-center gap-3">
             <span className="size-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
@@ -86,7 +90,9 @@ function AcceptContent() {
             </Button>
           </div>
         )}
+        </div>
       </div>
+      <Footer />
     </div>
   )
 }

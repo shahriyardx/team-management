@@ -1,4 +1,10 @@
+import type { Metadata } from "next"
 import { BarChart3, BookOpen, ListChecks, Users } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "Sign In — WeirdTeams",
+  description: "Sign in to your WeirdTeams account or create a new one.",
+}
 
 const features = [
   {

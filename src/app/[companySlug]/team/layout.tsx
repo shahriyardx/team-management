@@ -1,7 +1,22 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import type { Metadata } from "next"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ companySlug: string }>
+}): Promise<Metadata> {
+  const { companySlug } = await params
+  const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
+  const name = org?.name ?? "WeirdTeams"
+  return {
+    title: `Team — ${name} — WeirdTeams`,
+    description: `Team dashboard for ${name}. View tasks, knowledge base, OKRs, and team members.`,
+  }
+}
 
 export default async function TeamLayout({
   children,

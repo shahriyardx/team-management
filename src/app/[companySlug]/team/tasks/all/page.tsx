@@ -1,7 +1,13 @@
-"use client"
+import type { Metadata } from "next"
+import { prisma } from "@/lib/prisma"
+import AllTasksPage from "./page-client"
 
-import { TaskTable } from "@/components/tasks/task-table"
+export const metadata: Metadata = {
+  title: "All Tasks",
+  description: "All tasks.",
+}
 
-export default function AllTasksPage() {
-  return <TaskTable mode="all" />
+
+export default function Page() {
+  return <AllTasksPage />
 }

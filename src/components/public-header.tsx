@@ -33,7 +33,7 @@ export function PublicHeader() {
                   isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                [{link.label}]
+                {link.label}
               </Link>
             )
           })}

@@ -1,7 +1,13 @@
-"use client"
+import type { Metadata } from "next"
+import { prisma } from "@/lib/prisma"
+import AssignedTasksPage from "./page-client"
 
-import { TaskTable } from "@/components/tasks/task-table"
+export const metadata: Metadata = {
+  title: "Assigned Tasks",
+  description: "Tasks assigned to me.",
+}
 
-export default function AssignedTasksPage() {
-  return <TaskTable mode="assigned" />
+
+export default function Page() {
+  return <AssignedTasksPage />
 }

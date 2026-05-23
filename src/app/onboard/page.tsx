@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { SignOut } from "@phosphor-icons/react"
+import { PublicHeader } from "@/components/public-header"
+import { Footer } from "@/components/footer"
 
 type Org = { id: string; name: string; slug: string; logo?: string | null }
 
@@ -74,21 +75,7 @@ export default function OnboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex items-center justify-between border-b border-border px-6 py-3">
-        <h1 className="text-base font-bold tracking-[0.15em] text-foreground">WEIRDTEAMS</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={async () => {
-              await authClient.signOut()
-              window.location.href = "/"
-            }}
-            className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <SignOut className="mr-1.5 size-3" />
-            Log out
-          </button>
-        </div>
-      </header>
+      <PublicHeader />
       <main className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-2xl">
           <h2 className="text-lg font-semibold text-foreground text-center">Get started with WeirdTeams</h2>
@@ -125,6 +112,7 @@ export default function OnboardPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

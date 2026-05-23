@@ -1,16 +1,18 @@
-"use client"
+import type { Metadata } from "next"
+import { prisma } from "@/lib/prisma"
+import KnowledgeDetailPage from "./page-client"
 
-import { use } from "react"
-import { useParams } from "next/navigation"
-import { KbDetailContent } from "@/components/knowledge-base/kb-detail-content"
+export async function generateMetadata({ params }: { params: Promise<{ companySlug: string; slug: string }> }): Promise<Metadata> {
+  const { companySlug, slug } = await params
+  const article = await prisma.kbItem.findUnique({ where: { id: slug } })
+  const articleTitle = article?.title ?? "Knowledge Base"
+  return { title: articleTitle, description: `View ${articleTitle}.` }
+}
 
-export default function KnowledgeDetailPage({
+export default async function Page({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = use(params)
-  const { companySlug } = useParams<{ companySlug: string }>()
-
-  return <KbDetailContent slug={slug} baseUrl={`/${companySlug}/knowledge-base`} />
+  return <KnowledgeDetailPage params={params} />
 }
