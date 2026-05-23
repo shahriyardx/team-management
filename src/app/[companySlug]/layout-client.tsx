@@ -104,13 +104,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const s = slug ?? ""
   const isTeamBranch = !!slug && (
     pathname.startsWith(`/${s}/manage-team`) ||
-    pathname.startsWith(`/${s}/team`)
+    pathname === `/${s}/team` ||
+    pathname.startsWith(`/${s}/team/`)
   )
 
   let branch: "owner" | "leader" | "member" = "owner"
   if (slug) {
     if (pathname.startsWith(`/${slug}/manage-team`)) branch = "leader"
-    else if (pathname.startsWith(`/${slug}/team`)) branch = "member"
+    else if (pathname === `/${slug}/team` || pathname.startsWith(`/${slug}/team/`)) branch = "member"
   }
 
   const { data: myTeamsData } = api.team.getMyTeams.useQuery(

@@ -40,22 +40,22 @@ interface MemberObjectiveCardProps {
 export function MemberObjectiveCard({ cycleId, locked, objective }: MemberObjectiveCardProps) {
   return (
     <div className="border border-border p-4">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{objective.title}</span>
-          <Badge variant={statusBadge[objective.status] as "default" | "secondary" | "destructive" | "outline"}>
-            {objective.status.replace(/_/g, " ")}
-          </Badge>
-        </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {Math.round(objective.progress)}%
-        </span>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">{objective.title}</span>
+        <Badge variant={statusBadge[objective.status] as "default" | "secondary" | "destructive" | "outline"}>
+          {objective.status.replace(/_/g, " ")}
+        </Badge>
       </div>
       {objective.description && (
         <p className="mt-1 text-xs text-muted-foreground">{objective.description}</p>
       )}
-      <div className="mt-2">
-        <ProgressBar value={objective.progress} size="sm" status={objective.status} />
+      <div className="mt-2 flex items-center gap-3">
+        <div className="flex-1">
+          <ProgressBar value={objective.progress} size="sm" status={objective.status} />
+        </div>
+        <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+          {Math.round(objective.progress)}%
+        </span>
       </div>
       <div className="mt-3 space-y-2">
         {objective.keyResults.map((kr) => (

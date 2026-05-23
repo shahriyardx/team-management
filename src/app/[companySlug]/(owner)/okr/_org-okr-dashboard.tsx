@@ -218,10 +218,15 @@ export function OrgOkrDashboard() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
           <h1 className="text-base font-semibold">Org OKRs</h1>
-          <div className="flex flex-wrap items-center gap-1">
+          <p className="text-xs text-muted-foreground sm:hidden">
+            {cycles.find((c) => c.id === selectedCycleId)?.title ?? ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <Select
               value={selectedYear}
               onValueChange={(v) => {
@@ -268,8 +273,6 @@ export function OrgOkrDashboard() {
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant={isEditMode ? "default" : "outline"}
             onClick={() => setIsEditMode((p) => !p)}
@@ -284,7 +287,6 @@ export function OrgOkrDashboard() {
           </Button>
           {isEditMode && (
             <Button
-              size="sm"
               onClick={() => {
                 objectiveForm.reset()
                 setObjFormOpen(true)
@@ -298,7 +300,6 @@ export function OrgOkrDashboard() {
           )}
         </div>
       </div>
-
       {/* Loading */}
       {objectivesLoading ? (
         <div className="space-y-4">

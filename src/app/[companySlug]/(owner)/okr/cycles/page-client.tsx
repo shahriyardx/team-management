@@ -205,9 +205,9 @@ export default function CyclesPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold">Cycles</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-base font-semibold">Cycles</h1>
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
               {selectedYear === "all" ? "All years" : selectedYear}
@@ -219,11 +219,11 @@ export default function CyclesPage() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <Button size="sm" variant="outline" onClick={openCycleForm}>
+          <Button size="sm" variant="outline" onClick={openCycleForm}>
           <Plus className="mr-1 size-3.5" />
           New Cycle
         </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -248,7 +248,7 @@ export default function CyclesPage() {
             return (
           <div className="divide-y divide-border">
             {filtered.map((c) => (
-              <div key={c.id} className="flex items-center justify-between px-4 py-3">
+              <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{c.title}</span>

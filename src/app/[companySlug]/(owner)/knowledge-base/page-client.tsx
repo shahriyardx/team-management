@@ -33,13 +33,13 @@ export default function KnowledgeTimelinePage() {
 
   return (
     <div className="flex-1 overflow-auto p-6">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold">Knowledge Base</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">Browse knowledge across your organization.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative flex-1 min-w-40">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-auto">
             <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -54,20 +54,22 @@ export default function KnowledgeTimelinePage() {
               </button>
             )}
           </div>
-          <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-            <SelectTrigger className="h-8">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Link href="add">
-            <Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Link href="add">
+              <Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button>
+            </Link>
+          </div>
         </div>
       </div>
 

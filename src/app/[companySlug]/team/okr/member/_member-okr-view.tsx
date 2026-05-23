@@ -115,12 +115,15 @@ export function MemberOkrView({ cycleId: initialCycleId, locked: initialLocked }
   return (
     <div className="space-y-6">
       {/* Header row */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">My OKRs</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Your personal objectives and key results.</p>
+          <p className="text-xs text-muted-foreground sm:hidden">
+            {cycles.find((c) => c.id === cycleId)?.title ?? ""}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="hidden sm:flex flex-wrap items-center gap-3 shrink-0">
           <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId("") }}>
             <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
               {selectedYear === "all" ? "All years" : selectedYear}

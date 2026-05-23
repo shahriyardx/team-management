@@ -366,7 +366,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   return (
     <div className="flex flex-1 flex-col p-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-lg font-semibold text-foreground">
             {mode === "all" ? "All Tasks" : mode === "assigned" ? "Assigned Tasks" : "My tasks"}

@@ -221,8 +221,10 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     },
   })
 
-  // Group objectives by member
-  const teamMembers = team?.members ?? []
+  // Group objectives by member (exclude leader)
+  const teamMembers = (team?.members ?? []).filter(
+    (m) => m.userId !== team?.leader?.user?.id,
+  )
   const memberObjectives = useMemo(() => {
     const map = new Map<string, OkrObjective[]>()
     for (const obj of objectives) {
@@ -276,55 +278,64 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium">{team.name} Members</h2>
-          <Badge variant="outline" className="text-[10px]">
-            {objectives.length} objective{objectives.length !== 1 ? "s" : ""}
-          </Badge>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-medium">{team.name} Members</h2>
+              <Badge variant="outline" className="text-[10px]">
+                {objectives.length} objective{objectives.length !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground sm:hidden">
+              {cycles.find((c) => c.id === cycleId)?.title ?? ""}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <Select
-            value={selectedYear}
-            onValueChange={(v) => {
-              setSelectedYear(v)
-              setSelectedCycleId(null)
-            }}
-          >
-            <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
-              {selectedYear === "all" ? "All years" : selectedYear}
-            </SelectTrigger>
-            <SelectContent position="popper">
-              <SelectItem value="all">All years</SelectItem>
-              {years.map((yr) => (
-                <SelectItem key={yr} value={yr}>
-                  {yr}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={cycleId} onValueChange={setSelectedCycleId}>
-            <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
-              <span className="truncate">
-                {cycles.find((c) => c.id === cycleId)?.title ?? "Select cycle"}
-              </span>
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {(selectedYear === "all"
-                ? cycles
-                : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
-              ).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{c.title}</span>
-                    <Badge variant="outline" className="text-[10px]">
-                      {c.status}
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="hidden sm:flex items-center gap-3">
+            <Select
+              value={selectedYear}
+              onValueChange={(v) => {
+                setSelectedYear(v)
+                setSelectedCycleId(null)
+              }}
+            >
+              <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
+                {selectedYear === "all" ? "All years" : selectedYear}
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="all">All years</SelectItem>
+                {years.map((yr) => (
+                  <SelectItem key={yr} value={yr}>
+                    {yr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={cycleId} onValueChange={setSelectedCycleId}>
+              <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
+                <span className="truncate">
+                  {cycles.find((c) => c.id === cycleId)?.title ?? "Select cycle"}
+                </span>
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {(selectedYear === "all"
+                  ? cycles
+                  : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+                ).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{c.title}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {c.status}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             onClick={() => {
               objectiveForm.reset()
@@ -356,7 +367,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
         <>
           {/* Analytics */}
           {objectives.length > 0 && (
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div className="border border-border p-3">
                 <p className="text-xs text-muted-foreground">Avg Progress</p>
                 <p className="mt-1 text-lg font-semibold tabular-nums">
@@ -407,7 +418,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
               return (
                 <details key={member.id} className="border border-border">
-                  <summary className="flex cursor-pointer items-center justify-between px-4 py-3 hover:bg-accent/50">
+                  <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="size-7">
                         <AvatarImage src={member.user.image ?? undefined} />
@@ -430,15 +441,15 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-32">
+                    <div className="flex items-center gap-3 sm:w-auto">
+                      <div className="flex-1 sm:w-32">
                         <ProgressBar
                           value={avgProgress}
                           size="sm"
                           showLabel={false}
                         />
                       </div>
-                      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
+                      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
                         {avgProgress}%
                       </span>
                     </div>

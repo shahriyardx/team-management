@@ -53,50 +53,50 @@ export function ObjectiveCard({
   return (
     <div className="border border-border border-l-2 border-l-violet-500/40 p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium">{objective.title}</span>
-            <Badge
-              variant={statusBadge[objective.status] ?? "outline"}
-              className="text-[10px]"
-            >
-              {objective.status.replace(/_/g, " ")}
-            </Badge>
-          </div>
-          <div className="mt-2 max-w-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium">{objective.title}</span>
+          <Badge
+            variant={statusBadge[objective.status] ?? "outline"}
+            className="text-[10px]"
+          >
+            {objective.status.replace(/_/g, " ")}
+          </Badge>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+          <div className="sm:w-64">
             <ProgressBar value={objective.progress} size="sm" status={objective.status} showLabel />
           </div>
-          {objective.keyResults.length > 0 && !krRenderer && (
-            <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
-              {objective.keyResults.map((kr) => (
-                <div key={kr.id} className="flex items-center gap-3">
-                  <span className="text-[11px] text-muted-foreground truncate">{kr.title}</span>
-                  <span className="text-[10px] text-muted-foreground/60 shrink-0">
-                    {kr.currentValue}/{kr.targetValue} {kr.unit}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-1">
-          {onEdit && (
-            <Button variant="ghost" size="icon-xs" onClick={() => setEditOpen(true)}>
-              <PencilSimple className="size-3" />
-            </Button>
-          )}
-          {onAddKr && (
-            <Button variant="outline" size="xs" onClick={() => onAddKr(objective.id)}>
-              + KR
-            </Button>
-          )}
-          {onDelete && (
-            <Button variant="ghost" size="icon-xs" onClick={() => onDelete(objective.id)}>
-              <Trash className="size-3" />
-            </Button>
-          )}
+          <div className="flex shrink-0 flex-wrap gap-1">
+            {onEdit && (
+              <Button variant="ghost" size="icon-xs" onClick={() => setEditOpen(true)}>
+                <PencilSimple className="size-3" />
+              </Button>
+            )}
+            {onAddKr && (
+              <Button variant="outline" size="xs" onClick={() => onAddKr(objective.id)}>
+                + KR
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="ghost" size="icon-xs" onClick={() => onDelete(objective.id)}>
+                <Trash className="size-3" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+      {objective.keyResults.length > 0 && !krRenderer && (
+        <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
+          {objective.keyResults.map((kr) => (
+            <div key={kr.id} className="flex items-center gap-3">
+              <span className="text-[11px] text-muted-foreground truncate">{kr.title}</span>
+              <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                {kr.currentValue}/{kr.targetValue} {kr.unit}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {krRenderer && objective.keyResults.length > 0 && (
         <div className="mt-2 space-y-1">
           {objective.keyResults.map((kr) => krRenderer(kr))}

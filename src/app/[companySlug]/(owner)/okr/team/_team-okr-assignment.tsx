@@ -80,12 +80,18 @@ export default function TeamOkrAssignment() {
 
   useEffect(() => {
     if (!organization) return
-    authClient.organization.getFullOrganization({
-      query: { organizationId: organization.id },
-    }).then((res) => {
-      const orgData = res.data as { teams?: Array<{ id: string; name: string }> } | null
-      setTeams((orgData?.teams ?? []).filter((t) => t.name !== organization.name))
-    })
+    authClient.organization
+      .getFullOrganization({
+        query: { organizationId: organization.id },
+      })
+      .then((res) => {
+        const orgData = res.data as {
+          teams?: Array<{ id: string; name: string }>
+        } | null
+        setTeams(
+          (orgData?.teams ?? []).filter((t) => t.name !== organization.name),
+        )
+      })
   }, [organization])
 
   // Cycles
@@ -100,11 +106,15 @@ export default function TeamOkrAssignment() {
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
   const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()))
+  const [selectedYear, setSelectedYear] = useState<string>(
+    String(new Date().getFullYear()),
+  )
 
   const years = useMemo(() => {
     const cur = new Date().getFullYear()
-    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
+    return Array.from({ length: cur - 2020 + 2 }, (_, i) =>
+      String(2020 + i),
+    ).reverse()
   }, [])
 
   useMemo(() => {
@@ -189,7 +199,10 @@ export default function TeamOkrAssignment() {
 
   // Group objectives by team
   const objectivesByTeam = useMemo(() => {
-    const map: Record<string, { team: { id: string; name: string }; objectives: OkrObjective[] }> = {}
+    const map: Record<
+      string,
+      { team: { id: string; name: string }; objectives: OkrObjective[] }
+    > = {}
     for (const obj of objectives) {
       if (!obj.teamId) continue
       if (!map[obj.teamId]) {
@@ -207,56 +220,88 @@ export default function TeamOkrAssignment() {
         map[t.id] = { team: t, objectives: [] }
       }
     }
-    return Object.values(map).sort((a, b) => a.team.name.localeCompare(b.team.name))
+    return Object.values(map).sort((a, b) =>
+      a.team.name.localeCompare(b.team.name),
+    )
   }, [objectives, teams])
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold">Team OKR Assignments</h1>
-          <div className="flex items-center gap-1">
-            <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
-              <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
-                {selectedYear === "all" ? "All years" : selectedYear}
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">All years</SelectItem>
-                {years.map((yr) => (
-                  <SelectItem key={yr} value={yr}>{yr}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedCycleId ?? ""} onValueChange={setSelectedCycleId}>
-              <SelectTrigger className="h-8 w-auto min-w-32 rounded-none text-xs">
-                <span className="truncate">
-                  {cycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
-                </span>
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{c.title}</span>
-                      <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-base font-semibold">Team OKR</h1>
+          <p className="text-xs text-muted-foreground sm:hidden">
+            {cycles.find((c) => c.id === selectedCycleId)?.title ?? ""}
+          </p>
         </div>
-        <Button size="sm" onClick={() => { objectiveForm.reset(); setObjFormOpen(true) }} disabled={!selectedCycleId}>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
+            <Select
+                value={selectedYear}
+                onValueChange={(v) => {
+                  setSelectedYear(v)
+                  setSelectedCycleId(null)
+                }}
+              >
+                <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
+                  {selectedYear === "all" ? "All years" : selectedYear}
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectItem value="all">All years</SelectItem>
+                  {years.map((yr) => (
+                    <SelectItem key={yr} value={yr}>
+                      {yr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={selectedCycleId ?? ""}
+                onValueChange={setSelectedCycleId}
+              >
+                <SelectTrigger className="h-8 w-auto min-w-32 rounded-none text-xs">
+                  <span className="truncate">
+                    {cycles.find((c) => c.id === selectedCycleId)?.title ??
+                      "Select cycle"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {(selectedYear === "all"
+                    ? cycles
+                    : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+                  ).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{c.title}</span>
+                        <Badge variant="outline" className="text-[10px]">
+                          {c.status}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+          </div>
+          <Button
+          onClick={() => {
+            objectiveForm.reset()
+            setObjFormOpen(true)
+          }}
+          disabled={!selectedCycleId}
+        >
           <Plus className="mr-1 size-3.5" />
           Add Objective
         </Button>
+        </div>
       </div>
 
       {/* Loading */}
       {isLoading ? (
         <div className="space-y-6">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-40" />
+          ))}
         </div>
       ) : !selectedCycleId ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
@@ -273,7 +318,8 @@ export default function TeamOkrAssignment() {
               <div className="border-b border-border bg-muted/30 px-4 py-2">
                 <span className="text-sm font-medium">{team.name}</span>
                 <span className="ml-2 text-[10px] text-muted-foreground">
-                  {teamObjectives.length} objective{teamObjectives.length !== 1 ? "s" : ""}
+                  {teamObjectives.length} objective
+                  {teamObjectives.length !== 1 ? "s" : ""}
                 </span>
               </div>
               {teamObjectives.length === 0 ? (
@@ -306,35 +352,72 @@ export default function TeamOkrAssignment() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Objective</DialogTitle>
-            <DialogDescription>Assign a new objective to a team for the selected cycle.</DialogDescription>
+            <DialogDescription>
+              Assign a new objective to a team for the selected cycle.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateObjective}>
             <div className="space-y-4">
               <Field>
                 <FieldLabel>Title</FieldLabel>
-                <Controller control={objectiveForm.control} name="title" render={({ field }) => <Input {...field} placeholder="Improve team velocity" />} />
-                <FieldError>{objectiveForm.formState.errors.title?.message}</FieldError>
+                <Controller
+                  control={objectiveForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <Input {...field} placeholder="Improve team velocity" />
+                  )}
+                />
+                <FieldError>
+                  {objectiveForm.formState.errors.title?.message}
+                </FieldError>
               </Field>
               <Field>
                 <FieldLabel>Description (optional)</FieldLabel>
-                <Controller control={objectiveForm.control} name="description" render={({ field }) => <Textarea {...field} rows={2} />} />
+                <Controller
+                  control={objectiveForm.control}
+                  name="description"
+                  render={({ field }) => <Textarea {...field} rows={2} />}
+                />
               </Field>
               <Field>
                 <FieldLabel>Team</FieldLabel>
-                <Controller control={objectiveForm.control} name="teamId" render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="h-8 w-full rounded-none text-xs">{field.value ? teams.find((t) => t.id === field.value)?.name : "Select team"}</SelectTrigger>
-                    <SelectContent position="popper">
-                      {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )} />
-                <FieldError>{objectiveForm.formState.errors.teamId?.message}</FieldError>
+                <Controller
+                  control={objectiveForm.control}
+                  name="teamId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="h-8 w-full rounded-none text-xs">
+                        {field.value
+                          ? teams.find((t) => t.id === field.value)?.name
+                          : "Select team"}
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {teams.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError>
+                  {objectiveForm.formState.errors.teamId?.message}
+                </FieldError>
               </Field>
             </div>
             <DialogFooter className="mt-4">
-              <Button variant="outline" type="button" onClick={() => setObjFormOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={createObjectiveMutation.isPending}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setObjFormOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createObjectiveMutation.isPending}
+              >
                 {createObjectiveMutation.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
@@ -355,11 +438,21 @@ export default function TeamOkrAssignment() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete objective?</DialogTitle>
-            <DialogDescription>This will also delete all its key results. Cannot be undone.</DialogDescription>
+            <DialogDescription>
+              This will also delete all its key results. Cannot be undone.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteObj(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { if (deleteObj) deleteObjectiveMutation.mutate({ id: deleteObj }) }} disabled={deleteObjectiveMutation.isPending}>
+            <Button variant="outline" onClick={() => setDeleteObj(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteObj) deleteObjectiveMutation.mutate({ id: deleteObj })
+              }}
+              disabled={deleteObjectiveMutation.isPending}
+            >
               {deleteObjectiveMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>

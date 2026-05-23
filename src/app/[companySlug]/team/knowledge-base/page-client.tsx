@@ -40,17 +40,17 @@ export default function TeamKnowledgeBasePage() {
 
   return (
     <div className="flex-1 overflow-auto p-6">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><h1 className="text-lg font-semibold">Team Knowledge</h1><p className="mt-0.5 text-xs text-muted-foreground">Knowledge shared within your team.</p></div>
-        <div className="flex gap-2">
-          <div className="relative">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-auto">
             <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-8 w-52 rounded-none border border-input bg-transparent pl-8 pr-8 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+              className="h-8 w-full rounded-none border border-input bg-transparent pl-8 pr-8 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
             />
             {searchQuery && (
               <button onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -58,11 +58,13 @@ export default function TeamKnowledgeBasePage() {
               </button>
             )}
           </div>
-          <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-            <SelectTrigger className="h-8"><SelectValue placeholder="All Categories" /></SelectTrigger>
-            <SelectContent><SelectItem value="__all__">All Categories</SelectItem>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent>
-          </Select>
-          <Link href="add"><Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button></Link>
+          <div className="flex gap-2">
+            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+              <SelectTrigger className="h-8"><SelectValue placeholder="All Categories" /></SelectTrigger>
+              <SelectContent><SelectItem value="__all__">All Categories</SelectItem>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent>
+            </Select>
+            <Link href="add"><Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button></Link>
+          </div>
         </div>
       </div>
       {roleLoading ? <div className="flex items-center justify-center py-20"><Skeleton className="size-8 rounded-full" /></div>

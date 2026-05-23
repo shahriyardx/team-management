@@ -101,7 +101,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="flex flex-1 flex-col p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">Categories</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Manage knowledge base categories and subcategories</p>

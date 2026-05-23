@@ -168,7 +168,7 @@ export function TeamDetail({ teamId }: { teamId: string }) {
         >
           &larr; Back to teams
         </button>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold text-foreground">{team.name}</h1>
           </div>
@@ -195,7 +195,7 @@ export function TeamDetail({ teamId }: { teamId: string }) {
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h2 className="text-xs font-medium text-foreground">
             Members ({team.members.length})
           </h2>

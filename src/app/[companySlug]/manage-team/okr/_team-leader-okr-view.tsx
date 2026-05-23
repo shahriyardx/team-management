@@ -114,12 +114,15 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   return (
     <div className="space-y-6">
       {/* Header row */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Team OKR</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives. Fill in progress for your team.</p>
+          <p className="text-xs text-muted-foreground sm:hidden">
+            {cycles.find((c) => c.id === selectedCycleId)?.title ?? ""}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="hidden sm:flex flex-wrap items-center gap-3 shrink-0">
           <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
             <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
               {selectedYear === "all" ? "All years" : selectedYear}

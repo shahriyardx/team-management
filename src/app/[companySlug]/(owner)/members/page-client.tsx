@@ -188,7 +188,7 @@ export default function OrgMembersPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Members</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Manage who has access to this organization.</p>

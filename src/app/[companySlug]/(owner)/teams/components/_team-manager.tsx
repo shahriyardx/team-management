@@ -162,7 +162,7 @@ export function TeamManager() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Teams</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
