@@ -1,9 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { PlusIcon } from "@phosphor-icons/react"
+import { MagnifyingGlassIcon, PlusIcon, X } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -12,9 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useOrganization } from "@/lib/organization-context"
 import { useMemberRole } from "@/lib/use-member-role"
 import { authClient } from "@/lib/auth-client"
-import { api } from "@/lib/trpc/client"
-import { KbItemRow, type KbItem } from "@/components/knowledge-base/kb-item-row"
+import { useKbBrowser } from "@/components/knowledge-base/use-kb-browser"
 import { KbAllCategoriesView } from "@/components/knowledge-base/kb-all-categories-view"
+import { KbItemRow, type KbItem } from "@/components/knowledge-base/kb-item-row"
 import { KbSpecificCategoryView } from "@/components/knowledge-base/kb-specific-category-view"
 
 export default function TeamKnowledgeBasePage() {
@@ -24,48 +23,43 @@ export default function TeamKnowledgeBasePage() {
   const { data: session } = authClient.useSession()
   const activeTeamId = session?.session?.activeTeamId
 
-  const { data: catData } = api.knowledgeBase.categoryList.useQuery(
-    { organizationId: organization?.id ?? "", teamId: activeTeamId ?? "" },
-    { enabled: !!organization && !!activeTeamId },
-  )
-  const categories = catData?.categories ?? []
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("__all__")
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const {
+    categories, selectedCategoryId, setSelectedCategoryId,
+    showAll, collapsedCategories, toggleCategory,
+    searchQuery, onSearchChange, clearSearch,
+    searchPage, setSearchPage, searchLoading,
+    searchResults, totalResults, totalPages, PAGE,
+  } = useKbBrowser({
+    organizationId: organization?.id ?? "",
+    teamId: activeTeamId ?? "",
+    enabled: !!organization && !!activeTeamId,
+  })
 
-  function toggleCategory(id: string) {
-    setCollapsedCategories((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
-  }
-
-  const { data: itemsData, isLoading } = api.knowledgeBase.itemList.useQuery(
-    { organizationId: organization?.id ?? "", categoryId: selectedCategoryId === "__all__" ? undefined : selectedCategoryId, teamId: activeTeamId ?? "", take: 100 },
-    { enabled: !!organization && !!activeTeamId },
-  )
-  const items = (itemsData?.items ?? []) as KbItem[]
-
-  const timelineGroups = useMemo(() => {
-    if (!catData) return []
-    const result: Array<{ categoryId: string; categoryName: string; subcategories: Array<{ subcategoryId: string; subcategoryName: string; items: KbItem[] }> }> = []
-    for (const cat of categories) {
-      const subs: Array<{ subcategoryId: string; subcategoryName: string; items: KbItem[] }> = []
-      for (const sub of cat.subcategories) { const si = items.filter((i) => i.subcategory.id === sub.id); if (si.length > 0) subs.push({ subcategoryId: sub.id, subcategoryName: sub.name, items: si }) }
-      if (subs.length > 0) result.push({ categoryId: cat.id, categoryName: cat.name, subcategories: subs })
-    }
-    return result
-  }, [items, categories, catData])
-
-  const showAll = selectedCategoryId === "__all__"
-
-  function ItemRow({ item }: { item: KbItem }) {
-    return <KbItemRow item={item} baseHref={`/${companySlug}/team/knowledge-base`} />
-  }
+  const selectedCat = categories.find((c) => c.id === selectedCategoryId)
+  const baseHref = `/${companySlug}/team/knowledge-base`
 
   return (
     <div className="flex-1 overflow-auto p-6">
       <div className="mb-8 flex items-start justify-between">
         <div><h1 className="text-lg font-semibold">Team Knowledge</h1><p className="mt-0.5 text-xs text-muted-foreground">Knowledge shared within your team.</p></div>
         <div className="flex gap-2">
+          <div className="relative">
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="h-8 w-52 rounded-none border border-input bg-transparent pl-8 pr-8 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+            />
+            {searchQuery && (
+              <button onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
           <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-            <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
+            <SelectTrigger className="h-8"><SelectValue placeholder="All Categories" /></SelectTrigger>
             <SelectContent><SelectItem value="__all__">All Categories</SelectItem>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent>
           </Select>
           <Link href="add"><Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button></Link>
@@ -73,10 +67,26 @@ export default function TeamKnowledgeBasePage() {
       </div>
       {roleLoading ? <div className="flex items-center justify-center py-20"><Skeleton className="size-8 rounded-full" /></div>
       : !activeTeamId ? <div className="flex flex-col items-center justify-center gap-3 py-20"><p className="text-xs text-muted-foreground">No active team selected.</p></div>
-      : isLoading ? <div className="flex items-center justify-center py-20"><Skeleton className="size-8 rounded-full" /></div>
-      : timelineGroups.length === 0 ? <div className="flex flex-col items-center justify-center gap-4 py-20"><p className="text-xs text-muted-foreground">No knowledge items found for this team.</p></div>
-      : showAll ? <KbAllCategoriesView timelineGroups={timelineGroups} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} ItemRow={ItemRow} />
-      : <KbSpecificCategoryView timelineGroups={timelineGroups} ItemRow={ItemRow} />}
+      : searchQuery ? (
+        searchLoading ? <div className="flex items-center justify-center py-20"><span className="size-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" /></div>
+        : searchResults.length === 0 ? <div className="flex flex-col items-center justify-center gap-4 py-20"><p className="text-xs text-muted-foreground">No results found.</p></div>
+        : <div className="space-y-1">
+            <p className="mb-3 text-xs text-muted-foreground">{totalResults} result{totalResults !== 1 ? "s" : ""}</p>
+            {searchResults.map((item: KbItem) => <KbItemRow key={item.id} item={item} baseHref={baseHref} />)}
+            {totalResults > PAGE && (
+              <div className="flex items-center justify-between pt-3">
+                <span className="text-xs text-muted-foreground">Page {searchPage + 1} of {totalPages}</span>
+                <div className="flex gap-1">
+                  <button disabled={searchPage === 0} onClick={() => setSearchPage((p) => p - 1)} className="h-7 rounded-none border border-border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40">Previous</button>
+                  <button disabled={searchPage >= totalPages - 1} onClick={() => setSearchPage((p) => p + 1)} className="h-7 rounded-none border border-border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40">Next</button>
+                </div>
+              </div>
+            )}
+          </div>
+      )
+      : showAll ? <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} />
+      : selectedCat ? <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} baseHref={baseHref} />
+      : null}
     </div>
   )
 }

@@ -196,6 +196,68 @@ export const knowledgeBaseRouter = router({
       return { items, total }
     }),
 
+  searchItems: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        query: z.string().min(1).max(200),
+        teamId: z.string().optional(),
+        categoryId: z.string().optional(),
+        skip: z.number().int().min(0).default(0),
+        take: z.number().int().min(1).max(100).default(50),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const where: Record<string, unknown> = {
+        organizationId: input.organizationId,
+        deletedAt: null,
+        OR: [
+          { title: { contains: input.query, mode: "insensitive" } },
+          { description: { contains: input.query, mode: "insensitive" } },
+        ],
+      }
+      if (input.teamId) {
+        where.teamId = input.teamId
+      } else {
+        where.teamId = null
+      }
+      if (input.categoryId) {
+        where.subcategory = { categoryId: input.categoryId }
+      }
+
+      const [items, total] = await prisma.$transaction(async (tx) => {
+        const data = await tx.kbItem.findMany({
+          where,
+          include: {
+            author: { select: { id: true, name: true, image: true } },
+            subcategory: {
+              select: {
+                id: true,
+                name: true,
+                categoryId: true,
+                category: { select: { id: true, name: true } },
+              },
+            },
+            attachments: { select: { id: true, name: true, url: true, type: true } },
+            links: { select: { id: true, url: true, title: true } },
+            _count: { select: { attachments: true, links: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: input.skip,
+          take: input.take,
+        })
+        const count = await tx.kbItem.count({ where })
+        return [data, count] as const
+      })
+
+      return { items, total }
+    }),
+
   itemGet: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
