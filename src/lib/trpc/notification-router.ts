@@ -17,6 +17,45 @@ export const notificationRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
+      const [notifications, total] = await Promise.all([
+        prisma.notification.findMany({
+          where: {
+            userId: ctx.session.user.id,
+            organizationId: input.organizationId,
+            read: false,
+          },
+          include: {
+            task: { select: { id: true, title: true } },
+            kbItem: { select: { id: true, title: true, teamId: true } },
+            announcement: { select: { id: true, title: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
+        prisma.notification.count({
+          where: {
+            userId: ctx.session.user.id,
+            organizationId: input.organizationId,
+            read: false,
+          },
+        }),
+      ])
+      return { notifications, total }
+    }),
+
+  listAll: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
       const notifications = await prisma.notification.findMany({
         where: {
           userId: ctx.session.user.id,
@@ -26,9 +65,9 @@ export const notificationRouter = router({
         include: {
           task: { select: { id: true, title: true } },
           kbItem: { select: { id: true, title: true, teamId: true } },
+          announcement: { select: { id: true, title: true } },
         },
         orderBy: { createdAt: "desc" },
-        take: 20,
       })
       return { notifications }
     }),

@@ -1,0 +1,457 @@
+"use client"
+
+import { useState, useCallback, useEffect } from "react"
+import { useRouter, useParams, usePathname } from "next/navigation"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { ArrowLeft, Plus, X } from "@phosphor-icons/react"
+import { useOrganization } from "@/lib/organization-context"
+import { api } from "@/lib/trpc/client"
+import { authClient } from "@/lib/auth-client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Field, FieldLabel, FieldError } from "@/components/ui/field"
+import { FileDropzone } from "@/components/file-dropzone"
+
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required."),
+  content: z.string().min(1, "Content is required."),
+  teamId: z.string().optional(),
+  pinned: z.boolean(),
+  enableComments: z.boolean(),
+  enableLikes: z.boolean(),
+  thumbnail: z.string().optional(),
+})
+
+type FormValues = z.infer<typeof formSchema>
+
+interface Props {
+  announcementId?: string
+}
+
+export function AnnouncementForm({ announcementId }: Props) {
+  const { organization } = useOrganization()
+  const router = useRouter()
+  const params = useParams()
+  const pathname = usePathname()
+  const slug = params.companySlug as string
+  const utils = api.useUtils()
+  const { data: sessionData } = authClient.useSession()
+  const isManageTeam = pathname.includes("/manage-team/")
+  const activeTeamId = sessionData?.session?.activeTeamId ?? null
+  const isEdit = !!announcementId
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      content: "",
+      teamId: undefined,
+      pinned: false,
+      enableComments: true,
+      enableLikes: true,
+      thumbnail: "",
+    },
+  })
+
+  const [links, setLinks] = useState<Array<{ url: string; title: string }>>([])
+  const [newLinkUrl, setNewLinkUrl] = useState("")
+  const [newLinkTitle, setNewLinkTitle] = useState("")
+  const [thumbnailFile, setThumbnailFile] = useState<
+    Array<{ name: string; url?: string; uploading?: boolean; error?: string }>
+  >([])
+  const [selectedFiles, setSelectedFiles] = useState<
+    Array<{
+      file: File
+      name: string
+      uploading: boolean
+      url?: string
+      error?: string
+    }>
+  >([])
+  const [uploadError, setUploadError] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [isThumbnailUploading, setIsThumbnailUploading] = useState(false)
+  // Fetch existing announcement for edit mode
+  const { data: existingData } = api.announcement.getById.useQuery(
+    { id: announcementId ?? "", organizationId: organization?.id ?? "" },
+    { enabled: isEdit && !!organization && !!announcementId },
+  )
+
+  // Populate form with existing data
+  useEffect(() => {
+    if (!existingData?.announcement) return
+    const a = existingData.announcement
+    form.reset({
+      title: a.title,
+      content: a.content,
+      teamId: a.teamId ?? undefined,
+      pinned: a.pinned,
+      enableComments: a.enableComments,
+      enableLikes: a.enableLikes,
+      thumbnail: a.thumbnail ?? "",
+    })
+    if (a.thumbnail) {
+      setThumbnailFile([{ name: "Thumbnail", url: a.thumbnail }])
+    }
+    if (a.links?.length) {
+      const existing = a.links.map((l: { url: string; title: string }) => ({ url: l.url, title: l.title }))
+      setLinks(existing)
+    }
+  }, [existingData, form])
+
+  const { data: teamsData } = api.team.list.useQuery(
+    { organizationId: organization?.id ?? "" },
+    { enabled: !!organization },
+  )
+  const teams = (teamsData?.teams ?? []) as Array<{ id: string; name: string }>
+
+  const basePath = pathname.replace(/\/create\/?$/, "").replace(/\/edit\/?$/, "")
+  const createMutation = api.announcement.create.useMutation({
+    onSuccess: (res) => {
+      utils.announcement.list.invalidate()
+      router.push(`${basePath}/${res.announcement.id}`)
+    },
+  })
+  const updateMutation = api.announcement.update.useMutation({
+    onSuccess: () => {
+      utils.announcement.list.invalidate()
+      utils.announcement.getById.invalidate()
+      router.back()
+    },
+  })
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const body = new FormData()
+    body.set("file", file)
+    const res = await fetch("/api/knowledge/upload", { method: "POST", body })
+    if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed")
+    const { url } = await res.json()
+    return url
+  }
+
+  const onThumbnailDrop = useCallback(
+    async (files: File[]) => {
+      const file = files[0]
+      if (!file) return
+      setIsThumbnailUploading(true)
+      setThumbnailFile([{ name: file.name, uploading: true }])
+      try {
+        const url = await uploadFile(file)
+        setThumbnailFile([{ name: file.name, url, uploading: false }])
+        form.setValue("thumbnail", url)
+      } catch (e) {
+        setThumbnailFile([
+          { name: file.name, uploading: false, error: (e as Error).message },
+        ])
+      } finally {
+        setIsThumbnailUploading(false)
+      }
+    },
+    [form],
+  )
+
+  const onAttachmentsDrop = useCallback((files: File[]) => {
+    setSelectedFiles((prev) => [
+      ...prev,
+      ...files.map((f) => ({ file: f, name: f.name, uploading: false })),
+    ])
+  }, [])
+
+  const removeAttachment = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const addLink = () => {
+    if (!newLinkUrl.trim() || !newLinkTitle.trim()) return
+    setLinks([...links, { url: newLinkUrl.trim(), title: newLinkTitle.trim() }])
+    setNewLinkUrl("")
+    setNewLinkTitle("")
+  }
+
+  const onSubmit = async (values: FormValues) => {
+    setIsUploading(true)
+    setUploadError("")
+
+    let attachments:
+      | Array<{ name: string; url: string; type: string; size: number }>
+      | undefined
+
+    if (selectedFiles.length > 0) {
+      const uploading = selectedFiles.map((f) => ({ ...f, uploading: true }))
+      setSelectedFiles(uploading)
+
+      const results = await Promise.all(
+        selectedFiles.map(async (f) => {
+          try {
+            const url = await uploadFile(f.file)
+            return { ...f, url, uploading: false, error: undefined }
+          } catch (e) {
+            return { ...f, uploading: false, error: (e as Error).message }
+          }
+        }),
+      )
+
+      setSelectedFiles(results)
+      const failed = results.find((r) => r.error)
+      if (failed) {
+        setUploadError(`Failed to upload: ${failed.name}`)
+        setIsUploading(false)
+        return
+      }
+
+      attachments = results.map((r) => ({
+        name: r.name,
+        url: r.url!,
+        type: r.file.type,
+        size: r.file.size,
+      }))
+    }
+
+    setIsUploading(false)
+
+    if (isEdit && announcementId) {
+      updateMutation.mutate({
+        id: announcementId,
+        organizationId: organization?.id ?? "",
+        title: values.title.trim(),
+        content: values.content.trim(),
+        pinned: values.pinned,
+        enableComments: values.enableComments,
+        enableLikes: values.enableLikes,
+        thumbnail: values.thumbnail || null,
+      })
+    } else {
+      createMutation.mutate({
+        title: values.title.trim(),
+        content: values.content.trim(),
+        organizationId: organization?.id ?? "",
+        teamId: isManageTeam
+          ? (activeTeamId ?? undefined)
+          : values.teamId || undefined,
+        pinned: values.pinned,
+        enableComments: values.enableComments,
+        enableLikes: values.enableLikes,
+        thumbnail: values.thumbnail || undefined,
+        links: links.length > 0 ? links : undefined,
+        attachments,
+      })
+    }
+  }
+
+  const busy =
+    isUploading ||
+    isThumbnailUploading ||
+    createMutation.isPending ||
+    updateMutation.isPending
+
+  return (
+    <div className="space-y-6 p-6 max-w-3xl">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="size-3" />
+        Back
+      </button>
+
+      <h1 className="text-base font-semibold">
+        {isEdit ? "Edit Announcement" : "New Announcement"}
+      </h1>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Field>
+          <FieldLabel>Thumbnail</FieldLabel>
+          <FileDropzone
+            onDrop={onThumbnailDrop}
+            onRemove={() => {
+              setThumbnailFile([])
+              form.setValue("thumbnail", "")
+            }}
+            files={thumbnailFile}
+            accept={{ "image/*": [] }}
+            multiple={false}
+            preview
+          />
+        </Field>
+
+        <Controller
+          control={form.control}
+          name="title"
+          render={({ field, fieldState }) => (
+            <Field>
+              <FieldLabel>Title</FieldLabel>
+              <Input {...field} placeholder="Announcement title" />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="content"
+          render={({ field, fieldState }) => (
+            <Field>
+              <FieldLabel>Content (markdown supported)</FieldLabel>
+              <Textarea {...field} placeholder="Write your announcement..." rows={12} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+
+        {!isManageTeam && !isEdit && (
+          <Controller
+            control={form.control}
+            name="teamId"
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Scope</FieldLabel>
+                <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                  <SelectTrigger className="h-8 w-full rounded-none text-xs">
+                    <SelectValue placeholder="Org-wide" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    {teams.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
+          />
+        )}
+
+        {/* Links */}
+        <Field>
+          <FieldLabel>Links (optional)</FieldLabel>
+          <div className="flex gap-2">
+            <Input
+              value={newLinkTitle}
+              onChange={(e) => setNewLinkTitle(e.target.value)}
+              placeholder="Link title"
+              className="h-8 text-xs rounded-none flex-1"
+            />
+            <Input
+              value={newLinkUrl}
+              onChange={(e) => setNewLinkUrl(e.target.value)}
+              placeholder="URL"
+              className="h-8 text-xs rounded-none flex-1"
+            />
+            <Button size="icon" variant="outline" onClick={addLink} type="button">
+              <Plus className="size-3" />
+            </Button>
+          </div>
+          {links.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {links.map((link, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <span>{link.title}</span>
+                  <span className="text-muted-foreground/50">&rarr;</span>
+                  <span className="truncate">{link.url}</span>
+                  <button
+                    type="button"
+                    onClick={() => setLinks(links.filter((_, j) => j !== i))}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Field>
+
+        {/* Attachments (create only) */}
+        {!isEdit && (
+          <Field>
+            <FieldLabel>Attachments (optional)</FieldLabel>
+            <FileDropzone
+              onDrop={onAttachmentsDrop}
+              onRemove={removeAttachment}
+              files={selectedFiles}
+              accept={{
+                "image/*": [],
+                "application/pdf": [],
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                  [],
+                "text/plain": [],
+                "text/csv": [],
+                "application/vnd.ms-excel": [],
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                  [],
+              }}
+              multiple
+            />
+            {uploadError && (
+              <p className="text-xs text-red-500 mt-1">{uploadError}</p>
+            )}
+          </Field>
+        )}
+
+        <div className="flex flex-wrap items-center gap-6">
+          <Controller
+            control={form.control}
+            name="pinned"
+            render={({ field }) => (
+              <Label className="cursor-pointer">
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                Pinned
+              </Label>
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="enableComments"
+            render={({ field }) => (
+              <Label className="cursor-pointer">
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                Enable comments
+              </Label>
+            )}
+          />
+          <Controller
+            control={form.control}
+            name="enableLikes"
+            render={({ field }) => (
+              <Label className="cursor-pointer">
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                Enable likes
+              </Label>
+            )}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 pt-2">
+          <Button type="submit" disabled={busy}>
+            {busy ? "Saving..." : isEdit ? "Update" : "Publish"}
+          </Button>
+          <Button variant="outline" type="button" onClick={() => router.back()}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}

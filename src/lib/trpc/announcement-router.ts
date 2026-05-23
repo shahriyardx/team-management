@@ -1,0 +1,446 @@
+import { z } from "zod"
+import { TRPCError } from "@trpc/server"
+import { prisma } from "@/lib/prisma"
+import { router, protectedProcedure } from "./server"
+
+export const announcementRouter = router({
+  list: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        teamId: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      // Owner/admin: see org-wide + all team announcements
+      // Team leader/member: see org-wide + their team's announcements
+      const isOrgAdmin = member.role === "owner" || member.role === "admin"
+
+      const userTeamIds = isOrgAdmin
+        ? undefined
+        : (
+            await prisma.teamMember.findMany({
+              where: { userId: ctx.session.user.id },
+              select: { teamId: true },
+            })
+          ).map((tm) => tm.teamId)
+
+      const where: Record<string, unknown> = { organizationId: input.organizationId }
+      if (!isOrgAdmin && userTeamIds) {
+        where.OR = [
+          { teamId: null },
+          { teamId: { in: userTeamIds } },
+        ]
+      }
+      if (input.teamId) {
+        delete where.OR
+        where.teamId = input.teamId
+      }
+
+      const announcements = await prisma.announcement.findMany({
+        where,
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          _count: { select: { comments: true, likes: true } },
+        },
+        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+      })
+
+      // Check if current user liked each announcement
+      const likedSet = new Set(
+        (
+          await prisma.announcementLike.findMany({
+            where: {
+              userId: ctx.session.user.id,
+              announcementId: { in: announcements.map((a) => a.id) },
+            },
+            select: { announcementId: true },
+          })
+        ).map((l) => l.announcementId),
+      )
+
+      return {
+        announcements: announcements.map((a) => ({
+          ...a,
+          liked: likedSet.has(a.id),
+        })),
+      }
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.string(), organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.id },
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          team: { select: { id: true, name: true } },
+          attachments: { select: { id: true, name: true, url: true, type: true, size: true } },
+          links: { select: { id: true, url: true, title: true } },
+          comments: {
+            include: {
+              author: { select: { id: true, name: true, image: true } },
+              replies: {
+                include: {
+                  author: { select: { id: true, name: true, image: true } },
+                },
+                orderBy: { createdAt: "asc" },
+              },
+            },
+            where: { parentId: null },
+            orderBy: { createdAt: "asc" },
+          },
+          _count: { select: { likes: true } },
+        },
+      })
+      if (!announcement) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const liked = !!(await prisma.announcementLike.findUnique({
+        where: {
+          announcementId_userId: {
+            announcementId: input.id,
+            userId: ctx.session.user.id,
+          },
+        },
+      }))
+
+      return { announcement: { ...announcement, liked } }
+    }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        title: z.string().min(1, "Title is required."),
+        content: z.string().min(1, "Content is required."),
+        thumbnail: z.string().optional(),
+        teamId: z.string().optional(),
+        enableComments: z.boolean().optional(),
+        enableLikes: z.boolean().optional(),
+        pinned: z.boolean().optional(),
+        links: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
+        attachments: z
+          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number() }))
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isOrgAdmin = member.role === "owner" || member.role === "admin"
+
+      // Team-scoped: must be team leader or org admin
+      if (input.teamId && !isOrgAdmin) {
+        const team = await prisma.team.findUnique({ where: { id: input.teamId } })
+        if (!team || team.leaderId !== member.id) {
+          throw new TRPCError({ code: "FORBIDDEN" })
+        }
+      }
+
+      // Org-wide: only org admin
+      if (!input.teamId && !isOrgAdmin) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const announcement = await prisma.announcement.create({
+        data: {
+          title: input.title,
+          content: input.content,
+          thumbnail: input.thumbnail ?? null,
+          teamId: input.teamId ?? null,
+          enableComments: input.enableComments ?? true,
+          enableLikes: input.enableLikes ?? true,
+          pinned: input.pinned ?? false,
+          organizationId: input.organizationId,
+          authorId: ctx.session.user.id,
+          links: input.links?.length
+            ? {
+                create: input.links,
+              }
+            : undefined,
+          attachments: input.attachments?.length
+            ? {
+                create: input.attachments,
+              }
+            : undefined,
+        },
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          links: true,
+          attachments: true,
+          _count: { select: { comments: true, likes: true } },
+        },
+      })
+
+      // Create notifications
+      const recipientIds = input.teamId
+        ? (
+            await prisma.teamMember.findMany({
+              where: { teamId: input.teamId },
+              select: { userId: true },
+            })
+          ).map((tm) => tm.userId)
+        : (
+            await prisma.member.findMany({
+              where: { organizationId: input.organizationId },
+              select: { userId: true },
+            })
+          ).map((m) => m.userId)
+
+      const notifyIds = recipientIds.filter((id) => id !== ctx.session.user.id)
+      if (notifyIds.length > 0) {
+        await prisma.notification.createMany({
+          data: notifyIds.map((userId) => ({
+            type: "announcement",
+            title: input.title,
+            organizationId: input.organizationId,
+            userId,
+            announcementId: announcement.id,
+          })),
+        })
+      }
+
+      return { announcement: { ...announcement, liked: false } }
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        organizationId: z.string(),
+        title: z.string().min(1).optional(),
+        content: z.string().min(1).optional(),
+        thumbnail: z.string().optional().nullable(),
+        enableComments: z.boolean().optional(),
+        enableLikes: z.boolean().optional(),
+        pinned: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const existing = await prisma.announcement.findUnique({ where: { id: input.id } })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const isOrgAdmin = member.role === "owner" || member.role === "admin"
+      const isAuthor = existing.authorId === ctx.session.user.id
+
+      if (!isOrgAdmin && !isAuthor) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const { id, organizationId: _orgId, ...data } = input
+      const announcement = await prisma.announcement.update({
+        where: { id: input.id },
+        data,
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          _count: { select: { comments: true, likes: true } },
+        },
+      })
+
+      const liked = !!(await prisma.announcementLike.findUnique({
+        where: { announcementId_userId: { announcementId: input.id, userId: ctx.session.user.id } },
+      }))
+
+      return { announcement: { ...announcement, liked } }
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string(), organizationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const existing = await prisma.announcement.findUnique({ where: { id: input.id } })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const isOrgAdmin = member.role === "owner" || member.role === "admin"
+      const isAuthor = existing.authorId === ctx.session.user.id
+
+      if (!isOrgAdmin && !isAuthor) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      await prisma.announcement.delete({ where: { id: input.id } })
+      return { success: true }
+    }),
+
+  // ── Comments ──
+
+  commentCreate: protectedProcedure
+    .input(
+      z.object({
+        announcementId: z.string(),
+        organizationId: z.string(),
+        content: z.string().min(1, "Comment is required."),
+        parentId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.announcementId },
+        select: { enableComments: true, authorId: true, title: true },
+      })
+      if (!announcement) throw new TRPCError({ code: "NOT_FOUND" })
+      if (!announcement.enableComments) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const comment = await prisma.announcementComment.create({
+        data: {
+          content: input.content,
+          announcementId: input.announcementId,
+          authorId: ctx.session.user.id,
+          parentId: input.parentId ?? null,
+        },
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+        },
+      })
+
+      // Notify announcement author (only if commenter is not the author)
+      if (announcement.authorId !== ctx.session.user.id) {
+        await prisma.notification.create({
+          data: {
+            type: "announcement_comment",
+            title: comment.author.name + ' commented on "' + announcement.title + '"',
+            body: input.content.slice(0, 120),
+            organizationId: input.organizationId,
+            userId: announcement.authorId,
+            announcementId: input.announcementId,
+          },
+        })
+      }
+
+      // For replies: notify parent comment author
+      if (input.parentId) {
+        const parentComment = await prisma.announcementComment.findUnique({
+          where: { id: input.parentId },
+          select: { authorId: true },
+        })
+        if (parentComment && parentComment.authorId !== ctx.session.user.id) {
+          await prisma.notification.create({
+            data: {
+              type: "announcement_comment",
+              title: comment.author.name + ' replied to your comment',
+              body: input.content.slice(0, 120),
+              organizationId: input.organizationId,
+              userId: parentComment.authorId,
+              announcementId: input.announcementId,
+            },
+          })
+        }
+      }
+
+      return { comment }
+    }),
+
+  commentDelete: protectedProcedure
+    .input(z.object({ id: z.string(), organizationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.announcementComment.findUnique({ where: { id: input.id } })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+      if (existing.authorId !== ctx.session.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+      await prisma.announcementComment.delete({ where: { id: input.id } })
+      return { success: true }
+    }),
+
+  // ── Likes ──
+
+  likeToggle: protectedProcedure
+    .input(z.object({ announcementId: z.string(), organizationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.announcementId },
+        select: { enableLikes: true },
+      })
+      if (!announcement) throw new TRPCError({ code: "NOT_FOUND" })
+      if (!announcement.enableLikes) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const existing = await prisma.announcementLike.findUnique({
+        where: {
+          announcementId_userId: {
+            announcementId: input.announcementId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+
+      if (existing) {
+        await prisma.announcementLike.delete({ where: { id: existing.id } })
+        return { liked: false }
+      }
+
+      await prisma.announcementLike.create({
+        data: {
+          announcementId: input.announcementId,
+          userId: ctx.session.user.id,
+        },
+      })
+      return { liked: true }
+    }),
+})

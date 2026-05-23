@@ -34,6 +34,9 @@ model User {
   kbItems         KbItem[]
   kbEditHistories KbEditHistory[]
   kbComments      KbComment[]
+  announcements   Announcement[]     @relation("AuthoredAnnouncements")
+  announcementComments AnnouncementComment[]
+  announcementLikes    AnnouncementLike[]
 
   @@unique([email])
   @@map("user")
@@ -92,6 +95,7 @@ model Organization {
   kbCategories  KbCategory[]
   kbSubcategories KbSubcategory[]
   kbItems       KbItem[]
+  announcements Announcement[]
 
   @@map("organization")
 }
@@ -275,10 +279,13 @@ model Notification {
   task           Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
   kbItemId       String?
   kbItem         KbItem?      @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+  announcementId String?
+  announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
   @@index([organizationId])
   @@index([kbItemId])
+  @@index([announcementId])
   @@map("notification")
 }
 
@@ -368,9 +375,38 @@ model Team {
   objectives     Objective[]
   kbItems        KbItem[]
   kbCategories   KbCategory[]
+  announcements  Announcement[]
 
   @@index([organizationId])
   @@map("team")
+}
+
+model Announcement {
+  id              String       @id @default(cuid())
+  title           String
+  content         String
+  thumbnail       String?
+  enableComments  Boolean      @default(true)
+  enableLikes     Boolean      @default(true)
+  pinned          Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId          String?
+  team            Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User         @relation("AuthoredAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  comments        AnnouncementComment[]
+  likes           AnnouncementLike[]
+  attachments     AnnouncementAttachment[]
+  links           AnnouncementLink[]
+  notifications   Notification[]
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@index([createdAt])
+  @@map("announcement")
 }
 
 model TeamMember {
@@ -511,4 +547,58 @@ model KbEditHistory {
 
   @@index([kbItemId])
   @@map("kb_edit_history")
+}
+
+model AnnouncementComment {
+  id             String                @id @default(cuid())
+  content        String
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  announcementId String
+  announcement   Announcement          @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId       String?
+  parent         AnnouncementComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies        AnnouncementComment[] @relation("CommentReplies")
+
+  @@index([announcementId])
+  @@index([parentId])
+  @@map("announcement_comment")
+}
+
+model AnnouncementLike {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([announcementId, userId])
+  @@map("announcement_like")
+}
+
+model AnnouncementAttachment {
+  id             String       @id @default(cuid())
+  name           String
+  url            String
+  type           String
+  size           Int
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+  @@map("announcement_attachment")
+}
+
+model AnnouncementLink {
+  id             String       @id @default(cuid())
+  url            String
+  title          String
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+  @@map("announcement_link")
 }

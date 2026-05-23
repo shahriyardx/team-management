@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { useParams } from "next/navigation"
-import { ArrowLeft, BookBookmark, House, ListChecks, Target, Users } from "@phosphor-icons/react"
+import { ArrowLeft, BookBookmark, House, ListChecks, Megaphone, Target, Users } from "@phosphor-icons/react"
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +23,7 @@ type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 function leaderItems(slug: string, todoCount: number): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}/manage-team`, icon: House },
+    { title: "Announcements", url: `/${slug}/manage-team/announcements`, icon: Megaphone },
     {
       title: "OKRs",
       icon: Target,
