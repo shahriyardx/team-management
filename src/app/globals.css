@@ -8,6 +8,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --font-space-grotesk: var(--font-space-grotesk);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-mono);
@@ -126,7 +127,7 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-mono;
+    font-family: var(--font-space-grotesk), sans-serif;
   }
 }
 

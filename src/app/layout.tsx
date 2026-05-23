@@ -1,31 +1,25 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google"
+import { Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { TRPCProvider } from "@/lib/trpc/provider"
 
-const jetbrainsMono = JetBrains_Mono({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-mono",
-})
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-space-grotesk",
 })
 
 export const metadata: Metadata = {
-  title: "WeirdTeams",
+  title: "WeirdTeams — Team Management Platform",
   description:
-    "Team management platform — tasks, knowledge base, and collaboration in one place.",
+    "A simple workspace for teams that want to move faster. Tasks, knowledge base, OKR tracking, and member management in one place.",
+  openGraph: {
+    title: "WeirdTeams",
+    description:
+      "A simple workspace for teams that want to move faster. Tasks, knowledge base, OKR tracking, and member management in one place.",
+    type: "website",
+  },
 }
 
 export default function RootLayout({
@@ -37,13 +31,8 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full dark",
-        "antialiased",
-        geistSans.variable,
-        geistMono.variable,
-        inter.variable,
-        "font-mono",
-        jetbrainsMono.variable,
+        "h-full dark antialiased",
+        spaceGrotesk.variable,
       )}
     >
       <body className="min-h-full flex flex-col">
