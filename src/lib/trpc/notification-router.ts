@@ -23,7 +23,10 @@ export const notificationRouter = router({
           organizationId: input.organizationId,
           read: false,
         },
-        include: { task: { select: { id: true, title: true } } },
+        include: {
+          task: { select: { id: true, title: true } },
+          kbItem: { select: { id: true, title: true, teamId: true } },
+        },
         orderBy: { createdAt: "desc" },
         take: 20,
       })

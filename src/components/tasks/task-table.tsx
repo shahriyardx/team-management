@@ -89,13 +89,6 @@ type Task = {
     email: string
     image: string | null | undefined
   }
-  labels: Array<{
-    label: {
-      id: string
-      name: string
-      color: string
-    }
-  }>
 }
 
 const statusLabels: Record<string, string> = {
@@ -117,18 +110,10 @@ const taskSchema = z.object({
   status: z.enum(["todo", "in_progress", "done"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   assigneeIds: z.array(z.string()).optional(),
-  labelIds: z.array(z.string()).optional(),
   dueDate: z.string().optional(),
 })
 
 type TaskForm = z.infer<typeof taskSchema>
-
-const labelSchema = z.object({
-  name: z.string().min(1, "Name is required."),
-  color: z.string(),
-})
-
-type LabelForm = z.infer<typeof labelSchema>
 
 const commentSchema = z.object({
   content: z.string().min(1, "Comment is required."),
@@ -143,48 +128,60 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   const [showDone, setShowDone] = useState(false)
   const PAGE_SIZE = 10
 
+  const activeTeamId = session?.session?.activeTeamId
+
   const { data, isLoading } = api.task.list.useQuery(
-    { organizationId: organization?.id ?? "", skip: 0, take: 100 },
+    { organizationId: organization?.id ?? "", teamId: activeTeamId ?? null, skip: 0, take: 100 },
     { enabled: !!organization },
   )
   const tasks = data?.tasks ?? []
   const utils = api.useUtils()
 
-  // Members for assignee dropdown + current member lookup
-  const [members, setMembers] = useState<Member[]>([])
-  const [membersLoading, setMembersLoading] = useState(true)
+  // Org members for current member lookup + role check
+  const [orgMembers, setOrgMembers] = useState<Member[]>([])
+  const [orgMembersLoading, setOrgMembersLoading] = useState(true)
   useEffect(() => {
     if (!organization) {
-      setMembersLoading(false)
+      setOrgMembersLoading(false)
       return
     }
-    setMembersLoading(true)
+    setOrgMembersLoading(true)
     authClient.organization
       .listMembers({ query: { organizationSlug: organization.slug } })
       .then((res) => {
-        setMembers(res.data?.members ?? [])
-        setMembersLoading(false)
+        setOrgMembers(res.data?.members ?? [])
+        setOrgMembersLoading(false)
       })
-      .catch(() => setMembersLoading(false))
+      .catch(() => setOrgMembersLoading(false))
   }, [organization])
 
-  // Labels for filtering + management
-  const { data: labelsData } = api.label.list.useQuery(
-    { organizationId: organization?.id ?? "" },
-    { enabled: !!organization },
-  )
-  const availableLabels = labelsData?.labels ?? []
-  const createLabelMutation = api.label.create.useMutation({
-    onSuccess: () => utils.label.list.invalidate(),
-  })
-  const [labelCreateOpen, setLabelCreateOpen] = useState(false)
+  // Team members for scoped assignee dropdown
+  const [teamUserIds, setTeamUserIds] = useState<Set<string>>(new Set())
+  const [teamLoading, setTeamLoading] = useState(false)
+  useEffect(() => {
+    if (!activeTeamId || !organization) {
+      setTeamUserIds(new Set())
+      setTeamLoading(false)
+      return
+    }
+    setTeamLoading(true)
+    authClient.organization
+      .listTeamMembers({ query: { teamId: activeTeamId } })
+      .then((res) => {
+        const ids = (res.data ?? []).map((m: { userId: string }) => m.userId)
+        setTeamUserIds(new Set(ids))
+        setTeamLoading(false)
+      })
+      .catch(() => setTeamLoading(false))
+  }, [activeTeamId, organization])
 
-  const labelForm = useForm<LabelForm>({
-    resolver: zodResolver(labelSchema),
-    defaultValues: { name: "", color: "#6366f1" },
-  })
+  const assigneeMembers = activeTeamId
+    ? orgMembers.filter((m) => teamUserIds.has(m.userId))
+    : orgMembers.filter((m) => m.role === "owner" || m.role === "admin")
 
-  const currentMember = members.find((m) => m.userId === session?.user?.id)
+  const membersLoading = activeTeamId ? orgMembersLoading || teamLoading : orgMembersLoading
+
+  const currentMember = orgMembers.find((m) => m.userId === session?.user?.id)
   const canEditAll =
     currentMember?.role === "admin" || currentMember?.role === "owner"
 
@@ -202,7 +199,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   const [filterPriority, setFilterPriority] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string | null>(null)
   const [filterAssignee, setFilterAssignee] = useState<string | null>(null)
-  const [filterLabel, setFilterLabel] = useState<string | null>(null)
 
   const filteredTasks = visibleTasks.filter((t) => {
     if (searchQuery) {
@@ -221,8 +217,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       !t.assignees.some((a) => a.member.id === filterAssignee)
     )
       return false
-    if (filterLabel && !t.labels.some((l) => l.label.id === filterLabel))
-      return false
     return true
   })
 
@@ -230,8 +224,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
     searchQuery ||
     filterPriority ||
     filterStatus ||
-    filterAssignee ||
-    filterLabel
+    filterAssignee
 
   // Client-side pagination of filtered results
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE))
@@ -245,7 +238,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: deps trigger reset, not used inside
   useEffect(() => {
     setPage(0)
-  }, [searchQuery, filterPriority, filterStatus, filterAssignee, filterLabel])
+  }, [searchQuery, filterPriority, filterStatus, filterAssignee])
 
   // Create/edit mutation
   const createMutation = api.task.create.useMutation({
@@ -272,7 +265,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       status: "todo",
       priority: "medium",
       assigneeIds: [],
-      labelIds: [],
       dueDate: "",
     },
   })
@@ -292,7 +284,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
         status: task.status as TaskForm["status"],
         priority: task.priority as TaskForm["priority"],
         assigneeIds: task.assignees.map((a) => a.member.id),
-        labelIds: task.labels.map((l) => l.label.id),
         dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
       })
       setCreateOpen(true)
@@ -310,14 +301,13 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
         status: data.status,
         priority: data.priority,
         assigneeIds: data.assigneeIds?.length ? data.assigneeIds : undefined,
-        labelIds: data.labelIds ?? [],
         dueDate: data.dueDate || null,
       }
 
       if (editTask) {
         updateMutation.mutate({ id: editTask.id, ...input })
       } else {
-        createMutation.mutate({ ...input, organizationId: organization.id })
+        createMutation.mutate({ ...input, organizationId: organization.id, teamId: activeTeamId ?? undefined })
       }
       setCreateOpen(false)
     },
@@ -386,7 +376,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={openCreate}>
+          <Button onClick={openCreate}>
             <Plus className="size-3.5" />
             Add task
           </Button>
@@ -432,26 +422,12 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
         >
           <option value="">All assignees</option>
-          {members.map((m) => (
+          {assigneeMembers.map((m) => (
             <option key={m.id} value={m.id}>
               {m.user.name}
             </option>
           ))}
         </select>
-        {availableLabels.length > 0 && (
-          <select
-            value={filterLabel ?? ""}
-            onChange={(e) => setFilterLabel(e.target.value || null)}
-            className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
-          >
-            <option value="">All labels</option>
-            {availableLabels.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        )}
         {hasActiveFilters && (
           <button
             onClick={() => {
@@ -459,7 +435,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
               setFilterPriority(null)
               setFilterStatus(null)
               setFilterAssignee(null)
-              setFilterLabel(null)
             }}
             className="h-8 rounded-none border border-border px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
@@ -584,7 +559,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                       <MultiSelectValue placeholder="Select assignees" />
                     </MultiSelectTrigger>
                     <MultiSelectContent>
-                      {members.map((m) => (
+                      {assigneeMembers.map((m) => (
                         <MultiSelectItem
                           key={m.id}
                           value={m.id}
@@ -598,97 +573,10 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                 )}
               />
             </Field>
-
-            <Field>
-              <FieldLabel>Labels</FieldLabel>
-              {availableLabels.length > 0 ? (
-                <Controller
-                  name="labelIds"
-                  control={form.control}
-                  render={({ field }) => (
-                    <MultiSelect
-                      values={field.value ?? []}
-                      onValuesChange={field.onChange}
-                    >
-                      <MultiSelectTrigger className="w-full rounded-none">
-                        <MultiSelectValue placeholder="Select labels" />
-                      </MultiSelectTrigger>
-                      <MultiSelectContent>
-                        {availableLabels.map((l) => (
-                          <MultiSelectItem
-                            key={l.id}
-                            value={l.id}
-                            badgeLabel={l.name}
-                          >
-                            {l.name}
-                          </MultiSelectItem>
-                        ))}
-                      </MultiSelectContent>
-                    </MultiSelect>
-                  )}
-                />
-              ) : (
-                <p className="text-xs text-muted-foreground">No labels yet.</p>
-              )}
-              {canEditAll && (
-                <div className="mt-2">
-                  {labelCreateOpen ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="Label name"
-                        {...labelForm.register("name")}
-                        className="h-7 flex-1 rounded-none text-xs"
-                      />
-                      <Input
-                        type="color"
-                        {...labelForm.register("color")}
-                        className="h-7 w-8 cursor-pointer rounded-none border border-border bg-transparent p-0.5"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={labelForm.handleSubmit((data) => {
-                          if (organization) {
-                            createLabelMutation.mutate(
-                              {
-                                name: data.name.trim(),
-                                color: data.color,
-                                organizationId: organization.id,
-                              },
-                              {
-                                onSuccess: () => {
-                                  labelForm.reset()
-                                  setLabelCreateOpen(false)
-                                },
-                              },
-                            )
-                          }
-                        })}
-                        disabled={createLabelMutation.isPending}
-                      >
-                        Add
-                      </Button>
-                      <button
-                        onClick={() => { setLabelCreateOpen(false); labelForm.reset() }}
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setLabelCreateOpen(true)}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      + Create label
-                    </button>
-                  )}
-                </div>
-              )}
-            </Field>
           </div>
 
           <DialogFooter>
-            {editTask && (
+            {editTask && (canEditAll || editTask.createdBy.id === session?.user?.id) && (
               <Button
                 variant="destructive"
                 onClick={() => setConfirmDelete(editTask)}
@@ -787,25 +675,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                 </div>
               </div>
             )}
-            {viewTask && viewTask.labels.length > 0 && (
-              <div>
-                <span className="text-xs text-muted-foreground">Labels</span>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {viewTask.labels.map((l) => (
-                    <span
-                      key={l.label.id}
-                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
-                      style={{
-                        backgroundColor: l.label.color + "20",
-                        color: l.label.color,
-                      }}
-                    >
-                      {l.label.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
             {/* Comments */}
             <div className="border-t border-border pt-3">
               <h4 className="mb-2 text-xs font-medium text-foreground">
@@ -860,7 +729,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                   className="flex min-h-0 flex-1 resize-none"
                 />
                 <Button
-                  size="sm"
                   onClick={commentForm.handleSubmit((data) => {
                     if (viewTask) {
                       createCommentMutation.mutate({
@@ -877,14 +745,15 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => viewTask && setConfirmDelete(viewTask)}
-            >
-              <Trash className="size-3.5" />
-              Delete
-            </Button>
+            {viewTask && (canEditAll || viewTask.createdBy.id === session?.user?.id) && (
+              <Button
+                variant="destructive"
+                onClick={() => setConfirmDelete(viewTask)}
+              >
+                <Trash className="size-3.5" />
+                Delete
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setViewTask(null)}>
               Close
             </Button>
@@ -930,7 +799,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Labels</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Due</TableHead>
               <TableHead>Status</TableHead>
@@ -942,7 +810,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
             {filteredTasks.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={6}
                   className="py-16 text-center text-muted-foreground"
                 >
                   {hasActiveFilters
@@ -954,13 +822,12 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
               </TableRow>
             ) : (
               paginatedTasks.map((task) => {
-                const canEdit =
-                  mode === "all"
-                    ? canEditAll
-                    : canEditAll || task.createdById === session?.user?.id
                 const isAssignee = task.assignees.some(
                   (a) => a.memberId === currentMember?.id,
                 )
+                const canEdit =
+                  canEditAll ||
+                  task.createdById === session?.user?.id
                 const canChangeStatus = canEditAll || isAssignee
 
                 return (
@@ -971,31 +838,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                       >
                         {task.title}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      {task.labels.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {task.labels.slice(0, 3).map((l) => (
-                            <span
-                              key={l.label.id}
-                              className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-                              style={{
-                                backgroundColor: l.label.color + "20",
-                                color: l.label.color,
-                              }}
-                            >
-                              {l.label.name}
-                            </span>
-                          ))}
-                          {task.labels.length > 3 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              +{task.labels.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
                     </TableCell>
                     <TableCell>
                       <span
@@ -1123,7 +965,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
-              size="sm"
               disabled={safePage === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
             >
@@ -1140,7 +981,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                 <Button
                   key={actualPage}
                   variant={actualPage === safePage ? "default" : "outline"}
-                  size="sm"
                   onClick={() => setPage(actualPage)}
                   className="min-w-7"
                 >
@@ -1150,7 +990,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
             })}
             <Button
               variant="outline"
-              size="sm"
               disabled={safePage >= totalPages - 1}
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             >

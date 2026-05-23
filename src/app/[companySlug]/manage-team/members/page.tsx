@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { UserPlus } from "@phosphor-icons/react"
+import { useState } from "react"
+import { UserMinus, UserPlus } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
@@ -18,15 +18,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Field, FieldLabel } from "@/components/ui/field"
+import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-
-type OrgMember = {
-  id: string
-  userId: string
-  role: string
-  user: { id: string; name: string; email: string; image: string | null | undefined }
-}
 
 export default function TeamMembersPage() {
   const { organization } = useOrganization()
@@ -38,42 +31,65 @@ export default function TeamMembersPage() {
     { enabled: !!organization && !!activeTeamId },
   )
   const team = data?.team
+  const isLeader = team?.leader?.user?.id === session?.user?.id
 
-  const [orgMembers, setOrgMembers] = useState<OrgMember[]>([])
-  const [addMemberOpen, setAddMemberOpen] = useState(false)
-  const [addMemberEmail, setAddMemberEmail] = useState("")
+  const [addOpen, setAddOpen] = useState(false)
+  const [email, setEmail] = useState("")
   const [adding, setAdding] = useState(false)
-
-  const loadOrgMembers = useCallback(async () => {
-    if (!organization) return
-    const res = await authClient.organization.listMembers({
-      query: { organizationSlug: organization.slug },
-    })
-    setOrgMembers((res.data?.members ?? []) as OrgMember[])
-  }, [organization])
-
-  useEffect(() => {
-    if (organization) loadOrgMembers()
-  }, [organization, loadOrgMembers])
-
-  const matchedMember = addMemberEmail
-    ? orgMembers.find((m) => m.user.email.toLowerCase() === addMemberEmail.toLowerCase())
-    : null
-
-  const alreadyInTeam = matchedMember && team
-    ? team.members.some((tm) => tm.userId === matchedMember.userId)
-    : false
+  const [error, setError] = useState("")
 
   const handleAddMember = async () => {
-    if (!matchedMember || alreadyInTeam || !activeTeamId) return
+    if (!activeTeamId || !email.trim() || !organization) return
     setAdding(true)
+    setError("")
+
+    const memberRes = await authClient.organization.listMembers({
+      query: { organizationSlug: organization.slug },
+    })
+    const matched = (memberRes.data?.members ?? []).find(
+      (m: { user: { email: string } }) => m.user.email.toLowerCase() === email.trim().toLowerCase(),
+    )
+    if (!matched) {
+      setError("No member found with this email in the organization")
+      setAdding(false)
+      return
+    }
+
     try {
-      await authClient.organization.addTeamMember({ teamId: activeTeamId, userId: matchedMember.userId })
-      setAddMemberOpen(false)
-      setAddMemberEmail("")
-      refetch()
-    } catch { /* silent */ }
-    finally { setAdding(false) }
+      const res = await authClient.organization.addTeamMember({ teamId: activeTeamId, userId: matched.userId })
+      if (res.error) {
+        setError(res.error.message ?? "Failed to add member")
+      } else {
+        setAddOpen(false)
+        setEmail("")
+        refetch()
+      }
+    } catch {
+      setError("Something went wrong")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const [removeConfirm, setRemoveConfirm] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!activeTeamId) return
+    setRemoving(true)
+    try {
+      const res = await authClient.organization.removeTeamMember({ teamId: activeTeamId, userId })
+      if (res.error) {
+        setError(res.error.message ?? "Failed to remove member")
+      } else {
+        setRemoveConfirm(null)
+        refetch()
+      }
+    } catch {
+      setError("Something went wrong")
+    } finally {
+      setRemoving(false)
+    }
   }
 
   if (isLoading || !organization) {
@@ -91,73 +107,86 @@ export default function TeamMembersPage() {
           <h1 className="text-lg font-semibold text-foreground">Members</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{team.members.length} member{team.members.length !== 1 ? "s" : ""}</p>
         </div>
-        <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <UserPlus className="size-3.5 mr-1" />
-                Add member
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add member to {team.name}</DialogTitle>
-                <DialogDescription>Enter org member email to add them to this team.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Field>
-                  <FieldLabel>Email</FieldLabel>
-                  <Input
-                    placeholder="member@company.com"
-                    value={addMemberEmail}
-                    onChange={(e) => setAddMemberEmail(e.target.value)}
-                  />
-                </Field>
-                {matchedMember && (
-                  <div className="flex items-center gap-3 rounded-sm border border-border p-3">
-                    <Avatar size="sm">
-                      {matchedMember.user.image ? <AvatarImage src={matchedMember.user.image} alt={matchedMember.user.name} /> : null}
-                      <AvatarFallback>{matchedMember.user.name?.charAt(0)?.toUpperCase() ?? "?"}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-xs font-medium text-foreground">{matchedMember.user.name}</p>
-                      <p className="text-xs text-muted-foreground">{matchedMember.user.email}</p>
-                    </div>
-                    {alreadyInTeam && (
-                      <p className="ml-auto text-xs text-amber-500">Already in team</p>
-                    )}
-                  </div>
-                )}
-                {addMemberEmail && !matchedMember && (
-                  <p className="text-xs text-muted-foreground">No org member found with this email.</p>
-                )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => { setAddMemberOpen(false); setAddMemberEmail("") }}>Cancel</Button>
-                <Button onClick={handleAddMember} disabled={!matchedMember || alreadyInTeam || adding}>
-                  {adding ? "Adding..." : "Add"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-        <div className="space-y-1">
-          {team.members.map((tm) => (
-            <div key={tm.id} className="flex items-center gap-3 border border-border px-4 py-3">
-              <Avatar className="size-8">
-                <AvatarImage src={tm.user.image ?? undefined} />
-                <AvatarFallback className="text-xs">{tm.user.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">{tm.user.name}</span>
-                  {team.leader?.user?.id === tm.user.id && <Badge variant="outline" className="text-[9px]">Leader</Badge>}
-                  {tm.role === "leader" && team.leader?.user?.id !== tm.user.id && <Badge variant="secondary" className="text-[9px]">Co-leader</Badge>}
-                </div>
-                <p className="text-xs text-muted-foreground truncate">{tm.user.email}</p>
-              </div>
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <UserPlus className="size-3.5 mr-1" />
+              Add member
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add member to {team.name}</DialogTitle>
+              <DialogDescription>Enter an email address to add to this team.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <Input
+                  placeholder="member@company.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError("") }}
+                />
+              </Field>
+              {error && <FieldError>{error}</FieldError>}
             </div>
-          ))}
-        </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setAddOpen(false); setEmail(""); setError("") }}>Cancel</Button>
+              <Button onClick={handleAddMember} disabled={adding || !email.trim()}>
+                {adding ? "Adding..." : "Add"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="space-y-1">
+        {team.members.map((tm) => (
+          <div key={tm.id} className="flex items-center gap-3 border border-border px-4 py-3">
+            <Avatar className="size-8">
+              <AvatarImage src={tm.user.image ?? undefined} />
+              <AvatarFallback className="text-xs">{tm.user.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">{tm.user.name}</span>
+                {team.leader?.user?.id === tm.user.id && <Badge variant="outline" className="text-[9px]">Leader</Badge>}
+              </div>
+              <p className="text-xs text-muted-foreground truncate">{tm.user.email}</p>
+            </div>
+            {isLeader && team.leader?.user?.id !== tm.user.id && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground hover:text-destructive"
+                onClick={() => setRemoveConfirm(tm.user.id)}
+              >
+                <UserMinus className="size-3.5" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={!!removeConfirm} onOpenChange={(open) => !open && setRemoveConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove this member from {team.name}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveConfirm(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={removing}
+              onClick={() => removeConfirm && handleRemoveMember(removeConfirm)}
+            >
+              {removing ? "Removing..." : "Remove"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

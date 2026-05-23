@@ -424,6 +424,21 @@ export const knowledgeBaseRouter = router({
         data: { content: input.content, kbItemId: input.kbItemId, authorId: ctx.session.user.id },
         include: { author: { select: { id: true, name: true, image: true } } },
       })
+
+      // Notify KB item author if commenter is not them
+      if (item.authorId !== ctx.session.user.id) {
+        await prisma.notification.create({
+          data: {
+            type: "kb_comment",
+            title: `${comment.author.name} commented on "${item.title}"`,
+            body: input.content.length > 120 ? `${input.content.slice(0, 120)}…` : input.content,
+            userId: item.authorId,
+            organizationId: item.organizationId,
+            kbItemId: item.id,
+          },
+        })
+      }
+
       return { comment }
     }),
 
@@ -475,6 +490,7 @@ export const knowledgeBaseRouter = router({
         where: { kbItemId: input.kbItemId },
         include: { editor: { select: { id: true, name: true, image: true } } },
         orderBy: { editedAt: "desc" },
+        take: 5,
       })
       return { history }
     }),

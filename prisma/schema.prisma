@@ -126,6 +126,8 @@ model Task {
   updatedAt      DateTime       @updatedAt
   organizationId String
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?          @relation(fields: [teamId], references: [id])
   assignees      TaskAssignee[]
   createdById    String
   createdBy      User           @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
@@ -134,6 +136,7 @@ model Task {
   notifications  Notification[]
 
   @@index([organizationId])
+  @@index([teamId])
   @@map("task")
 }
 
@@ -270,9 +273,12 @@ model Notification {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   taskId         String?
   task           Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  kbItemId       String?
+  kbItem         KbItem?      @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
   @@index([organizationId])
+  @@index([kbItemId])
   @@map("notification")
 }
 
@@ -358,6 +364,7 @@ model Team {
   leader         Member?       @relation("TeamLeader", fields: [leaderId], references: [id])
   members        TeamMember[]
   invitations    Invitation[]
+  tasks          Task[]
   objectives     Objective[]
   kbItems        KbItem[]
   kbCategories   KbCategory[]
@@ -429,24 +436,25 @@ model KbSubcategory {
 }
 
 model KbItem {
-  id             String          @id @default(cuid())
-  title          String
-  description    String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
-  subcategoryId  String
-  subcategory    KbSubcategory   @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
-  organizationId String
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  authorId       String
-  author         User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  teamId         String?
-  team           Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  attachments    KbAttachment[]
-  links          KbLink[]
-  kbComments     KbComment[]
+  id              String          @id @default(cuid())
+  title           String
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+  subcategoryId   String
+  subcategory     KbSubcategory   @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  teamId          String?
+  team            Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  attachments     KbAttachment[]
+  links           KbLink[]
+  kbComments      KbComment[]
   kbEditHistories KbEditHistory[]
+  notifications   Notification[]
 
   @@index([subcategoryId])
   @@index([organizationId])

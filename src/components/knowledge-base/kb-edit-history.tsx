@@ -31,7 +31,7 @@ export function KbEditHistorySection({ kbItemId }: { kbItemId: string }) {
 
   return (
     <div>
-      <h3 className="mb-3 text-sm font-semibold">Edit History ({history.length})</h3>
+      <h3 className="mb-3 text-sm font-semibold">Edit History (last 5)</h3>
       <div className="space-y-3">
         {history.map((entry) => {
           let changes: Record<string, { old: unknown; new: unknown }> = {}

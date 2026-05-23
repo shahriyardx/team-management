@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useParams, usePathname } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import { Bell } from "@phosphor-icons/react"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,11 @@ import { api } from "@/lib/trpc/client"
 
 function NotificationBell() {
   const { organization } = useOrganization()
+  const router = useRouter()
+  const pathname = usePathname()
+  const params = useParams()
+  const slug = params.companySlug as string | undefined
+
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -61,7 +66,18 @@ function NotificationBell() {
               notifications.map((n) => (
                 <button
                   key={n.id}
-                  onClick={() => markReadMutation.mutate({ id: n.id })}
+                  onClick={() => {
+                    markReadMutation.mutate({ id: n.id })
+                    setOpen(false)
+                    if (n.kbItem && slug) {
+                      const base = n.kbItem.teamId
+                        ? pathname.includes("/manage-team/")
+                          ? `/${slug}/manage-team/knowledge-base`
+                          : `/${slug}/team/knowledge-base`
+                        : `/${slug}/knowledge-base`
+                      router.push(`${base}/${n.kbItem.id}`)
+                    }
+                  }}
                   className="w-full border-b border-border px-3 py-2 text-left transition-colors hover:bg-accent"
                 >
                   <p className="text-xs font-medium text-foreground">{n.title}</p>
@@ -129,7 +145,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           <SidebarTrigger />
           <div className="ml-auto flex items-center gap-2">
             <NotificationBell />
-            <span className="text-xs text-muted-foreground">{session?.user?.email}</span>
           </div>
         </header>
         {children}

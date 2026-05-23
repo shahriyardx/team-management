@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import {
@@ -19,15 +19,17 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { CaretRightIcon, BookBookmark, Gear, House, ListChecks, Target, Users, UsersThree } from "@phosphor-icons/react"
+import { useOrganization } from "@/lib/organization-context"
+import { api } from "@/lib/trpc/client"
 
 interface NavItem {
   title: string
   url?: string
   icon: React.ComponentType<{ className?: string }>
-  items?: { title: string; url: string }[]
+  items?: { title: string; url: string; badge?: number }[]
 }
 
-function ownerItems(slug: string): NavItem[] {
+function ownerItems(slug: string, todoCount: number): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}`, icon: House },
     {
@@ -36,6 +38,14 @@ function ownerItems(slug: string): NavItem[] {
         { title: "Org OKRs", url: `/${slug}/okr` },
         { title: "Team OKRs", url: `/${slug}/okr/team` },
         { title: "Cycles", url: `/${slug}/okr/cycles` },
+      ],
+    },
+    {
+      title: "Tasks", icon: ListChecks,
+      items: [
+        { title: "My tasks", url: `/${slug}/tasks`, badge: todoCount },
+        { title: "All Tasks", url: `/${slug}/tasks/all` },
+        { title: "Assigned", url: `/${slug}/tasks/assigned` },
       ],
     },
     {
@@ -58,7 +68,7 @@ function ownerItems(slug: string): NavItem[] {
   ]
 }
 
-function leaderItems(slug: string): NavItem[] {
+function leaderItems(slug: string, todoCount: number): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}/manage-team`, icon: House },
     {
@@ -80,7 +90,7 @@ function leaderItems(slug: string): NavItem[] {
     {
       title: "Tasks", icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/manage-team/tasks` },
+        { title: "My tasks", url: `/${slug}/manage-team/tasks`, badge: todoCount },
         { title: "All Tasks", url: `/${slug}/manage-team/tasks/all` },
         { title: "Assigned", url: `/${slug}/manage-team/tasks/assigned` },
       ],
@@ -89,7 +99,7 @@ function leaderItems(slug: string): NavItem[] {
   ]
 }
 
-function memberItems(slug: string): NavItem[] {
+function memberItems(slug: string, todoCount: number): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}/team`, icon: House },
     {
@@ -109,7 +119,7 @@ function memberItems(slug: string): NavItem[] {
     {
       title: "Tasks", icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/team/tasks` },
+        { title: "My tasks", url: `/${slug}/team/tasks`, badge: todoCount },
         { title: "Assigned", url: `/${slug}/team/tasks/assigned` },
       ],
     },
@@ -122,16 +132,26 @@ export function NavMain() {
   const pathname = usePathname()
   const params = useParams()
   const slug = params.companySlug as string | undefined
+  const { session, organization } = useOrganization()
+
+  const activeTeamId = session?.session?.activeTeamId
+
+  const { data: todoCountData } = api.task.getTodoCount.useQuery(
+    { organizationId: organization?.id ?? "", teamId: activeTeamId ?? null },
+    { enabled: !!organization },
+  )
+  const todoCount = todoCountData?.count ?? 0
 
   let branch: "owner" | "leader" | "member" = "owner"
   if (slug && pathname.startsWith(`/${slug}/manage-team`)) branch = "leader"
   else if (slug && (pathname === `/${slug}/team` || pathname.startsWith(`/${slug}/team/`))) branch = "member"
 
-  const navItems = slug
-    ? branch === "leader" ? leaderItems(slug)
-      : branch === "member" ? memberItems(slug)
-      : ownerItems(slug)
-    : []
+  const navItems = useMemo(() => {
+    if (!slug) return []
+    if (branch === "leader") return leaderItems(slug, todoCount)
+    if (branch === "member") return memberItems(slug, todoCount)
+    return ownerItems(slug, todoCount)
+  }, [slug, branch, todoCount])
 
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
 
@@ -192,7 +212,14 @@ export function NavMain() {
                       {item.items!.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                            <Link href={subItem.url}>{subItem.title}</Link>
+                            <Link href={subItem.url}>
+                              {subItem.title}
+                              {subItem.badge ? (
+                                <span className="ml-auto flex size-4 items-center justify-center rounded-full bg-foreground text-[9px] font-medium text-background">
+                                  {subItem.badge > 9 ? "9+" : subItem.badge}
+                                </span>
+                              ) : null}
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
