@@ -284,7 +284,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-medium">{team.name} Members</h2>
               <Badge variant="outline" className="text-[10px]">
-                {objectives.length} objective{objectives.length !== 1 ? "s" : ""}
+                {objectives.length} objective
+                {objectives.length !== 1 ? "s" : ""}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground sm:hidden">
@@ -316,7 +317,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
             <Select value={cycleId} onValueChange={setSelectedCycleId}>
               <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
                 <span className="truncate">
-                  {cycles.find((c) => c.id === cycleId)?.title ?? "Select cycle"}
+                  {cycles.find((c) => c.id === cycleId)?.title ??
+                    "Select cycle"}
                 </span>
               </SelectTrigger>
               <SelectContent position="popper">
@@ -454,7 +456,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                       </span>
                     </div>
                   </summary>
-                  <div className="border-t border-border px-4 py-3">
+                  <div className="border-t border-border">
                     {memberObjs.length === 0 ? (
                       <p className="text-xs text-muted-foreground text-center py-2">
                         No objectives assigned yet.

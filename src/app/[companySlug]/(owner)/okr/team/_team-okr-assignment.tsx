@@ -77,7 +77,10 @@ type OkrCycleItem = {
 type TeamWithMembers = {
   id: string
   name: string
-  leader: { id: string; user: { id: string; name: string; email: string; image?: string | null } } | null
+  leader: {
+    id: string
+    user: { id: string; name: string; email: string; image?: string | null }
+  } | null
   members: Array<{
     id: string
     userId: string
@@ -198,16 +201,6 @@ export default function TeamOkrAssignment() {
     },
   })
 
-  const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
-  const toggleTeam = useCallback((teamId: string) => {
-    setCollapsedTeams((prev) => {
-      const next = new Set(prev)
-      if (next.has(teamId)) next.delete(teamId)
-      else next.add(teamId)
-      return next
-    })
-  }, [])
-
   const handleCreateObjective = objectiveForm.handleSubmit((data) => {
     if (!organization || !selectedCycleId) return
     createObjectiveMutation.mutate({
@@ -238,7 +231,11 @@ export default function TeamOkrAssignment() {
   const teamSections = useMemo(() => {
     const map = new Map<string, TeamSection>()
     for (const t of teams) {
-      map.set(t.id, { team: t, teamObjectives: [], memberObjectives: new Map() })
+      map.set(t.id, {
+        team: t,
+        teamObjectives: [],
+        memberObjectives: new Map(),
+      })
     }
     for (const obj of objectives) {
       if (!obj.teamId) continue
@@ -270,61 +267,61 @@ export default function TeamOkrAssignment() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="hidden sm:flex items-center gap-2">
             <Select
-                value={selectedYear}
-                onValueChange={(v) => {
-                  setSelectedYear(v)
-                  setSelectedCycleId(null)
-                }}
-              >
-                <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
-                  {selectedYear === "all" ? "All years" : selectedYear}
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="all">All years</SelectItem>
-                  {years.map((yr) => (
-                    <SelectItem key={yr} value={yr}>
-                      {yr}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedCycleId ?? ""}
-                onValueChange={setSelectedCycleId}
-              >
-                <SelectTrigger className="h-8 w-auto min-w-32 rounded-none text-xs">
-                  <span className="truncate">
-                    {cycles.find((c) => c.id === selectedCycleId)?.title ??
-                      "Select cycle"}
-                  </span>
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  {(selectedYear === "all"
-                    ? cycles
-                    : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
-                  ).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{c.title}</span>
-                        <Badge variant="outline" className="text-[10px]">
-                          {c.status}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              value={selectedYear}
+              onValueChange={(v) => {
+                setSelectedYear(v)
+                setSelectedCycleId(null)
+              }}
+            >
+              <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
+                {selectedYear === "all" ? "All years" : selectedYear}
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectItem value="all">All years</SelectItem>
+                {years.map((yr) => (
+                  <SelectItem key={yr} value={yr}>
+                    {yr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={selectedCycleId ?? ""}
+              onValueChange={setSelectedCycleId}
+            >
+              <SelectTrigger className="h-8 w-auto min-w-32 rounded-none text-xs">
+                <span className="truncate">
+                  {cycles.find((c) => c.id === selectedCycleId)?.title ??
+                    "Select cycle"}
+                </span>
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {(selectedYear === "all"
+                  ? cycles
+                  : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+                ).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{c.title}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {c.status}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button
-          onClick={() => {
-            objectiveForm.reset()
-            setObjFormOpen(true)
-          }}
-          disabled={!selectedCycleId}
-        >
-          <Plus className="mr-1 size-3.5" />
-          Add Objective
-        </Button>
+            onClick={() => {
+              objectiveForm.reset()
+              setObjFormOpen(true)
+            }}
+            disabled={!selectedCycleId}
+          >
+            <Plus className="mr-1 size-3.5" />
+            Add Objective
+          </Button>
         </div>
       </div>
 
@@ -346,94 +343,129 @@ export default function TeamOkrAssignment() {
       ) : (
         <div className="space-y-6">
           {teamSections.map(({ team, teamObjectives, memberObjectives }) => {
-            const collapsed = collapsedTeams.has(team.id)
-            const totalObjs = teamObjectives.length +
-              Array.from(memberObjectives.values()).reduce((s, o) => s + o.length, 0)
+            const allMemberObjs = Array.from(memberObjectives.values()).flat()
+            const totalObjs = teamObjectives.length + allMemberObjs.length
+            const teamAvgProgress =
+              allMemberObjs.length > 0
+                ? Math.round(
+                    allMemberObjs.reduce((s, o) => s + o.progress, 0) /
+                      allMemberObjs.length,
+                  )
+                : 0
             return (
-            <div key={team.id} className="border border-border">
-              <button
-                onClick={() => toggleTeam(team.id)}
-                className="flex w-full items-center gap-2 border-b border-border bg-muted/30 px-4 py-2 cursor-pointer text-left"
-              >
-                {collapsed
-                  ? <CaretRight className="size-3 text-muted-foreground shrink-0" />
-                  : <CaretDown className="size-3 text-muted-foreground shrink-0" />}
-                <span className="text-sm font-medium">{team.name}</span>
-                <span className="text-[10px] text-muted-foreground">
-                  {totalObjs} objective
-                  {totalObjs !== 1 ? "s" : ""}
-                </span>
-              </button>
-              {!collapsed && (
-                <div className="divide-y divide-border">
+              <details key={team.id} className="border border-border">
+                <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-sm font-medium">{team.name}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {totalObjs} objective{totalObjs !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 sm:w-auto">
+                    <div className="flex-1 sm:w-32">
+                      <ProgressBar
+                        value={teamAvgProgress}
+                        size="sm"
+                        showLabel={false}
+                      />
+                    </div>
+                    <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
+                      {teamAvgProgress}%
+                    </span>
+                  </div>
+                </summary>
+                <div className="border-t border-border">
                   {/* Member collapsible cards */}
-                  {Array.from(memberObjectives.entries()).map(([memberId, memberObjs]) => {
-                    const member = team.members.find(
-                      (m) => memberByUserId.get(m.userId) === memberId
-                    )
-                    if (!member) return null
-                    const avgProgress = memberObjs.length > 0
-                      ? Math.round(memberObjs.reduce((s, o) => s + o.progress, 0) / memberObjs.length)
-                      : 0
-                    return (
-                      <details key={memberId} className="border border-border">
-                        <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="size-7">
-                              <AvatarImage src={member.user.image ?? undefined} />
-                              <AvatarFallback className="text-[10px]">
-                                {member.user.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <span className="text-sm font-medium">{member.user.name}</span>
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                {memberObjs.length} objective
-                                {memberObjs.length !== 1 ? "s" : ""}
-                              </span>
-                              {member.role === "leader" && (
-                                <Badge variant="outline" className="ml-2 text-[9px]">
-                                  Leader
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 sm:w-auto">
-                            <div className="flex-1 sm:w-32">
-                              <ProgressBar value={avgProgress} size="sm" showLabel={false} />
-                            </div>
-                            <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
-                              {avgProgress}%
-                            </span>
-                          </div>
-                        </summary>
-                        <div className="border-t border-border px-4 py-3">
-                          {memberObjs.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                              No objectives assigned yet.
-                            </p>
-                          ) : (
-                            <div className="space-y-3">
-                              {memberObjs.map((obj) => (
-                                <ObjectiveCardWithKRs
-                                  key={obj.id}
-                                  objective={obj as any}
-                                  onAddKr={openKrForm}
-                                  onDeleteObjective={setDeleteObj}
-                                  onEditObjective={(id, title) =>
-                                    updateObjectiveMutation.mutate({ id, title })
-                                  }
+                  {Array.from(memberObjectives.entries()).map(
+                    ([memberId, memberObjs]) => {
+                      const member = team.members.find(
+                        (m) => memberByUserId.get(m.userId) === memberId,
+                      )
+                      if (!member) return null
+                      const avgProgress =
+                        memberObjs.length > 0
+                          ? Math.round(
+                              memberObjs.reduce((s, o) => s + o.progress, 0) /
+                                memberObjs.length,
+                            )
+                          : 0
+                      return (
+                        <details
+                          key={memberId}
+                          className="border border-border"
+                        >
+                          <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="size-7">
+                                <AvatarImage
+                                  src={member.user.image ?? undefined}
                                 />
-                              ))}
+                                <AvatarFallback className="text-[10px]">
+                                  {member.user.name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <span className="text-sm font-medium">
+                                  {member.user.name}
+                                </span>
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  {memberObjs.length} objective
+                                  {memberObjs.length !== 1 ? "s" : ""}
+                                </span>
+                                {member.role === "leader" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-2 text-[9px]"
+                                  >
+                                    Leader
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </details>
-                    )
-                  })}
+                            <div className="flex items-center gap-3 sm:w-auto">
+                              <div className="flex-1 sm:w-32">
+                                <ProgressBar
+                                  value={avgProgress}
+                                  size="sm"
+                                  showLabel={false}
+                                />
+                              </div>
+                              <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
+                                {avgProgress}%
+                              </span>
+                            </div>
+                          </summary>
+                          <div className="border-t border-border px-4 py-3">
+                            {memberObjs.length === 0 ? (
+                              <p className="text-xs text-muted-foreground text-center py-2">
+                                No objectives assigned yet.
+                              </p>
+                            ) : (
+                              <div className="space-y-3">
+                                {memberObjs.map((obj) => (
+                                  <ObjectiveCardWithKRs
+                                    key={obj.id}
+                                    objective={obj as any}
+                                    onAddKr={openKrForm}
+                                    onDeleteObjective={setDeleteObj}
+                                    onEditObjective={(id, title) =>
+                                      updateObjectiveMutation.mutate({
+                                        id,
+                                        title,
+                                      })
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      )
+                    },
+                  )}
                   {/* Team-level objectives */}
                   {teamObjectives.map((obj) => (
-                    <div key={obj.id} className="p-4">
+                    <div key={obj.id}>
                       <ObjectiveCardWithKRs
                         objective={obj as any}
                         onAddKr={openKrForm}
@@ -450,8 +482,7 @@ export default function TeamOkrAssignment() {
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              </details>
             )
           })}
         </div>
