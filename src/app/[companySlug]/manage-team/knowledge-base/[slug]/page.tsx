@@ -7,6 +7,7 @@ import { ArrowLeft, Paperclip, Link as LinkIcon, CalendarDots, User, TrashSimple
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MarkdownRenderer } from "@/components/knowledge-base/markdown-renderer"
 import { api } from "@/lib/trpc/client"
 
 export default function KnowledgeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,7 +41,7 @@ export default function KnowledgeDetailPage({ params }: { params: Promise<{ slug
           <div className="flex items-center gap-1.5"><User className="size-3.5" /><span>{item.author.name}</span>{item.author.email && <span className="text-muted-foreground/60">({item.author.email})</span>}</div>
           <div className="flex items-center gap-1.5"><CalendarDots className="size-3.5" />{new Date(item.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
         </div>
-        {item.description && <div className="mb-8"><p className="text-sm leading-relaxed whitespace-pre-wrap">{item.description}</p></div>}
+        {item.description && <div className="mb-8"><MarkdownRenderer content={item.description} /></div>}
         {item.attachments.length > 0 && (
           <div className="mb-8">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-1.5"><Paperclip className="size-4" />Attachments ({item.attachments.length})</h2>

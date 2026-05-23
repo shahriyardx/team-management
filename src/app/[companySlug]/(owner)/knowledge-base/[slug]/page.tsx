@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MarkdownRenderer } from "@/components/knowledge-base/markdown-renderer"
 import { api } from "@/lib/trpc/client"
 
 export default function KnowledgeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -79,7 +80,7 @@ export default function KnowledgeDetailPage({ params }: { params: Promise<{ slug
 
         {item.description && (
           <div className="mb-8">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.description}</p>
+            <MarkdownRenderer content={item.description} />
           </div>
         )}
 
