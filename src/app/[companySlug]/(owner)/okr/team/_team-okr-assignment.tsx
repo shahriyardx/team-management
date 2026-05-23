@@ -376,7 +376,7 @@ export default function TeamOkrAssignment() {
                       ? Math.round(memberObjs.reduce((s, o) => s + o.progress, 0) / memberObjs.length)
                       : 0
                     return (
-                      <details key={memberId} className="border-b border-border last:border-b-0">
+                      <details key={memberId} className="border border-border">
                         <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-3">
                             <Avatar className="size-7">
@@ -391,6 +391,11 @@ export default function TeamOkrAssignment() {
                                 {memberObjs.length} objective
                                 {memberObjs.length !== 1 ? "s" : ""}
                               </span>
+                              {member.role === "leader" && (
+                                <Badge variant="outline" className="ml-2 text-[9px]">
+                                  Leader
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-3 sm:w-auto">
@@ -402,18 +407,26 @@ export default function TeamOkrAssignment() {
                             </span>
                           </div>
                         </summary>
-                        <div className="border-t border-border px-4 py-3 space-y-3">
-                          {memberObjs.map((obj) => (
-                            <ObjectiveCardWithKRs
-                              key={obj.id}
-                              objective={obj as any}
-                              onAddKr={openKrForm}
-                              onDeleteObjective={setDeleteObj}
-                              onEditObjective={(id, title) =>
-                                updateObjectiveMutation.mutate({ id, title })
-                              }
-                            />
-                          ))}
+                        <div className="border-t border-border px-4 py-3">
+                          {memberObjs.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-2">
+                              No objectives assigned yet.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {memberObjs.map((obj) => (
+                                <ObjectiveCardWithKRs
+                                  key={obj.id}
+                                  objective={obj as any}
+                                  onAddKr={openKrForm}
+                                  onDeleteObjective={setDeleteObj}
+                                  onEditObjective={(id, title) =>
+                                    updateObjectiveMutation.mutate({ id, title })
+                                  }
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </details>
                     )
