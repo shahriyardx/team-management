@@ -81,7 +81,8 @@ function leaderItems(slug: string): NavItem[] {
       title: "Tasks", icon: ListChecks,
       items: [
         { title: "My tasks", url: `/${slug}/manage-team/tasks` },
-        { title: "All team tasks", url: `/${slug}/manage-team/tasks/all` },
+        { title: "All Tasks", url: `/${slug}/manage-team/tasks/all` },
+        { title: "Assigned", url: `/${slug}/manage-team/tasks/assigned` },
       ],
     },
     { title: "Members", url: `/${slug}/manage-team/members`, icon: Users },
@@ -109,6 +110,7 @@ function memberItems(slug: string): NavItem[] {
       title: "Tasks", icon: ListChecks,
       items: [
         { title: "My tasks", url: `/${slug}/team/tasks` },
+        { title: "Assigned", url: `/${slug}/team/tasks/assigned` },
       ],
     },
     { title: "Members", url: `/${slug}/team/members`, icon: Users },

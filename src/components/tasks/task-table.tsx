@@ -136,10 +136,11 @@ const commentSchema = z.object({
 
 type CommentForm = z.infer<typeof commentSchema>
 
-export function TaskTable({ mode }: { mode: "mine" | "all" }) {
+export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   const { session, organization } = useOrganization()
 
   const [page, setPage] = useState(0)
+  const [showDone, setShowDone] = useState(false)
   const PAGE_SIZE = 10
 
   const { data, isLoading } = api.task.list.useQuery(
@@ -189,7 +190,8 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
 
   const visibleTasks = currentMember
     ? tasks.filter((t) => {
-        if (t.status === "done") return false
+        if (!showDone && t.status === "done") return false
+        if (mode === "assigned") return t.createdBy.id === currentMember.userId
         if (mode === "all") return true
         return t.assignees.some((a) => a.memberId === currentMember.id)
       })
@@ -377,8 +379,11 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-semibold text-foreground">
-            {mode === "all" ? "All team tasks" : "My tasks"}
+            {mode === "all" ? "All Tasks" : mode === "assigned" ? "Assigned Tasks" : "My tasks"}
           </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {mode === "assigned" ? "Tasks you assigned to others" : mode === "mine" ? "Tasks assigned to you" : "All tasks in the team"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={openCreate}>
@@ -461,6 +466,16 @@ export function TaskTable({ mode }: { mode: "mine" | "all" }) {
             Clear
           </button>
         )}
+        <button
+          onClick={() => setShowDone(!showDone)}
+          className={`h-8 rounded-none border px-2 text-xs transition-colors ${
+            showDone
+              ? "border-ring bg-accent text-foreground"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Show done
+        </button>
       </div>
 
       {/* Create/Edit Dialog */}
