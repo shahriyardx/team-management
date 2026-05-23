@@ -59,6 +59,14 @@ export function KrFormDialog({ open, onOpenChange, mode, defaultValues, onSubmit
 
   const unitVal = form.watch("unit")
   const maxVal = form.watch("maxValue")
+
+  // Auto-set target to 1 for boolean, hide the input
+  useEffect(() => {
+    if (unitVal === "boolean") {
+      form.setValue("targetValue", 1)
+    }
+  }, [unitVal, form])
+
   const handleSubmit = form.handleSubmit(onSubmit)
 
   return (
@@ -78,14 +86,16 @@ export function KrFormDialog({ open, onOpenChange, mode, defaultValues, onSubmit
               <FieldLabel>Description (optional)</FieldLabel>
               <Controller control={form.control} name="description" render={({ field }) => <Textarea {...field} rows={2} />} />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel>Target value</FieldLabel>
-                <Controller control={form.control} name="targetValue" render={({ field }) => (
-                  <Input type="number" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.valueAsNumber)} step="any" />
-                )} />
-                <FieldError>{form.formState.errors.targetValue?.message}</FieldError>
-              </Field>
+            <div className={unitVal === "boolean" ? "grid grid-cols-1 gap-4" : "grid grid-cols-2 gap-4"}>
+              {unitVal !== "boolean" && (
+                <Field>
+                  <FieldLabel>Target value</FieldLabel>
+                  <Controller control={form.control} name="targetValue" render={({ field }) => (
+                    <Input type="number" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.valueAsNumber)} step="any" />
+                  )} />
+                  <FieldError>{form.formState.errors.targetValue?.message}</FieldError>
+                </Field>
+              )}
               <Field>
                 <FieldLabel>Current value</FieldLabel>
                 {unitVal === "boolean" ? (
