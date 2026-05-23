@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies — installed in Docker build
+node_modules
+
+# Build output — generated in Docker build
+.next
+
+# Next.js
+.next
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs — not needed for build
+*.md
+selfhost.md
+
+# CI/CD
+.github
+
+# Linting/config — not needed in runtime
+biome.json
+.editorconfig
+
+# Docker — not part of build context
+Dockerfile
+docker-compose*
+.dockerignore
+
+# Prisma — not needed as source, schema is generated in build
+# (prisma/ is copied explicitly in Dockerfile)
+
+# Misc
+*.tsbuildinfo
+next-env.d.ts
