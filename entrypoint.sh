@@ -3,8 +3,7 @@ set -e
 
 # ── Required environment variables ──────────────────────────
 #
-# If you're missing any of these, see selfhost.md or the
-# project README on GitHub:
+# If you're missing any of these, see the project README on GitHub:
 #   https://github.com/shahriyardx/team-management
 
 missing=""
