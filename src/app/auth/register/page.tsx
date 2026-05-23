@@ -11,7 +11,7 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -105,7 +105,7 @@ export default function RegisterPage() {
       <p className="mb-8 mt-1 text-sm text-muted-foreground">Get started with your team workspace.</p>
 
       <div className="mb-6">
-        <label className="mb-2 block text-xs font-medium text-foreground">
+        <label htmlFor="" className="mb-2 block text-xs font-medium text-foreground">
           Profile photo
         </label>
         <button
@@ -132,54 +132,34 @@ export default function RegisterPage() {
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="you@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="At least 8 characters" {...field} />
-                </FormControl>
-                <PasswordStrength password={watchPassword} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating account..." : "Create account"}
-          </Button>
-        </form>
-      </Form>
+      <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">
+        <Field>
+          <FieldLabel htmlFor="name">Name</FieldLabel>
+          <Input id="name" placeholder="Your name" {...form.register("name")} disabled={loading} />
+          {form.formState.errors.name && (
+            <FieldError errors={[form.formState.errors.name]} />
+          )}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Input id="email" type="email" placeholder="you@example.com" {...form.register("email")} disabled={loading} />
+          {form.formState.errors.email && (
+            <FieldError errors={[form.formState.errors.email]} />
+          )}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <Input id="password" type="password" placeholder="At least 8 characters" {...form.register("password")} disabled={loading} />
+          <PasswordStrength password={watchPassword} />
+          {form.formState.errors.password && (
+            <FieldError errors={[form.formState.errors.password]} />
+          )}
+        </Field>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Creating account..." : "Create account"}
+        </Button>
+      </form>
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
         Already have an account?{" "}

@@ -199,7 +199,7 @@ export default function Home() {
             </p>
           </div>
           <div className="grid gap-12 sm:grid-cols-3">
-            {steps.map((step, i) => (
+            {steps.map((step) => (
               <div key={step.number} className="relative">
                 <span className="text-5xl font-black text-muted-foreground/20">
                   {step.number}

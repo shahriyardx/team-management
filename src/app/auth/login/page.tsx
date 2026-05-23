@@ -8,15 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form"
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -50,7 +43,6 @@ export default function LoginPage() {
         return
       }
 
-      // Auto-redirect if user has orgs
       try {
         const { data: orgs } = await authClient.organization.list()
 
@@ -125,51 +117,41 @@ export default function LoginPage() {
         Sign in to your account to continue.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(handleEmailSignIn)}
-          className="space-y-4"
-        >
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      <form
+        onSubmit={form.handleSubmit(handleEmailSignIn)}
+        className="space-y-4"
+      >
+        <Field>
+          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            {...form.register("email")}
+            disabled={loading}
           />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Enter your password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          {form.formState.errors.email && (
+            <FieldError errors={[form.formState.errors.email]} />
+          )}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            {...form.register("password")}
+            disabled={loading}
           />
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in with email"}
-          </Button>
-        </form>
-      </Form>
+          {form.formState.errors.password && (
+            <FieldError errors={[form.formState.errors.password]} />
+          )}
+        </Field>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Signing in..." : "Sign in with email"}
+        </Button>
+      </form>
 
       <div className="relative my-8">
         <div className="absolute inset-0 flex items-center">
