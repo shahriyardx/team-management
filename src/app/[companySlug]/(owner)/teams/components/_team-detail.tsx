@@ -70,7 +70,7 @@ export function TeamDetail({ teamId }: { teamId: string }) {
     { organizationId: organization?.id ?? "" },
     { enabled: !!organization },
   )
-  const teams = ((teamsData?.teams ?? []) as Team[]).filter((t) => t.name !== organization?.name)
+  const teams = (teamsData?.teams ?? []) as Team[]
   const team = teams.find((t) => t.id === teamId) ?? null
 
   const setLeader = api.team.setLeader.useMutation({

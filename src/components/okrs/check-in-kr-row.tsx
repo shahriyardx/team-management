@@ -12,7 +12,7 @@ import { useOrganization } from "@/lib/organization-context"
 
 const statusCardStyle: Record<string, string> = {
   not_started: "border-l-muted-foreground/20",
-  on_track: "border-l-emerald-500/30 bg-emerald-500/[0.03]",
+  on_track: "border-l-sky-500/30 bg-sky-500/[0.03]",
   at_risk: "border-l-amber-500/30 bg-amber-500/[0.03]",
   behind: "border-l-red-500/30 bg-red-500/[0.03]",
   achieved: "border-l-emerald-500/30 bg-emerald-500/[0.03]",

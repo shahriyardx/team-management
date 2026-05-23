@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CaretDown, CaretRight, Plus } from "@phosphor-icons/react"
+import { Plus } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Select,
   SelectContent,
@@ -74,22 +73,10 @@ type OkrCycleItem = {
   _count: { objectives: number }
 }
 
-type TeamWithMembers = {
+type TeamItem = {
   id: string
   name: string
-  leader: {
-    id: string
-    user: { id: string; name: string; email: string; image?: string | null }
-  } | null
-  members: Array<{
-    id: string
-    userId: string
-    role: string
-    user: { id: string; name: string; email: string; image?: string | null }
-  }>
 }
-
-type TeamMember = TeamWithMembers["members"][number]
 
 export default function TeamOkrAssignment() {
   const { organization } = useOrganization()
@@ -100,24 +87,7 @@ export default function TeamOkrAssignment() {
     { organizationId: organization?.id ?? "" },
     { enabled: !!organization },
   )
-  const teams = (teamsData?.teams ?? []) as TeamWithMembers[]
-
-  // Member ID mapping (userId → memberId)
-  const teamMemberUserIds = useMemo(
-    () => teams.flatMap((t) => t.members.map((m) => m.userId)),
-    [teams],
-  )
-  const { data: memberRecords } = api.member.listByUserIds.useQuery(
-    { userIds: teamMemberUserIds, organizationId: organization?.id ?? "" },
-    { enabled: teamMemberUserIds.length > 0 && !!organization },
-  )
-  const memberByUserId = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const m of memberRecords?.members ?? []) {
-      map.set(m.userId, m.id)
-    }
-    return map
-  }, [memberRecords])
+  const teams = (teamsData?.teams ?? []) as TeamItem[]
 
   // Cycles
   const { data: cyclesData } = api.okrCycle.list.useQuery(
@@ -222,36 +192,23 @@ export default function TeamOkrAssignment() {
     })
   }
 
-  // Group objectives by team, then by member within each team
-  type TeamSection = {
-    team: { id: string; name: string; members: TeamMember[] }
-    teamObjectives: OkrObjective[]
-    memberObjectives: Map<string, OkrObjective[]>
-  }
+  // Group objectives by team
   const teamSections = useMemo(() => {
-    const map = new Map<string, TeamSection>()
+    const map = new Map<string, OkrObjective[]>()
     for (const t of teams) {
-      map.set(t.id, {
-        team: t,
-        teamObjectives: [],
-        memberObjectives: new Map(),
-      })
+      map.set(t.id, [])
     }
     for (const obj of objectives) {
       if (!obj.teamId) continue
-      const section = map.get(obj.teamId)
-      if (!section) continue
-      if (obj.ownerId) {
-        const existing = section.memberObjectives.get(obj.ownerId) ?? []
-        existing.push(obj)
-        section.memberObjectives.set(obj.ownerId, existing)
-      } else {
-        section.teamObjectives.push(obj)
-      }
+      const arr = map.get(obj.teamId)
+      if (arr) arr.push(obj)
     }
-    return Array.from(map.values()).sort((a, b) =>
-      a.team.name.localeCompare(b.team.name),
-    )
+    return Array.from(map.entries())
+      .map(([id, objectives]) => ({
+        team: { id, name: teams.find((t) => t.id === id)?.name ?? id },
+        objectives,
+      }))
+      .sort((a, b) => a.team.name.localeCompare(b.team.name))
   }, [objectives, teams])
 
   return (
@@ -342,14 +299,12 @@ export default function TeamOkrAssignment() {
         </div>
       ) : (
         <div className="space-y-6">
-          {teamSections.map(({ team, teamObjectives, memberObjectives }) => {
-            const allMemberObjs = Array.from(memberObjectives.values()).flat()
-            const totalObjs = teamObjectives.length + allMemberObjs.length
-            const teamAvgProgress =
-              allMemberObjs.length > 0
+          {teamSections.map(({ team, objectives }) => {
+            const avg =
+              objectives.length > 0
                 ? Math.round(
-                    allMemberObjs.reduce((s, o) => s + o.progress, 0) /
-                      allMemberObjs.length,
+                    objectives.reduce((s, o) => s + o.progress, 0) /
+                      objectives.length,
                   )
                 : 0
             return (
@@ -358,127 +313,37 @@ export default function TeamOkrAssignment() {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-sm font-medium">{team.name}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {totalObjs} objective{totalObjs !== 1 ? "s" : ""}
+                      {objectives.length} objective
+                      {objectives.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 sm:w-auto">
                     <div className="flex-1 sm:w-32">
-                      <ProgressBar
-                        value={teamAvgProgress}
-                        size="sm"
-                        showLabel={false}
-                      />
+                      <ProgressBar value={avg} size="sm" showLabel={false} />
                     </div>
                     <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
-                      {teamAvgProgress}%
+                      {avg}%
                     </span>
                   </div>
                 </summary>
                 <div className="border-t border-border">
-                  {/* Member collapsible cards */}
-                  {Array.from(memberObjectives.entries()).map(
-                    ([memberId, memberObjs]) => {
-                      const member = team.members.find(
-                        (m) => memberByUserId.get(m.userId) === memberId,
-                      )
-                      if (!member) return null
-                      const avgProgress =
-                        memberObjs.length > 0
-                          ? Math.round(
-                              memberObjs.reduce((s, o) => s + o.progress, 0) /
-                                memberObjs.length,
-                            )
-                          : 0
-                      return (
-                        <details
-                          key={memberId}
-                          className="border border-border"
-                        >
-                          <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="size-7">
-                                <AvatarImage
-                                  src={member.user.image ?? undefined}
-                                />
-                                <AvatarFallback className="text-[10px]">
-                                  {member.user.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <span className="text-sm font-medium">
-                                  {member.user.name}
-                                </span>
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  {memberObjs.length} objective
-                                  {memberObjs.length !== 1 ? "s" : ""}
-                                </span>
-                                {member.role === "leader" && (
-                                  <Badge
-                                    variant="outline"
-                                    className="ml-2 text-[9px]"
-                                  >
-                                    Leader
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 sm:w-auto">
-                              <div className="flex-1 sm:w-32">
-                                <ProgressBar
-                                  value={avgProgress}
-                                  size="sm"
-                                  showLabel={false}
-                                />
-                              </div>
-                              <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
-                                {avgProgress}%
-                              </span>
-                            </div>
-                          </summary>
-                          <div className="border-t border-border px-4 py-3">
-                            {memberObjs.length === 0 ? (
-                              <p className="text-xs text-muted-foreground text-center py-2">
-                                No objectives assigned yet.
-                              </p>
-                            ) : (
-                              <div className="space-y-3">
-                                {memberObjs.map((obj) => (
-                                  <ObjectiveCardWithKRs
-                                    key={obj.id}
-                                    objective={obj as any}
-                                    onAddKr={openKrForm}
-                                    onDeleteObjective={setDeleteObj}
-                                    onEditObjective={(id, title) =>
-                                      updateObjectiveMutation.mutate({
-                                        id,
-                                        title,
-                                      })
-                                    }
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </details>
-                      )
-                    },
-                  )}
-                  {/* Team-level objectives */}
-                  {teamObjectives.map((obj) => (
-                    <div key={obj.id}>
-                      <ObjectiveCardWithKRs
-                        objective={obj as any}
-                        onAddKr={openKrForm}
-                        onDeleteObjective={setDeleteObj}
-                        onEditObjective={(id, title) =>
-                          updateObjectiveMutation.mutate({ id, title })
-                        }
-                      />
-                    </div>
-                  ))}
-                  {totalObjs === 0 && (
+                  {objectives.length === 0 ? (
                     <div className="p-8 text-center text-xs text-muted-foreground">
                       No objectives assigned to this team yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3 p-4">
+                      {objectives.map((obj) => (
+                        <ObjectiveCardWithKRs
+                          key={obj.id}
+                          objective={obj as any}
+                          onAddKr={openKrForm}
+                          onDeleteObjective={setDeleteObj}
+                          onEditObjective={(id, title) =>
+                            updateObjectiveMutation.mutate({ id, title })
+                          }
+                        />
+                      ))}
                     </div>
                   )}
                 </div>

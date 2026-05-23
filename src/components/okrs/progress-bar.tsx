@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 const statusColors: Record<string, string> = {
   achieved: "bg-emerald-500",
   completed: "bg-emerald-500",
-  on_track: "bg-emerald-500",
+  on_track: "bg-sky-500",
   at_risk: "bg-amber-400",
   behind: "bg-red-400",
   not_started: "bg-muted-foreground/30",

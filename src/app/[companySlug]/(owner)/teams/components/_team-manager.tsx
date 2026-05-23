@@ -82,7 +82,7 @@ export function TeamManager() {
     { organizationId: organization?.id ?? "" },
     { enabled: !!organization },
   )
-  const teams = ((teamsData?.teams ?? []) as Team[]).filter((t) => t.name !== organization?.name)
+  const teams = (teamsData?.teams ?? []) as Team[]
 
   const setLeader = api.team.setLeader.useMutation({
     onSuccess: () => refetch(),
@@ -237,10 +237,10 @@ export function TeamManager() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team) => (
-              <div key={team.id} className="border border-border p-4 hover:bg-muted/30 transition-colors">
+              <div key={team.id} className="flex flex-col h-full border border-border p-4 hover:bg-muted/30 transition-colors">
                 <button
                   onClick={() => router.push(`/${companySlug}/teams/${team.id}`)}
-                  className="w-full text-left"
+                  className="w-full text-left flex-1 pb-3"
                 >
                   <div className="min-w-0">
                     <h3 className="text-sm font-medium text-foreground truncate">{team.name}</h3>
@@ -264,7 +264,7 @@ export function TeamManager() {
                     </Badge>
                   </div>
                 </button>
-                <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+                <div className="flex items-center gap-2 border-t border-border pt-3 mt-auto">
                   <Button
                     size="sm"
                     variant="default"
