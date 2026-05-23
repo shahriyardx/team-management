@@ -38,6 +38,9 @@
         "useIterableCallbackReturn": "off",
         "noExplicitAny": "off"
       },
+      "correctness": {
+        "useExhaustiveDependencies": "off"
+      },
       "security": {
         "noDangerouslySetInnerHtml": "off"
       },
