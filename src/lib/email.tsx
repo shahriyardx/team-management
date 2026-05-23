@@ -9,7 +9,7 @@ let _resend: ResendType | undefined
 async function getResend() {
   if (!_resend) {
     const { Resend } = await import("resend")
-    _resend = new Resend(process.env.RESEND_API_KEY!)
+    _resend = new Resend(process.env.RESEND_API_KEY as string)
   }
   return _resend
 }

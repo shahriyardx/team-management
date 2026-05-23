@@ -32,11 +32,11 @@ check_env "GOOGLE_CLIENT_SECRET" "Google OAuth client secret" \
 
 if [ -n "$missing" ]; then
   echo ""
-  echo "  ╝══ Missing required environment variables ══════════════════════════════════════════════════════════════"
-  echo ""
+  echo "  ╔══════════════════════════════════════════════════════╗"
+  echo "  ║  Missing required environment variables              ║"
+  echo "  ╚══════════════════════════════════════════════════════╝"
   printf "%b" "$missing"
   echo ""
-  echo "  See selfhost.md for setup instructions."
   echo ""
   exit 1
 fi
