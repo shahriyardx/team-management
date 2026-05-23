@@ -86,13 +86,17 @@ export function OrgOkrDashboard() {
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
   const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()))
+  const [selectedYear, setSelectedYear] = useState<string>(
+    String(new Date().getFullYear()),
+  )
   const [isEditMode, setIsEditMode] = useState(false)
 
   // Years 2020 to current + 1
   const years = useMemo(() => {
     const cur = new Date().getFullYear()
-    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
+    return Array.from({ length: cur - 2020 + 2 }, (_, i) =>
+      String(2020 + i),
+    ).reverse()
   }, [])
 
   // Auto-select active or first cycle
@@ -104,14 +108,15 @@ export function OrgOkrDashboard() {
   }, [cycles, activeCycle, selectedCycleId])
 
   // Objectives — org-level only (scope: "org")
-  const { data: objectivesData, isLoading: objectivesLoading } = api.objective.list.useQuery(
-    {
-      cycleId: selectedCycleId ?? "",
-      organizationId: organization?.id ?? "",
-      scope: "org",
-    },
-    { enabled: !!selectedCycleId && !!organization },
-  )
+  const { data: objectivesData, isLoading: objectivesLoading } =
+    api.objective.list.useQuery(
+      {
+        cycleId: selectedCycleId ?? "",
+        organizationId: organization?.id ?? "",
+        scope: "org",
+      },
+      { enabled: !!selectedCycleId && !!organization },
+    )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]
 
   // Create objective
@@ -123,7 +128,10 @@ export function OrgOkrDashboard() {
 
   const createObjectiveMutation = api.objective.create.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({ cycleId: selectedCycleId ?? "", scope: "org" })
+      utils.objective.list.invalidate({
+        cycleId: selectedCycleId ?? "",
+        scope: "org",
+      })
       setObjFormOpen(false)
       objectiveForm.reset()
     },
@@ -135,7 +143,10 @@ export function OrgOkrDashboard() {
 
   const createKrMutation = api.keyResult.create.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({ cycleId: selectedCycleId ?? "", scope: "org" })
+      utils.objective.list.invalidate({
+        cycleId: selectedCycleId ?? "",
+        scope: "org",
+      })
       setKrFormOpen(false)
     },
   })
@@ -149,7 +160,10 @@ export function OrgOkrDashboard() {
   const [deleteObj, setDeleteObj] = useState<string | null>(null)
   const deleteObjectiveMutation = api.objective.delete.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({ cycleId: selectedCycleId ?? "", scope: "org" })
+      utils.objective.list.invalidate({
+        cycleId: selectedCycleId ?? "",
+        scope: "org",
+      })
       setDeleteObj(null)
     },
   })
@@ -157,7 +171,10 @@ export function OrgOkrDashboard() {
   // Update objective
   const updateObjectiveMutation = api.objective.update.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({ cycleId: selectedCycleId ?? "", scope: "org" })
+      utils.objective.list.invalidate({
+        cycleId: selectedCycleId ?? "",
+        scope: "org",
+      })
     },
   })
 
@@ -201,33 +218,50 @@ export function OrgOkrDashboard() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <h1 className="text-base font-semibold">Org OKRs</h1>
-          <div className="flex items-center gap-1">
-            <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
+          <div className="flex flex-wrap items-center gap-1">
+            <Select
+              value={selectedYear}
+              onValueChange={(v) => {
+                setSelectedYear(v)
+                setSelectedCycleId(null)
+              }}
+            >
               <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
                 {selectedYear === "all" ? "All years" : selectedYear}
               </SelectTrigger>
               <SelectContent position="popper">
                 <SelectItem value="all">All years</SelectItem>
                 {years.map((yr) => (
-                  <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+                  <SelectItem key={yr} value={yr}>
+                    {yr}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={selectedCycleId ?? ""} onValueChange={setSelectedCycleId}>
+            <Select
+              value={selectedCycleId ?? ""}
+              onValueChange={setSelectedCycleId}
+            >
               <SelectTrigger className="h-8 w-auto min-w-32 rounded-none text-xs">
                 <span className="truncate">
-                  {cycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
+                  {cycles.find((c) => c.id === selectedCycleId)?.title ??
+                    "Select cycle"}
                 </span>
               </SelectTrigger>
               <SelectContent position="popper">
-                {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
+                {(selectedYear === "all"
+                  ? cycles
+                  : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+                ).map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     <div className="flex items-center gap-2">
                       <span>{c.title}</span>
-                      <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {c.status}
+                      </Badge>
                     </div>
                   </SelectItem>
                 ))}
@@ -235,17 +269,29 @@ export function OrgOkrDashboard() {
             </Select>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant={isEditMode ? "default" : "outline"}
-            size="sm"
             onClick={() => setIsEditMode((p) => !p)}
+            className="shrink-0"
           >
-            {isEditMode ? <Eye className="mr-1 size-3.5" /> : <PencilSimple className="mr-1 size-3.5" />}
+            {isEditMode ? (
+              <Eye className="mr-1 size-3.5" />
+            ) : (
+              <PencilSimple className="mr-1 size-3.5" />
+            )}
             {isEditMode ? "View" : "Edit"}
           </Button>
           {isEditMode && (
-            <Button size="sm" onClick={() => { objectiveForm.reset(); setObjFormOpen(true) }} disabled={!selectedCycleId}>
+            <Button
+              size="sm"
+              onClick={() => {
+                objectiveForm.reset()
+                setObjFormOpen(true)
+              }}
+              disabled={!selectedCycleId}
+              className="shrink-0"
+            >
               <Plus className="mr-1 size-3.5" />
               New Objective
             </Button>
@@ -256,10 +302,14 @@ export function OrgOkrDashboard() {
       {/* Loading */}
       {objectivesLoading ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-5 gap-3">
-            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-20" />)}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
           </div>
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
       ) : !selectedCycleId ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
@@ -272,26 +322,36 @@ export function OrgOkrDashboard() {
       ) : (
         <>
           {/* Analytics cards */}
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Avg Progress</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{analytics.avgProgress}%</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
+                {analytics.avgProgress}%
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">On Track</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-500">{analytics.onTrack}</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-500">
+                {analytics.onTrack}
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">At Risk</p>
-              <p className="mt-1 text-2xl font-semibold text-amber-400">{analytics.atRisk}</p>
+              <p className="mt-1 text-2xl font-semibold text-amber-400">
+                {analytics.atRisk}
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Behind</p>
-              <p className="mt-1 text-2xl font-semibold text-red-400">{analytics.behind}</p>
+              <p className="mt-1 text-2xl font-semibold text-red-400">
+                {analytics.behind}
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Completed</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-500">{analytics.completed}</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-500">
+                {analytics.completed}
+              </p>
             </div>
           </div>
 
@@ -310,7 +370,10 @@ export function OrgOkrDashboard() {
                     }
                   : {
                       krRenderer: (kr) => (
-                        <CheckInKrRow kr={kr as any} cycleId={selectedCycleId!} />
+                        <CheckInKrRow
+                          kr={kr as any}
+                          cycleId={selectedCycleId!}
+                        />
                       ),
                     })}
               />
@@ -324,23 +387,50 @@ export function OrgOkrDashboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create org objective</DialogTitle>
-            <DialogDescription>Org-level objectives are owned by the whole organization. Admins manage progress.</DialogDescription>
+            <DialogDescription>
+              Org-level objectives are owned by the whole organization. Admins
+              manage progress.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateObjective}>
             <div className="space-y-4">
               <Field>
                 <FieldLabel>Title</FieldLabel>
-                <Controller control={objectiveForm.control} name="title" render={({ field }) => <Input {...field} placeholder="Improve customer satisfaction" />} />
-                <FieldError>{objectiveForm.formState.errors.title?.message}</FieldError>
+                <Controller
+                  control={objectiveForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      placeholder="Improve customer satisfaction"
+                    />
+                  )}
+                />
+                <FieldError>
+                  {objectiveForm.formState.errors.title?.message}
+                </FieldError>
               </Field>
               <Field>
                 <FieldLabel>Description (optional)</FieldLabel>
-                <Controller control={objectiveForm.control} name="description" render={({ field }) => <Textarea {...field} rows={2} />} />
+                <Controller
+                  control={objectiveForm.control}
+                  name="description"
+                  render={({ field }) => <Textarea {...field} rows={2} />}
+                />
               </Field>
             </div>
             <DialogFooter className="mt-4">
-              <Button variant="outline" type="button" onClick={() => setObjFormOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={createObjectiveMutation.isPending}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setObjFormOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createObjectiveMutation.isPending}
+              >
                 {createObjectiveMutation.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
@@ -361,11 +451,21 @@ export function OrgOkrDashboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete objective?</DialogTitle>
-            <DialogDescription>This will also delete all its key results. Cannot be undone.</DialogDescription>
+            <DialogDescription>
+              This will also delete all its key results. Cannot be undone.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteObj(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { if (deleteObj) deleteObjectiveMutation.mutate({ id: deleteObj }) }} disabled={deleteObjectiveMutation.isPending}>
+            <Button variant="outline" onClick={() => setDeleteObj(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteObj) deleteObjectiveMutation.mutate({ id: deleteObj })
+              }}
+              disabled={deleteObjectiveMutation.isPending}
+            >
               {deleteObjectiveMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>

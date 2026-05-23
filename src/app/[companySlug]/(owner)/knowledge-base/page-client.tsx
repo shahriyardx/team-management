@@ -33,20 +33,20 @@ export default function KnowledgeTimelinePage() {
 
   return (
     <div className="flex-1 overflow-auto p-6">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold">Knowledge Base</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">Browse knowledge across your organization.</p>
         </div>
-        <div className="flex gap-2">
-          <div className="relative">
+        <div className="flex flex-wrap gap-2">
+          <div className="relative flex-1 min-w-40">
             <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="h-8 w-52 rounded-none border border-input bg-transparent pl-8 pr-8 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
+              className="h-8 w-full rounded-none border border-input bg-transparent pl-8 pr-8 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
             />
             {searchQuery && (
               <button onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">

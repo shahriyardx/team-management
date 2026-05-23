@@ -58,7 +58,7 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
   return (
     <>
       <div className="border border-muted-foreground/20 border-l-2 border-l-amber-500/30 px-3 py-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <button
@@ -100,7 +100,7 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
                   unit: kr.unit,
                 })
               }
-              className="ml-3 shrink-0"
+              className="shrink-0 self-start"
             >
               <ArrowCircleUp className="mr-1 size-3.5" />
               Check in

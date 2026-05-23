@@ -40,7 +40,7 @@ interface MemberObjectiveCardProps {
 export function MemberObjectiveCard({ cycleId, locked, objective }: MemberObjectiveCardProps) {
   return (
     <div className="border border-border p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{objective.title}</span>
           <Badge variant={statusBadge[objective.status] as "default" | "secondary" | "destructive" | "outline"}>

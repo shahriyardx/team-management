@@ -52,7 +52,7 @@ export function ObjectiveCard({
 
   return (
     <div className="border border-border border-l-2 border-l-violet-500/40 p-3">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium">{objective.title}</span>
@@ -79,7 +79,7 @@ export function ObjectiveCard({
             </div>
           )}
         </div>
-        <div className="ml-3 flex shrink-0 gap-1">
+        <div className="flex shrink-0 flex-wrap gap-1">
           {onEdit && (
             <Button variant="ghost" size="icon-xs" onClick={() => setEditOpen(true)}>
               <PencilSimple className="size-3" />

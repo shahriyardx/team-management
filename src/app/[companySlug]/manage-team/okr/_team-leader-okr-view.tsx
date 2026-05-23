@@ -114,12 +114,12 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   return (
     <div className="space-y-6">
       {/* Header row */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Team OKR</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives. Fill in progress for your team.</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
           <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
             <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
               {selectedYear === "all" ? "All years" : selectedYear}
@@ -158,7 +158,7 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
       ) : (
         <>
           {/* Summary */}
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Avg Progress</p>
               <p className="mt-1 text-lg font-semibold tabular-nums">{analytics.avgProgress}%</p>
