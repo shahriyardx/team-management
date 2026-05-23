@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { PlusIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +22,7 @@ import { KbAllCategoriesView } from "@/components/knowledge-base/kb-all-categori
 import { KbSpecificCategoryView } from "@/components/knowledge-base/kb-specific-category-view"
 
 export default function TeamKnowledgeBasePage() {
+  const { companySlug } = useParams<{ companySlug: string }>()
   const { organization } = useOrganization()
   const { loading: roleLoading } = useMemberRole()
   const { data: session } = authClient.useSession()
@@ -66,7 +68,7 @@ export default function TeamKnowledgeBasePage() {
   const showAll = selectedCategoryId === "__all__"
 
   function ItemRow({ item }: { item: KbItem }) {
-    return <KbItemRow item={item} baseHref="/manage-team/knowledge-base" />
+    return <KbItemRow item={item} baseHref={`/${companySlug}/manage-team/knowledge-base`} />
   }
 
   return (

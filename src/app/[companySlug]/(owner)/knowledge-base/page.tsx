@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { PlusIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,6 +21,7 @@ import { KbAllCategoriesView } from "@/components/knowledge-base/kb-all-categori
 import { KbSpecificCategoryView } from "@/components/knowledge-base/kb-specific-category-view"
 
 export default function KnowledgeTimelinePage() {
+  const { companySlug } = useParams<{ companySlug: string }>()
   const { organization } = useOrganization()
   const { role, loading: roleLoading } = useMemberRole()
 
@@ -78,7 +80,7 @@ export default function KnowledgeTimelinePage() {
   const showAll = selectedCategoryId === "__all__"
 
   function ItemRow({ item }: { item: KbItem }) {
-    return <KbItemRow item={item} baseHref="/knowledge-base" />
+    return <KbItemRow item={item} baseHref={`/${companySlug}/knowledge-base`} />
   }
 
   return (
