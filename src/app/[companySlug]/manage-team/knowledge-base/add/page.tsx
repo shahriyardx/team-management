@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -30,6 +30,7 @@ interface SelectedFile { file: File; name: string; uploading: boolean; url?: str
 interface LinkEntry { url: string; title: string }
 
 export default function TeamAddKnowledgePage() {
+  const { companySlug } = useParams<{ companySlug: string }>()
   const router = useRouter()
   const { organization } = useOrganization()
   const { data: session } = authClient.useSession()
@@ -86,7 +87,7 @@ export default function TeamAddKnowledgePage() {
         attachments: uploaded.map((f) => ({ name: f.name, url: f.url!, type: f.file.type, size: f.file.size })),
         links: validLinks.map((l) => ({ url: l.url, title: l.title || l.url })),
       })
-      router.push("/manage-team/knowledge-base")
+      router.push(`/${companySlug}/manage-team/knowledge-base`)
     } catch (err) { setError(err instanceof Error ? err.message : "Failed to create knowledge item."); setSubmitting(false) }
   }
 

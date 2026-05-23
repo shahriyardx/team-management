@@ -74,6 +74,7 @@ function leaderItems(slug: string): NavItem[] {
         { title: "View", url: `/${slug}/manage-team/knowledge-base` },
         { title: "Add Knowledge", url: `/${slug}/manage-team/knowledge-base/add` },
         { title: "Categories", url: `/${slug}/manage-team/knowledge-base/categories` },
+        { title: "Trash", url: `/${slug}/manage-team/knowledge-base/trash` },
       ],
     },
     {

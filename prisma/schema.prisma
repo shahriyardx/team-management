@@ -32,6 +32,8 @@ model User {
   twoFactor       TwoFactor?
   twoFactorEnabled Boolean      @default(false)
   kbItems         KbItem[]
+  kbEditHistories KbEditHistory[]
+  kbComments      KbComment[]
 
   @@unique([email])
   @@map("user")
@@ -432,6 +434,7 @@ model KbItem {
   description    String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
   subcategoryId  String
   subcategory    KbSubcategory   @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
   organizationId String
@@ -442,6 +445,8 @@ model KbItem {
   team           Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   attachments    KbAttachment[]
   links          KbLink[]
+  kbComments     KbComment[]
+  kbEditHistories KbEditHistory[]
 
   @@index([subcategoryId])
   @@index([organizationId])
@@ -471,4 +476,31 @@ model KbLink {
 
   @@index([kbItemId])
   @@map("kb_link")
+}
+
+model KbComment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  kbItemId  String
+  kbItem    KbItem   @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([kbItemId])
+  @@map("kb_comment")
+}
+
+model KbEditHistory {
+  id       String   @id @default(cuid())
+  kbItemId String
+  kbItem   KbItem   @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+  editorId String
+  editor   User     @relation(fields: [editorId], references: [id])
+  editedAt DateTime @default(now())
+  changes  String
+
+  @@index([kbItemId])
+  @@map("kb_edit_history")
 }

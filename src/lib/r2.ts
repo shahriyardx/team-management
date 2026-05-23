@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { env } from "./env"
 
 function getClient() {
@@ -37,4 +37,23 @@ export async function uploadToR2(file: File, folder = "logos"): Promise<string |
   )
 
   return `${publicUrl}/${key}`
+}
+
+export async function deleteFromR2(url: string): Promise<boolean> {
+  const client = getClient()
+  if (!client) return false
+
+  const bucket = env.R2_BUCKET
+  const publicUrl = env.R2_PUBLIC_URL
+  if (!bucket || !publicUrl) return false
+
+  const key = url.replace(`${publicUrl}/`, "")
+  if (!key || key === url) return false
+
+  try {
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+    return true
+  } catch {
+    return false
+  }
 }

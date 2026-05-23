@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -44,6 +44,7 @@ interface LinkEntry {
 }
 
 export default function AddKnowledgePage() {
+  const { companySlug } = useParams<{ companySlug: string }>()
   const router = useRouter()
   const { organization } = useOrganization()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -137,7 +138,7 @@ export default function AddKnowledgePage() {
         })),
       })
 
-      router.push("/knowledge-base")
+      router.push(`/${companySlug}/knowledge-base`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create knowledge item.")
       setSubmitting(false)

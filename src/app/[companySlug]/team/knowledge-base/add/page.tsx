@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -22,6 +22,7 @@ interface SelectedFile { file: File; name: string; uploading: boolean; url?: str
 interface LinkEntry { url: string; title: string }
 
 export default function TeamAddKnowledgePage() {
+  const { companySlug } = useParams<{ companySlug: string }>()
   const router = useRouter()
   const { organization } = useOrganization()
   const { data: session } = authClient.useSession()
@@ -63,7 +64,7 @@ export default function TeamAddKnowledgePage() {
       if (uploaded.filter((f) => !f.url).length > 0) { setError("Failed to upload some files."); setSubmitting(false); return }
       const vl = links.filter((l) => l.url.trim())
       await createItem.mutateAsync({ organizationId: organization.id, subcategoryId: data.subcategoryId, title: data.title, description: data.description || undefined, teamId: activeTeamId, attachments: uploaded.map((f) => ({ name: f.name, url: f.url!, type: f.file.type, size: f.file.size })), links: vl.map((l) => ({ url: l.url, title: l.title || l.url })) })
-      router.push("/team/knowledge-base")
+      router.push(`/${companySlug}/team/knowledge-base`)
     } catch (err) { setError(err instanceof Error ? err.message : "Failed to create knowledge item."); setSubmitting(false) }
   }
 

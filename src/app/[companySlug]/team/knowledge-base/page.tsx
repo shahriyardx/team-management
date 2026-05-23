@@ -55,7 +55,9 @@ export default function TeamKnowledgeBasePage() {
 
   const showAll = selectedCategoryId === "__all__"
 
-  function ItemRow({ item }: { item: KbItem }) { return <KbItemRow item={item} baseHref={`/${companySlug}/team/knowledge-base`} /> }
+  function ItemRow({ item }: { item: KbItem }) {
+    return <KbItemRow item={item} baseHref={`/${companySlug}/team/knowledge-base`} />
+  }
 
   return (
     <div className="flex-1 overflow-auto p-6">

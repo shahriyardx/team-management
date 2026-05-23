@@ -129,3 +129,23 @@
     @apply font-mono;
   }
 }
+
+.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.task-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.prose ul.contains-task-list > li::before {
+  display: none !important;
+  content: none !important;
+}
+
+.task-list-item-checkbox {
+  accent-color: var(--primary);
+}

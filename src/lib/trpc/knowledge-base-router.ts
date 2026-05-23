@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
+import { deleteFromR2 } from "@/lib/r2"
 import { router, protectedProcedure } from "./server"
 
 export const knowledgeBaseRouter = router({
@@ -163,7 +164,7 @@ export const knowledgeBaseRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const where: Record<string, unknown> = { organizationId: input.organizationId }
+      const where: Record<string, unknown> = { organizationId: input.organizationId, deletedAt: null }
       if (input.teamId) {
         where.teamId = input.teamId
       } else {
@@ -288,6 +289,24 @@ export const knowledgeBaseRouter = router({
         id: z.string(),
         title: z.string().min(1).max(200).optional(),
         description: z.string().optional(),
+        attachments: z
+          .array(
+            z.object({
+              name: z.string(),
+              url: z.string(),
+              type: z.string(),
+              size: z.number().int(),
+            }),
+          )
+          .optional(),
+        links: z
+          .array(
+            z.object({
+              url: z.string(),
+              title: z.string(),
+            }),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -299,11 +318,42 @@ export const knowledgeBaseRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
+      const changes: Record<string, { old: unknown; new: unknown }> = {}
+      if (input.title !== undefined && input.title !== existing.title) {
+        changes.title = { old: existing.title, new: input.title }
+      }
+      if (input.description !== undefined && input.description !== existing.description) {
+        changes.description = { old: existing.description, new: input.description }
+      }
+
+      if (Object.keys(changes).length > 0) {
+        await prisma.kbEditHistory.create({
+          data: {
+            kbItemId: input.id,
+            editorId: ctx.session.user.id,
+            changes: JSON.stringify(changes),
+          },
+        })
+      }
+
+      const updateData: Record<string, unknown> = {}
+      if (input.title !== undefined) updateData.title = input.title
+      if (input.description !== undefined) updateData.description = input.description
+      if (input.attachments !== undefined) {
+        updateData.attachments = { deleteMany: {}, create: input.attachments }
+      }
+      if (input.links !== undefined) {
+        updateData.links = { deleteMany: {}, create: input.links }
+      }
+
       const item = await prisma.kbItem.update({
         where: { id: input.id },
-        data: {
-          ...(input.title !== undefined && { title: input.title }),
-          ...(input.description !== undefined && { description: input.description }),
+        data: updateData,
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          subcategory: { select: { id: true, name: true } },
+          attachments: true,
+          links: true,
         },
       })
       return { item }
@@ -332,6 +382,188 @@ export const knowledgeBaseRouter = router({
 
       if (!isPrivileged && !isTeamLeader && existing.authorId !== ctx.session.user.id) {
         throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      await prisma.kbItem.update({ where: { id: input.id }, data: { deletedAt: new Date() } })
+      return { success: true }
+    }),
+
+  // ── Comments ──
+
+  commentList: protectedProcedure
+    .input(z.object({ kbItemId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const item = await prisma.kbItem.findUnique({ where: { id: input.kbItemId } })
+      if (!item) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const comments = await prisma.kbComment.findMany({
+        where: { kbItemId: input.kbItemId },
+        include: { author: { select: { id: true, name: true, image: true } } },
+        orderBy: { createdAt: "asc" },
+      })
+      return { comments }
+    }),
+
+  commentCreate: protectedProcedure
+    .input(z.object({ kbItemId: z.string(), content: z.string().min(1).max(5000) }))
+    .mutation(async ({ ctx, input }) => {
+      const item = await prisma.kbItem.findUnique({ where: { id: input.kbItemId } })
+      if (!item) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const comment = await prisma.kbComment.create({
+        data: { content: input.content, kbItemId: input.kbItemId, authorId: ctx.session.user.id },
+        include: { author: { select: { id: true, name: true, image: true } } },
+      })
+      return { comment }
+    }),
+
+  commentDelete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const comment = await prisma.kbComment.findUnique({
+        where: { id: input.id },
+        include: { kbItem: { select: { organizationId: true } } },
+      })
+      if (!comment) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: comment.kbItem.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isPrivileged = member.role === "owner" || member.role === "admin"
+      let isTeamLeader = false
+      if (!isPrivileged) {
+        const ledTeam = await prisma.team.findFirst({
+          where: { leaderId: member.id, organizationId: comment.kbItem.organizationId },
+        })
+        isTeamLeader = !!ledTeam
+      }
+
+      if (comment.authorId !== ctx.session.user.id && !isPrivileged && !isTeamLeader) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      await prisma.kbComment.delete({ where: { id: input.id } })
+      return { success: true }
+    }),
+
+  // ── Edit History ──
+
+  editHistoryList: protectedProcedure
+    .input(z.object({ kbItemId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const item = await prisma.kbItem.findUnique({ where: { id: input.kbItemId } })
+      if (!item) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const history = await prisma.kbEditHistory.findMany({
+        where: { kbItemId: input.kbItemId },
+        include: { editor: { select: { id: true, name: true, image: true } } },
+        orderBy: { editedAt: "desc" },
+      })
+      return { history }
+    }),
+
+  // ── Trash ──
+
+  trashList: protectedProcedure
+    .input(z.object({ organizationId: z.string(), teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isPrivileged = member.role === "owner" || member.role === "admin"
+      let isTeamLeader = false
+      if (!isPrivileged) {
+        const ledTeam = await prisma.team.findFirst({
+          where: { leaderId: member.id, organizationId: input.organizationId },
+        })
+        isTeamLeader = !!ledTeam
+      }
+      if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const items = await prisma.kbItem.findMany({
+        where: { organizationId: input.organizationId, teamId: input.teamId, deletedAt: { not: null } },
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          subcategory: { select: { id: true, name: true, category: { select: { id: true, name: true } } } },
+          attachments: { select: { id: true, name: true, url: true, type: true } },
+          links: { select: { id: true, url: true, title: true } },
+          _count: { select: { attachments: true, links: true } },
+        },
+        orderBy: { deletedAt: { sort: "desc", nulls: "last" } },
+      })
+      return { items }
+    }),
+
+  itemRestore: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.kbItem.findUnique({ where: { id: input.id } })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isPrivileged = member.role === "owner" || member.role === "admin"
+      let isTeamLeader = false
+      if (!isPrivileged) {
+        const ledTeam = await prisma.team.findFirst({
+          where: { leaderId: member.id, organizationId: existing.organizationId },
+        })
+        isTeamLeader = !!ledTeam
+      }
+      if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+
+      await prisma.kbItem.update({ where: { id: input.id }, data: { deletedAt: null } })
+      return { success: true }
+    }),
+
+  itemPermanentDelete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.kbItem.findUnique({
+        where: { id: input.id },
+        include: { attachments: true },
+      })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isPrivileged = member.role === "owner" || member.role === "admin"
+      let isTeamLeader = false
+      if (!isPrivileged) {
+        const ledTeam = await prisma.team.findFirst({
+          where: { leaderId: member.id, organizationId: existing.organizationId },
+        })
+        isTeamLeader = !!ledTeam
+      }
+      if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+
+      for (const att of existing.attachments) {
+        await deleteFromR2(att.url)
       }
 
       await prisma.kbItem.delete({ where: { id: input.id } })
