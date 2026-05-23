@@ -41,13 +41,13 @@ interface KrRowProps {
   kr: KrRowItem
 }
 
-const statusBorderColor: Record<string, string> = {
+const statusCardStyle: Record<string, string> = {
   not_started: "border-l-muted-foreground/20",
-  on_track: "border-l-emerald-500/30",
-  at_risk: "border-l-amber-500/30",
-  behind: "border-l-red-500/30",
-  achieved: "border-l-emerald-500/30",
-  completed: "border-l-emerald-500/30",
+  on_track: "border-l-emerald-500/30 bg-emerald-500/[0.03]",
+  at_risk: "border-l-amber-500/30 bg-amber-500/[0.03]",
+  behind: "border-l-red-500/30 bg-red-500/[0.03]",
+  achieved: "border-l-emerald-500/30 bg-emerald-500/[0.03]",
+  completed: "border-l-emerald-500/30 bg-emerald-500/[0.03]",
 }
 
 export function KrRow({ kr }: KrRowProps) {
@@ -105,7 +105,7 @@ export function KrRow({ kr }: KrRowProps) {
 
   return (
     <>
-      <div className={"border border-muted-foreground/20 border-l-2 px-3 py-2 " + (statusBorderColor[kr.status] ?? "border-l-muted-foreground/20")}>
+      <div className={"border border-muted-foreground/20 border-l-2 px-3 py-2 " + (statusCardStyle[kr.status] ?? "border-l-muted-foreground/20")}>
         <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2 min-w-0">
