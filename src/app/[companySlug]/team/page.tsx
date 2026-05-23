@@ -51,13 +51,6 @@ export default function MemberDashboardPage() {
         <StatCard icon={ListChecks} label="My Tasks" value={stats?.taskCount ?? "—"} color="text-violet-500" />
       </div>
 
-      <div className="border border-border p-4">
-        <h2 className="text-sm font-medium mb-3">Quick Links</h2>
-        <div className="space-y-2">
-          <a href="okr" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">→ My OKRs</a>
-          <a href="tasks" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">→ My Tasks</a>
-        </div>
-      </div>
     </div>
   )
 }

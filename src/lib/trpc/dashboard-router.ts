@@ -19,13 +19,13 @@ export const dashboardRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const [memberCount, cycleCount, taskCount] = await Promise.all([
+      const [memberCount, teamCount, taskCount] = await Promise.all([
         prisma.member.count({ where: { organizationId: input.organizationId } }),
-        prisma.okrCycle.count({ where: { organizationId: input.organizationId } }),
+        prisma.team.count({ where: { organizationId: input.organizationId } }),
         prisma.task.count({ where: { organizationId: input.organizationId } }),
       ])
 
-      return { memberCount, cycleCount, taskCount }
+      return { memberCount, teamCount, taskCount }
     }),
 
   teamStats: protectedProcedure

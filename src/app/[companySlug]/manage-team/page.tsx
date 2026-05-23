@@ -83,15 +83,6 @@ export default function TeamLeaderDashboardPage() {
         )}
       </div>
 
-      <div className="border border-border p-4">
-        <h2 className="text-sm font-medium mb-3">Quick Links</h2>
-        <div className="space-y-2">
-          <a href="okr" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">→ Team OKRs</a>
-          <a href="okr/members" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">→ Members OKRs</a>
-          <a href="tasks" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">→ My Tasks</a>
-          <a href="tasks/all" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">→ All Team Tasks</a>
-        </div>
-      </div>
     </div>
   )
 }

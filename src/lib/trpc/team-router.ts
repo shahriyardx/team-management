@@ -137,6 +137,50 @@ export const teamRouter = router({
       return { success: true }
     }),
 
+  addTeamMember: protectedProcedure
+    .input(z.object({ teamId: z.string(), organizationId: z.string(), userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const team = await prisma.team.findFirst({
+        where: { id: input.teamId, organizationId: input.organizationId },
+      })
+      if (!team) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const isOwnerAdmin = member.role === "owner" || member.role === "admin"
+      const isLeader = team.leaderId === member.id
+      if (!isOwnerAdmin && !isLeader) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const targetMember = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: input.userId,
+          },
+        },
+      })
+      if (!targetMember) throw new TRPCError({ code: "BAD_REQUEST", message: "User is not an org member" })
+
+      const existing = await prisma.teamMember.findUnique({
+        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+      })
+      if (existing) throw new TRPCError({ code: "BAD_REQUEST", message: "Already a member of this team" })
+
+      await prisma.teamMember.create({
+        data: { teamId: input.teamId, userId: input.userId, role: "member" },
+      })
+
+      return { success: true }
+    }),
+
   setLeader: protectedProcedure
     .input(z.object({ teamId: z.string(), leaderMemberId: z.string() }))
     .mutation(async ({ ctx, input }) => {

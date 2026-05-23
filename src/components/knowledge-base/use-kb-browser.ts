@@ -12,7 +12,7 @@ export function useKbBrowser({
   teamId?: string
   enabled: boolean
 }) {
-  const { data: catData } = api.knowledgeBase.categoryList.useQuery(
+  const { data: catData, isLoading: isCategoryLoading } = api.knowledgeBase.categoryList.useQuery(
     { organizationId, ...(teamId !== undefined ? { teamId } : {}) },
     { enabled },
   )
@@ -76,6 +76,7 @@ export function useKbBrowser({
 
   return {
     categories,
+    isCategoryLoading,
     selectedCategoryId,
     setSelectedCategoryId,
     showAll,

@@ -24,7 +24,7 @@ export default function TeamKnowledgeBasePage() {
   const activeTeamId = session?.session?.activeTeamId
 
   const {
-    categories, selectedCategoryId, setSelectedCategoryId,
+    categories, isCategoryLoading, selectedCategoryId, setSelectedCategoryId,
     showAll, collapsedCategories, toggleCategory,
     searchQuery, onSearchChange, clearSearch,
     searchPage, setSearchPage, searchLoading,
@@ -98,6 +98,10 @@ export default function TeamKnowledgeBasePage() {
             )}
           </div>
         )
+      ) : isCategoryLoading ? (
+        <div className="flex items-center justify-center py-20"><span className="size-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" /></div>
+      ) : categories.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 border border-border p-6"><p className="text-xs text-muted-foreground">No knowledge base yet.</p></div>
       ) : showAll ? (
         <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} />
       ) : selectedCat ? (

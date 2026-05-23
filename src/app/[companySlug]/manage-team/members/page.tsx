@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { UserMinus, UserPlus } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
+import { useMemberRole } from "@/lib/use-member-role"
 import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -23,6 +24,7 @@ import { Input } from "@/components/ui/input"
 
 export default function TeamMembersPage() {
   const { organization } = useOrganization()
+  const { role } = useMemberRole()
   const { data: session } = authClient.useSession()
   const activeTeamId = session?.session?.activeTeamId
 
@@ -30,8 +32,13 @@ export default function TeamMembersPage() {
     { teamId: activeTeamId ?? "", organizationId: organization?.id ?? "" },
     { enabled: !!organization && !!activeTeamId },
   )
+
+  const addMemberMutation = api.team.addTeamMember.useMutation({
+    onSuccess: () => refetch(),
+  })
   const team = data?.team
   const isLeader = team?.leader?.user?.id === session?.user?.id
+  const canManage = isLeader || role === "owner" || role === "admin"
 
   const [addOpen, setAddOpen] = useState(false)
   const [email, setEmail] = useState("")
@@ -47,7 +54,8 @@ export default function TeamMembersPage() {
       query: { organizationSlug: organization.slug },
     })
     const matched = (memberRes.data?.members ?? []).find(
-      (m: { user: { email: string } }) => m.user.email.toLowerCase() === email.trim().toLowerCase(),
+      (m: { user: { email: string } }) =>
+        m.user.email.toLowerCase() === email.trim().toLowerCase(),
     )
     if (!matched) {
       setError("No member found with this email in the organization")
@@ -56,16 +64,15 @@ export default function TeamMembersPage() {
     }
 
     try {
-      const res = await authClient.organization.addTeamMember({ teamId: activeTeamId, userId: matched.userId })
-      if (res.error) {
-        setError(res.error.message ?? "Failed to add member")
-      } else {
-        setAddOpen(false)
-        setEmail("")
-        refetch()
-      }
-    } catch {
-      setError("Something went wrong")
+      await addMemberMutation.mutateAsync({
+        teamId: activeTeamId,
+        organizationId: organization.id,
+        userId: matched.userId,
+      })
+      setAddOpen(false)
+      setEmail("")
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to add member")
     } finally {
       setAdding(false)
     }
@@ -78,7 +85,10 @@ export default function TeamMembersPage() {
     if (!activeTeamId) return
     setRemoving(true)
     try {
-      const res = await authClient.organization.removeTeamMember({ teamId: activeTeamId, userId })
+      const res = await authClient.organization.removeTeamMember({
+        teamId: activeTeamId,
+        userId,
+      })
       if (res.error) {
         setError(res.error.message ?? "Failed to remove member")
       } else {
@@ -93,11 +103,20 @@ export default function TeamMembersPage() {
   }
 
   if (isLoading || !organization) {
-    return <div className="flex flex-1 flex-col gap-4 p-6"><Skeleton className="h-6 w-48" /><Skeleton className="h-32" /></div>
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-6">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-32" />
+      </div>
+    )
   }
 
   if (!team) {
-    return <div className="flex flex-1 items-center justify-center p-6"><p className="text-xs text-muted-foreground">Team not found.</p></div>
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <p className="text-xs text-muted-foreground">Team not found.</p>
+      </div>
+    )
   }
 
   return (
@@ -105,7 +124,9 @@ export default function TeamMembersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Members</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{team.members.length} member{team.members.length !== 1 ? "s" : ""}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {team.members.length} member{team.members.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
@@ -117,7 +138,9 @@ export default function TeamMembersPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add member to {team.name}</DialogTitle>
-              <DialogDescription>Enter an email address to add to this team.</DialogDescription>
+              <DialogDescription>
+                Enter an email address to add to this team.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <Field>
@@ -125,14 +148,29 @@ export default function TeamMembersPage() {
                 <Input
                   placeholder="member@company.com"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError("") }}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setError("")
+                  }}
                 />
               </Field>
               {error && <FieldError>{error}</FieldError>}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setAddOpen(false); setEmail(""); setError("") }}>Cancel</Button>
-              <Button onClick={handleAddMember} disabled={adding || !email.trim()}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAddOpen(false)
+                  setEmail("")
+                  setError("")
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddMember}
+                disabled={adding || !email.trim()}
+              >
                 {adding ? "Adding..." : "Add"}
               </Button>
             </DialogFooter>
@@ -141,19 +179,32 @@ export default function TeamMembersPage() {
       </div>
       <div className="space-y-1">
         {team.members.map((tm) => (
-          <div key={tm.id} className="flex items-center gap-3 border border-border px-4 py-3">
+          <div
+            key={tm.id}
+            className="flex items-center gap-3 border border-border px-4 py-3"
+          >
             <Avatar className="size-8">
               <AvatarImage src={tm.user.image ?? undefined} />
-              <AvatarFallback className="text-xs">{tm.user.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xs">
+                {tm.user.name.charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium truncate">{tm.user.name}</span>
-                {team.leader?.user?.id === tm.user.id && <Badge variant="outline" className="text-[9px]">Leader</Badge>}
+                <span className="text-sm font-medium truncate">
+                  {tm.user.name}
+                </span>
+                {team.leader?.user?.id === tm.user.id && (
+                  <Badge variant="outline" className="text-[9px]">
+                    Leader
+                  </Badge>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground truncate">{tm.user.email}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {tm.user.email}
+              </p>
             </div>
-            {isLeader && team.leader?.user?.id !== tm.user.id && (
+            {canManage && team.leader?.user?.id !== tm.user.id && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -167,7 +218,10 @@ export default function TeamMembersPage() {
         ))}
       </div>
 
-      <Dialog open={!!removeConfirm} onOpenChange={(open) => !open && setRemoveConfirm(null)}>
+      <Dialog
+        open={!!removeConfirm}
+        onOpenChange={(open) => !open && setRemoveConfirm(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Remove member</DialogTitle>
@@ -176,7 +230,9 @@ export default function TeamMembersPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRemoveConfirm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRemoveConfirm(null)}>
+              Cancel
+            </Button>
             <Button
               variant="destructive"
               disabled={removing}

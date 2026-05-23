@@ -6,7 +6,9 @@ import { Bell } from "@phosphor-icons/react"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { OrganizationProvider, useOrganization } from "@/lib/organization-context"
-import { AppSidebar } from "@/components/app-sidebar"
+import { OwnerSidebar } from "@/components/owner-sidebar"
+import { LeaderSidebar } from "@/components/leader-sidebar"
+import { MemberSidebar } from "@/components/member-sidebar"
 import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
 
@@ -102,12 +104,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const s = slug ?? ""
   const isTeamBranch = !!slug && (
     pathname.startsWith(`/${s}/manage-team`) ||
-    pathname === `/${s}/manage-team` ||
-    pathname.startsWith(`/${s}/manage-team/`) ||
-    pathname.startsWith(`/${s}/team`) ||
-    pathname === `/${s}/team` ||
-    pathname.startsWith(`/${s}/team/`)
+    pathname.startsWith(`/${s}/team`)
   )
+
+  let branch: "owner" | "leader" | "member" = "owner"
+  if (slug) {
+    if (pathname.startsWith(`/${slug}/manage-team`)) branch = "leader"
+    else if (pathname.startsWith(`/${slug}/team`)) branch = "member"
+  }
 
   const { data: myTeamsData } = api.team.getMyTeams.useQuery(
     { organizationId: organization?.id ?? "" },
@@ -139,7 +143,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar session={session} />
+      {branch === "owner" ? (
+        <OwnerSidebar session={session} />
+      ) : branch === "leader" ? (
+        <LeaderSidebar session={session} />
+      ) : (
+        <MemberSidebar session={session} />
+      )}
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b border-border px-4">
           <SidebarTrigger />

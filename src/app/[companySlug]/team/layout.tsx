@@ -30,7 +30,12 @@ export default async function TeamLayout({
     where: { organizationId: orgId, leaderId: member.id },
   })
 
-  if (ledTeam) redirect(`/${companySlug}/manage-team`)
+  if (ledTeam) {
+    const activeTeamId = session.session.activeTeamId
+    if (!activeTeamId || activeTeamId === ledTeam.id) {
+      redirect(`/${companySlug}/manage-team`)
+    }
+  }
 
   // Validate user is in at least one team
   const teamMember = await prisma.teamMember.findFirst({

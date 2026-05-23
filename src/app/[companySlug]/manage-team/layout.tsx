@@ -37,7 +37,9 @@ export default async function ManageTeamLayout({
       const validTeam = await prisma.team.findFirst({
         where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
       })
-      if (!validTeam) redirect(`/${companySlug}/org`)
+      if (!validTeam) {
+        redirect(`/${companySlug}/team`)
+      }
     }
   }
 
