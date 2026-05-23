@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { type ReactNode } from "react"
 import { CaretDown, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/okrs/progress-bar"
@@ -52,7 +53,7 @@ export function ObjectiveCard({
   const [open, setOpen] = useState(true)
 
   return (
-    <div className="border border-border border-l-2 border-l-violet-500/40 p-3">
+    <div className="border border-border p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-2">
           <button
@@ -66,7 +67,7 @@ export function ObjectiveCard({
           </button>
           <Badge
             variant={statusBadge[objective.status] ?? "outline"}
-            className="text-[10px]"
+            className={cn("text-[10px]", objective.status === "completed" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", objective.status === "at_risk" && "bg-amber-500/10 text-amber-500 border-amber-500/20")}
           >
             {objective.status.replace(/_/g, " ")}
           </Badge>
