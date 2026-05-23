@@ -35,7 +35,7 @@ export default async function CompanyLayout({
   const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
 
   // Verify user is member of this org
-  let member = org
+  const member = org
     ? await prisma.member.findUnique({
         where: { organizationId_userId: { organizationId: org.id, userId: session.user.id } },
       })
