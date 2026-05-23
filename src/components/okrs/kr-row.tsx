@@ -2,7 +2,12 @@
 
 import { useCallback, useState } from "react"
 import { format } from "date-fns"
-import { CaretDown, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react"
+import {
+  CaretDown,
+  CaretRight,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react"
 import {
   Dialog,
   DialogContent,
@@ -44,7 +49,12 @@ export function KrRow({ kr }: KrRowProps) {
 
   // Check-in history for expanded view
   const { data: checkInsData } = api.checkIn.list.useQuery(
-    { keyResultId: kr.id, organizationId: organization?.id ?? "", skip: 0, take: 20 },
+    {
+      keyResultId: kr.id,
+      organizationId: organization?.id ?? "",
+      skip: 0,
+      take: 20,
+    },
     { enabled: expanded && !!organization },
   )
   const checkIns = (checkInsData?.checkIns ?? []) as Array<{
@@ -53,7 +63,9 @@ export function KrRow({ kr }: KrRowProps) {
     newValue: number
     note: string | null
     createdAt: string
-    author: { user: { id: string; name: string; email: string; image?: string | null } }
+    author: {
+      user: { id: string; name: string; email: string; image?: string | null }
+    }
   }>
 
   // Edit
@@ -85,28 +97,29 @@ export function KrRow({ kr }: KrRowProps) {
   return (
     <>
       <div className="border border-muted-foreground/20 border-l-2 border-l-amber-500/30 px-3 py-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex items-center gap-2 min-w-0">
               <button
                 onClick={toggle}
-                className="flex items-center gap-1 cursor-pointer shrink-0"
+                className="flex items-start gap-1 cursor-pointer"
               >
-                {expanded
-                  ? <CaretDown className="size-3 text-muted-foreground" />
-                  : <CaretRight className="size-3 text-muted-foreground" />}
-                <span className="text-xs font-medium truncate">{kr.title}</span>
+                {expanded ? (
+                  <CaretDown className="size-3 text-muted-foreground hidden sm:inline" />
+                ) : (
+                  <CaretRight className="size-3 text-muted-foreground hidden sm:inline" />
+                )}
+                <span className="text-xs font-medium wrap-break-words text-left">
+                  {kr.title}
+                </span>
               </button>
-              <Badge variant="outline" className="text-[10px] shrink-0">
-                {kr.unit}
-              </Badge>
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <div className="flex-1 max-w-xs">
+              <div className="flex-1 sm:max-w-xs">
                 <ProgressBar value={kr.progress} size="sm" status={kr.status} />
               </div>
               <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground shrink-0">
-                {kr.currentValue} / {kr.targetValue}
+                {kr.progress}%
               </span>
             </div>
           </div>
@@ -135,14 +148,23 @@ export function KrRow({ kr }: KrRowProps) {
             {checkInsData && checkIns.length > 0 && (
               <div className="space-y-1.5">
                 {checkIns.map((ci) => (
-                  <div key={ci.id} className="flex items-start gap-2 text-[11px]">
-                    <Badge variant="outline" className="shrink-0 text-[10px] whitespace-nowrap">
+                  <div
+                    key={ci.id}
+                    className="flex items-start gap-2 text-[11px]"
+                  >
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 text-[10px] whitespace-nowrap"
+                    >
                       {ci.previousValue} → {ci.newValue}
                     </Badge>
                     <div className="min-w-0 leading-tight">
-                      {ci.note && <span className="text-muted-foreground">{ci.note}</span>}
+                      {ci.note && (
+                        <span className="text-muted-foreground">{ci.note}</span>
+                      )}
                       <span className="text-muted-foreground/50">
-                        {" "}– {ci.author.user.name}
+                        {" "}
+                        – {ci.author.user.name}
                       </span>
                       <span className="text-muted-foreground/30 ml-1">
                         {format(new Date(ci.createdAt), "MMM d")}
@@ -153,7 +175,9 @@ export function KrRow({ kr }: KrRowProps) {
               </div>
             )}
             {checkInsData && checkIns.length === 0 && !kr.description && (
-              <p className="text-[11px] text-muted-foreground/50">No check-ins yet.</p>
+              <p className="text-[11px] text-muted-foreground/50">
+                No check-ins yet.
+              </p>
             )}
           </div>
         )}
@@ -181,7 +205,8 @@ export function KrRow({ kr }: KrRowProps) {
           <DialogHeader>
             <DialogTitle>Delete key result?</DialogTitle>
             <DialogDescription>
-              This will also delete all check-ins for this key result. This action cannot be undone.
+              This will also delete all check-ins for this key result. This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

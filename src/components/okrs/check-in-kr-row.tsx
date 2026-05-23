@@ -58,26 +58,25 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
   return (
     <>
       <div className="border border-muted-foreground/20 border-l-2 border-l-amber-500/30 px-3 py-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
+        <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2">
               <button
                 onClick={toggle}
-                className="flex items-center gap-1 cursor-pointer"
+                className="flex items-start gap-1 cursor-pointer"
               >
                 {expanded
-                  ? <CaretDown className="size-3 text-muted-foreground" />
-                  : <CaretRight className="size-3 text-muted-foreground" />}
-                <span className="text-xs font-medium">{kr.title}</span>
+                  ? <CaretDown className="size-3 text-muted-foreground hidden sm:inline" />
+                  : <CaretRight className="size-3 text-muted-foreground hidden sm:inline" />}
+                <span className="text-xs font-medium wrap-break-words text-left">{kr.title}</span>
               </button>
-              <Badge variant="outline" className="text-[10px]">
-                {kr.unit}
-              </Badge>
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <ProgressBar value={kr.progress} size="sm" status={kr.status} />
+              <div className="flex-1 sm:max-w-xs">
+                <ProgressBar value={kr.progress} size="sm" status={kr.status} />
+              </div>
               <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                {kr.currentValue} / {kr.targetValue}
+                {Math.round(kr.progress)}%
               </span>
             </div>
           </div>
@@ -100,7 +99,7 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
                   unit: kr.unit,
                 })
               }
-              className="shrink-0 self-start"
+              className="shrink-0 self-start w-full sm:w-auto"
             >
               <ArrowCircleUp className="mr-1 size-3.5" />
               Check in
