@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { type ReactNode } from "react"
-import { PencilSimple, Trash } from "@phosphor-icons/react"
+import { CaretDown, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/okrs/progress-bar"
@@ -49,12 +49,21 @@ export function ObjectiveCard({
   krRenderer,
 }: ObjectiveCardProps) {
   const [editOpen, setEditOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   return (
     <div className="border border-border border-l-2 border-l-violet-500/40 p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium">{objective.title}</span>
+          <button
+            onClick={() => setOpen((p) => !p)}
+            className="flex items-center gap-1 cursor-pointer"
+          >
+            {open
+              ? <CaretDown className="size-3 text-muted-foreground" />
+              : <CaretRight className="size-3 text-muted-foreground" />}
+            <span className="text-xs font-medium">{objective.title}</span>
+          </button>
           <Badge
             variant={statusBadge[objective.status] ?? "outline"}
             className="text-[10px]"
@@ -85,7 +94,7 @@ export function ObjectiveCard({
           </div>
         </div>
       </div>
-      {objective.keyResults.length > 0 && !krRenderer && (
+      {open && objective.keyResults.length > 0 && !krRenderer && (
         <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
           {objective.keyResults.map((kr) => (
             <div key={kr.id} className="flex items-center gap-3">
@@ -97,7 +106,7 @@ export function ObjectiveCard({
           ))}
         </div>
       )}
-      {krRenderer && objective.keyResults.length > 0 && (
+      {open && krRenderer && objective.keyResults.length > 0 && (
         <div className="mt-2 space-y-1">
           {objective.keyResults.map((kr) => krRenderer(kr))}
         </div>

@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Plus } from "@phosphor-icons/react"
+import { CaretDown, CaretRight, Plus } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Select,
   SelectContent,
@@ -25,8 +26,8 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ProgressBar } from "@/components/okrs/progress-bar"
 import { useOrganization } from "@/lib/organization-context"
-import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
 import { KrFormDialog, type KrForm } from "@/components/okrs/kr-form-dialog"
 import { ObjectiveCardWithKRs } from "@/components/okrs/objective-card-with-krs"
@@ -46,6 +47,7 @@ type OkrObjective = {
   progress: number
   status: string
   teamId: string | null
+  ownerId: string | null
   keyResults: Array<{
     id: string
     title: string
@@ -72,27 +74,47 @@ type OkrCycleItem = {
   _count: { objectives: number }
 }
 
+type TeamWithMembers = {
+  id: string
+  name: string
+  leader: { id: string; user: { id: string; name: string; email: string; image?: string | null } } | null
+  members: Array<{
+    id: string
+    userId: string
+    role: string
+    user: { id: string; name: string; email: string; image?: string | null }
+  }>
+}
+
+type TeamMember = TeamWithMembers["members"][number]
+
 export default function TeamOkrAssignment() {
   const { organization } = useOrganization()
   const utils = api.useUtils()
 
-  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([])
+  // Teams with members
+  const { data: teamsData } = api.team.list.useQuery(
+    { organizationId: organization?.id ?? "" },
+    { enabled: !!organization },
+  )
+  const teams = (teamsData?.teams ?? []) as TeamWithMembers[]
 
-  useEffect(() => {
-    if (!organization) return
-    authClient.organization
-      .getFullOrganization({
-        query: { organizationId: organization.id },
-      })
-      .then((res) => {
-        const orgData = res.data as {
-          teams?: Array<{ id: string; name: string }>
-        } | null
-        setTeams(
-          (orgData?.teams ?? []).filter((t) => t.name !== organization.name),
-        )
-      })
-  }, [organization])
+  // Member ID mapping (userId → memberId)
+  const teamMemberUserIds = useMemo(
+    () => teams.flatMap((t) => t.members.map((m) => m.userId)),
+    [teams],
+  )
+  const { data: memberRecords } = api.member.listByUserIds.useQuery(
+    { userIds: teamMemberUserIds, organizationId: organization?.id ?? "" },
+    { enabled: teamMemberUserIds.length > 0 && !!organization },
+  )
+  const memberByUserId = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const m of memberRecords?.members ?? []) {
+      map.set(m.userId, m.id)
+    }
+    return map
+  }, [memberRecords])
 
   // Cycles
   const { data: cyclesData } = api.okrCycle.list.useQuery(
@@ -176,6 +198,16 @@ export default function TeamOkrAssignment() {
     },
   })
 
+  const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set())
+  const toggleTeam = useCallback((teamId: string) => {
+    setCollapsedTeams((prev) => {
+      const next = new Set(prev)
+      if (next.has(teamId)) next.delete(teamId)
+      else next.add(teamId)
+      return next
+    })
+  }, [])
+
   const handleCreateObjective = objectiveForm.handleSubmit((data) => {
     if (!organization || !selectedCycleId) return
     createObjectiveMutation.mutate({
@@ -197,30 +229,30 @@ export default function TeamOkrAssignment() {
     })
   }
 
-  // Group objectives by team
-  const objectivesByTeam = useMemo(() => {
-    const map: Record<
-      string,
-      { team: { id: string; name: string }; objectives: OkrObjective[] }
-    > = {}
+  // Group objectives by team, then by member within each team
+  type TeamSection = {
+    team: { id: string; name: string; members: TeamMember[] }
+    teamObjectives: OkrObjective[]
+    memberObjectives: Map<string, OkrObjective[]>
+  }
+  const teamSections = useMemo(() => {
+    const map = new Map<string, TeamSection>()
+    for (const t of teams) {
+      map.set(t.id, { team: t, teamObjectives: [], memberObjectives: new Map() })
+    }
     for (const obj of objectives) {
       if (!obj.teamId) continue
-      if (!map[obj.teamId]) {
-        const team = teams.find((t) => t.id === obj.teamId)
-        map[obj.teamId] = {
-          team: team ?? { id: obj.teamId, name: "Unknown" },
-          objectives: [],
-        }
-      }
-      map[obj.teamId].objectives.push(obj)
-    }
-    // Add teams with no objectives
-    for (const t of teams) {
-      if (!map[t.id]) {
-        map[t.id] = { team: t, objectives: [] }
+      const section = map.get(obj.teamId)
+      if (!section) continue
+      if (obj.ownerId) {
+        const existing = section.memberObjectives.get(obj.ownerId) ?? []
+        existing.push(obj)
+        section.memberObjectives.set(obj.ownerId, existing)
+      } else {
+        section.teamObjectives.push(obj)
       }
     }
-    return Object.values(map).sort((a, b) =>
+    return Array.from(map.values()).sort((a, b) =>
       a.team.name.localeCompare(b.team.name),
     )
   }, [objectives, teams])
@@ -307,27 +339,86 @@ export default function TeamOkrAssignment() {
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
           No cycles yet.
         </div>
-      ) : objectivesByTeam.length === 0 ? (
+      ) : teamSections.length === 0 ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
           No teams. Create one first.
         </div>
       ) : (
         <div className="space-y-6">
-          {objectivesByTeam.map(({ team, objectives: teamObjectives }) => (
+          {teamSections.map(({ team, teamObjectives, memberObjectives }) => {
+            const collapsed = collapsedTeams.has(team.id)
+            const totalObjs = teamObjectives.length +
+              Array.from(memberObjectives.values()).reduce((s, o) => s + o.length, 0)
+            return (
             <div key={team.id} className="border border-border">
-              <div className="border-b border-border bg-muted/30 px-4 py-2">
+              <button
+                onClick={() => toggleTeam(team.id)}
+                className="flex w-full items-center gap-2 border-b border-border bg-muted/30 px-4 py-2 cursor-pointer text-left"
+              >
+                {collapsed
+                  ? <CaretRight className="size-3 text-muted-foreground shrink-0" />
+                  : <CaretDown className="size-3 text-muted-foreground shrink-0" />}
                 <span className="text-sm font-medium">{team.name}</span>
-                <span className="ml-2 text-[10px] text-muted-foreground">
-                  {teamObjectives.length} objective
-                  {teamObjectives.length !== 1 ? "s" : ""}
+                <span className="text-[10px] text-muted-foreground">
+                  {totalObjs} objective
+                  {totalObjs !== 1 ? "s" : ""}
                 </span>
-              </div>
-              {teamObjectives.length === 0 ? (
-                <div className="p-8 text-center text-xs text-muted-foreground">
-                  No objectives assigned to this team yet.
-                </div>
-              ) : (
+              </button>
+              {!collapsed && (
                 <div className="divide-y divide-border">
+                  {/* Member collapsible cards */}
+                  {Array.from(memberObjectives.entries()).map(([memberId, memberObjs]) => {
+                    const member = team.members.find(
+                      (m) => memberByUserId.get(m.userId) === memberId
+                    )
+                    if (!member) return null
+                    const avgProgress = memberObjs.length > 0
+                      ? Math.round(memberObjs.reduce((s, o) => s + o.progress, 0) / memberObjs.length)
+                      : 0
+                    return (
+                      <details key={memberId} className="border-b border-border last:border-b-0">
+                        <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-7">
+                              <AvatarImage src={member.user.image ?? undefined} />
+                              <AvatarFallback className="text-[10px]">
+                                {member.user.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <span className="text-sm font-medium">{member.user.name}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {memberObjs.length} objective
+                                {memberObjs.length !== 1 ? "s" : ""}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 sm:w-auto">
+                            <div className="flex-1 sm:w-32">
+                              <ProgressBar value={avgProgress} size="sm" showLabel={false} />
+                            </div>
+                            <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
+                              {avgProgress}%
+                            </span>
+                          </div>
+                        </summary>
+                        <div className="border-t border-border px-4 py-3 space-y-3">
+                          {memberObjs.map((obj) => (
+                            <ObjectiveCardWithKRs
+                              key={obj.id}
+                              objective={obj as any}
+                              onAddKr={openKrForm}
+                              onDeleteObjective={setDeleteObj}
+                              onEditObjective={(id, title) =>
+                                updateObjectiveMutation.mutate({ id, title })
+                              }
+                            />
+                          ))}
+                        </div>
+                      </details>
+                    )
+                  })}
+                  {/* Team-level objectives */}
                   {teamObjectives.map((obj) => (
                     <div key={obj.id} className="p-4">
                       <ObjectiveCardWithKRs
@@ -340,10 +431,16 @@ export default function TeamOkrAssignment() {
                       />
                     </div>
                   ))}
+                  {totalObjs === 0 && (
+                    <div className="p-8 text-center text-xs text-muted-foreground">
+                      No objectives assigned to this team yet.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
