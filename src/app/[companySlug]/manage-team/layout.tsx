@@ -24,21 +24,21 @@ export default async function ManageTeamLayout({
 
   if (!member) redirect("/onboard")
 
-  if (member.role === "owner" || member.role === "admin") redirect(`/${companySlug}`)
+  const isOwnerAdmin = member.role === "owner" || member.role === "admin"
 
-  const ledTeam = await prisma.team.findFirst({
-    where: { organizationId: orgId, leaderId: member.id },
-  })
-
-  if (!ledTeam) redirect(`/${companySlug}/team`)
-
-  // Validate active team still exists and user still leads it
-  const activeTeamId = session.session.activeTeamId
-  if (activeTeamId) {
-    const validTeam = await prisma.team.findFirst({
-      where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
+  if (!isOwnerAdmin) {
+    const ledTeam = await prisma.team.findFirst({
+      where: { organizationId: orgId, leaderId: member.id },
     })
-    if (!validTeam) redirect(`/${companySlug}/org`)
+    if (!ledTeam) redirect(`/${companySlug}/team`)
+
+    const activeTeamId = session.session.activeTeamId
+    if (activeTeamId) {
+      const validTeam = await prisma.team.findFirst({
+        where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
+      })
+      if (!validTeam) redirect(`/${companySlug}/org`)
+    }
   }
 
   return <>{children}</>

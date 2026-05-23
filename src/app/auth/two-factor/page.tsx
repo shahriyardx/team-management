@@ -25,7 +25,25 @@ export default function TwoFactorVerificationPage() {
       setVerifying(false)
       return
     }
-    router.push("/onboard")
+
+    try {
+      const { data: orgs } = await authClient.organization.list()
+      if (orgs && orgs.length > 0) {
+        const org = orgs[0]
+        await authClient.organization.setActive({ organizationId: org.id })
+        const { data: member } = await authClient.organization.getActiveMember()
+        const role = member && typeof member === "object" && "role" in member
+          ? (member as { role: string }).role
+          : null
+        if (role === "owner" || role === "admin") router.replace(`/${org.slug}`)
+        else if (role === "team_leader") router.replace(`/${org.slug}/manage-team`)
+        else if (role === "pending") router.replace(`/${org.slug}/org`)
+        else router.replace(`/${org.slug}/team`)
+        return
+      }
+    } catch {}
+
+    router.replace("/onboard")
   }, [code, backupCode, method, router])
 
   return (

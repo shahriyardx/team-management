@@ -85,10 +85,11 @@ export const teamRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
+      const isOwnerAdmin = member.role === "owner" || member.role === "admin"
       const teams = await prisma.team.findMany({
         where: {
           organizationId: input.organizationId,
-          members: { some: { userId: ctx.session.user.id } },
+          ...(isOwnerAdmin ? {} : { members: { some: { userId: ctx.session.user.id } } }),
         },
         include: {
           leader: {
@@ -106,6 +107,34 @@ export const teamRouter = router({
       })
 
       return { teams }
+    }),
+
+  setActiveTeam: protectedProcedure
+    .input(z.object({ teamId: z.string(), organizationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member || (member.role !== "owner" && member.role !== "admin")) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const team = await prisma.team.findFirst({
+        where: { id: input.teamId, organizationId: input.organizationId },
+      })
+      if (!team) throw new TRPCError({ code: "NOT_FOUND" })
+
+      await prisma.session.update({
+        where: { id: ctx.session.session.id },
+        data: { activeTeamId: input.teamId },
+      })
+
+      return { success: true }
     }),
 
   setLeader: protectedProcedure

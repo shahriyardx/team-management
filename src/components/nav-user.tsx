@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Avatar,
@@ -13,9 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -27,52 +24,18 @@ import {
 import { CaretUpDownIcon, SignOutIcon, User } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 import { useOrganization } from "@/lib/organization-context"
-import { api } from "@/lib/trpc/client"
 
 export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
   const { data: session } = authClient.useSession()
   const { organizations, organization: activeOrg, onSwitchOrg } = useOrganization()
-  const utils = api.useUtils()
   const user = session?.user
   const [menuOpen, setMenuOpen] = useState(false)
-  const [orgTeams, setOrgTeams] = useState<Record<string, Array<{ id: string; name: string }>>>({})
-
-  useEffect(() => {
-    if (!menuOpen || organizations.length === 0) return
-    let cancelled = false
-    const fetchAll = async () => {
-      const results: Record<string, Array<{ id: string; name: string }>> = {}
-      for (const org of organizations) {
-        try {
-          const data = await utils.team.getMyTeams.fetch({ organizationId: org.id })
-          results[org.id] = (data as { teams: Array<{ id: string; name: string }> }).teams ?? []
-        } catch {
-          results[org.id] = []
-        }
-        if (cancelled) return
-      }
-      setOrgTeams(results)
-    }
-    fetchAll()
-    return () => { cancelled = true }
-  }, [menuOpen, organizations, utils.team.getMyTeams])
 
   async function handleSignOut() {
     await authClient.signOut()
     router.replace("/")
-  }
-
-  async function handleTeamClick(orgId: string, teamId: string) {
-    const targetOrg = organizations.find((o) => o.id === orgId)
-    if (!targetOrg) return
-
-    if (orgId !== activeOrg?.id) {
-      await onSwitchOrg(orgId)
-    }
-    await authClient.organization.setActiveTeam({ teamId })
-    router.push(`/${targetOrg.slug}/manage-team`)
   }
 
   if (!user) return null
@@ -124,52 +87,22 @@ export function NavUser() {
               Organizations
             </DropdownMenuLabel>
             {organizations.map((org) => {
-              const teams = orgTeams[org.id] ?? []
               const isActive = org.id === activeOrg?.id
-
-              if (teams.length === 0) {
-                return (
-                  <DropdownMenuItem
-                    key={org.id}
-                    onClick={() => {
-                      const newSlug = org.slug
-                      onSwitchOrg(org.id).then(() => router.push(`/${newSlug}`))
-                    }}
-                    className="gap-2 p-2"
-                  >
-                    <span className="flex size-6 items-center justify-center rounded-md border text-xs">
-                      {org.name.charAt(0)}
-                    </span>
-                    <span className="flex-1">{org.name}</span>
-                    {isActive && <span className="text-[10px] text-muted-foreground">(active)</span>}
-                  </DropdownMenuItem>
-                )
-              }
-
               return (
-                <DropdownMenuSub key={org.id}>
-                  <DropdownMenuSubTrigger className="gap-2 p-2">
-                    <span className="flex size-6 items-center justify-center rounded-md border text-xs">
-                      {org.name.charAt(0)}
-                    </span>
-                    <span className="flex-1">{org.name}</span>
-                    {isActive && <span className="text-[10px] text-muted-foreground">(active)</span>}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="min-w-40 rounded-lg">
-                    {teams.map((team) => (
-                      <DropdownMenuItem
-                        key={team.id}
-                        onClick={() => handleTeamClick(org.id, team.id)}
-                        className="gap-2 p-2"
-                      >
-                        <span className="flex size-5 items-center justify-center rounded border text-[10px]">
-                          {team.name.charAt(0)}
-                        </span>
-                        {team.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
+                <DropdownMenuItem
+                  key={org.id}
+                  onClick={() => {
+                    const newSlug = org.slug
+                    onSwitchOrg(org.id).then(() => router.push(`/${newSlug}`))
+                  }}
+                  className="gap-2 p-2"
+                >
+                  <span className="flex size-6 items-center justify-center rounded-md border text-xs">
+                    {org.name.charAt(0)}
+                  </span>
+                  <span className="flex-1">{org.name}</span>
+                  {isActive && <span className="text-[10px] text-muted-foreground">(active)</span>}
+                </DropdownMenuItem>
               )
             })}
             <DropdownMenuSeparator />
