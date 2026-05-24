@@ -48,7 +48,9 @@ export const announcementRouter = router({
       if (input.scope === "org") {
         where.teamId = null
       } else if (input.scope === "team") {
-        if (userTeamIds && userTeamIds.length > 0) {
+        if (isOrgAdmin) {
+          where.teamId = { not: null }
+        } else if (userTeamIds && userTeamIds.length > 0) {
           where.teamId = { in: userTeamIds }
         } else {
           where.id = "none"
@@ -69,7 +71,9 @@ export const announcementRouter = router({
             author: { select: { id: true, name: true, image: true } },
             _count: { select: { comments: true, likes: true } },
           },
-          orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+          orderBy: input.scope === "team"
+            ? [{ createdAt: "desc" }]
+            : [{ pinned: "desc" }, { createdAt: "desc" }],
           skip: input.cursor ?? 0,
           take: input.take + 1,
         }),
