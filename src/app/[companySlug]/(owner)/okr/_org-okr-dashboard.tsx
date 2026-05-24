@@ -125,7 +125,7 @@ export function OrgOkrDashboard() {
     defaultValues: { title: "", description: "" },
   })
 
-  const createObjectiveMutation = api.objective.create.useMutation({
+  const createObjectiveMutation = api.objective.createOrgLevel.useMutation({
     onSuccess: () => {
       utils.objective.list.invalidate({
         cycleId: selectedCycleId ?? "",

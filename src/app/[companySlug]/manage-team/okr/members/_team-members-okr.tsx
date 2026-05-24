@@ -180,7 +180,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     defaultValues: { title: "", description: "", ownerId: "" },
   })
 
-  const createObjectiveMutation = api.objective.create.useMutation({
+  const createObjectiveMutation = api.objective.createMemberLevel.useMutation({
     onSuccess: () => {
       utils.objective.list.invalidate({
         cycleId: cycleId ?? "",
@@ -475,13 +475,12 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
                                 for (const item of data) {
                                   const obj =
-                                    await utils.client.objective.create.mutate({
+                                    await utils.client.objective.createMemberLevel.mutate({
                                       title: item.objective.title,
                                       description:
                                         item.objective.description ?? null,
                                       ownerId: memberId,
                                       cycleId,
-                                      organizationId: organization.id,
                                     })
                                   for (const kr of item.keyResults ?? []) {
                                     await utils.client.keyResult.create.mutate({
