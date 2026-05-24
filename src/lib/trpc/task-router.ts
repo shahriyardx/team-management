@@ -315,6 +315,83 @@ export const taskRouter = router({
       return { task }
     }),
 
+  changeStatus: protectedProcedure
+    .input(z.object({ id: z.string(), status: z.enum(["todo", "in_progress", "done"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.task.findUnique({
+        where: { id: input.id },
+        include: { assignees: assigneesInclude },
+      })
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      // Allow creator, team leader, org admin/owner, or assignee to change status
+      const isAssignee = existing.assignees.some((a) => a.member.user.id === ctx.session.user.id)
+      const isOwnerAdmin = member.role === "owner" || member.role === "admin"
+
+      if (existing.teamId) {
+        const isLeader = await prisma.team.findFirst({
+          where: { id: existing.teamId, organizationId: existing.organizationId, leaderId: member.id },
+        })
+        if (!isLeader && !isOwnerAdmin && existing.createdById !== ctx.session.user.id && !isAssignee) {
+          throw new TRPCError({ code: "FORBIDDEN" })
+        }
+      } else {
+        if (!isOwnerAdmin && existing.createdById !== ctx.session.user.id && !isAssignee) {
+          throw new TRPCError({ code: "FORBIDDEN" })
+        }
+      }
+
+      const task = await prisma.task.update({
+        where: { id: input.id },
+        data: { status: input.status },
+        include: {
+          assignees: assigneesInclude,
+          createdBy: { select: { id: true, name: true, email: true, image: true } },
+        },
+      })
+
+      // Notify
+      if (task.assignees.length > 0) {
+        const assigneeUserIds = task.assignees.map((a) => a.member.user.id)
+        const isActingUserAssignee = assigneeUserIds.includes(ctx.session.user.id)
+        const isActingUserCreator = task.createdById === ctx.session.user.id
+
+        let notifyUserIds: string[]
+        if (isActingUserCreator) {
+          notifyUserIds = assigneeUserIds.filter((id) => id !== ctx.session.user.id)
+        } else if (isActingUserAssignee) {
+          notifyUserIds = [task.createdById].filter((id) => id !== ctx.session.user.id)
+        } else {
+          notifyUserIds = [...new Set([...assigneeUserIds, task.createdById])].filter(
+            (id) => id !== ctx.session.user.id,
+          )
+        }
+
+        if (notifyUserIds.length > 0) {
+          await createNotifications(
+            notifyUserIds,
+            "status_changed",
+            `Task "${task.title}" moved to ${input.status.replace("_", " ")}`,
+            undefined,
+            existing.organizationId,
+            task.id,
+          )
+        }
+      }
+
+      return { task }
+    }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {

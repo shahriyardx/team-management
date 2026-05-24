@@ -321,11 +321,15 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
     [deleteMutation],
   )
 
+  const changeStatusMutation = api.task.changeStatus.useMutation({
+    onSuccess: () => utils.task.list.invalidate(),
+  })
+
   const handleStatusChange = useCallback(
     (taskId: string, status: string) => {
-      updateMutation.mutate({ id: taskId, status })
+      changeStatusMutation.mutate({ id: taskId, status: status as "todo" | "in_progress" | "done" })
     },
-    [updateMutation],
+    [changeStatusMutation],
   )
 
   // Comments
