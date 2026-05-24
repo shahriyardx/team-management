@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { api } from "@/lib/trpc/client"
 
 type Org = { id: string; name: string; slug: string; logo?: string | null; websiteUrl?: string | null; department?: string | null; teamSize?: string | null }
 
@@ -23,24 +24,24 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   const { data: session, isPending: sessionLoading, refetch: refetchSession } = authClient.useSession()
   const [organizations, setOrganizations] = useState<Org[]>([])
   const [orgsLoaded, setOrgsLoaded] = useState(false)
+  const utils = api.useUtils()
 
   useEffect(() => {
     if (sessionLoading) return
     if (!session) { router.replace("/"); return }
     if (orgsLoaded) return
 
-    authClient.organization.list().then((res) => {
-      const orgs = res.data ?? []
-      setOrganizations(orgs)
+    utils.member.listActiveOrganizations.fetch().then(({ organizations }) => {
+      setOrganizations(organizations)
       setOrgsLoaded(true)
 
-      if (orgs.length === 0) {
+      if (organizations.length === 0) {
         router.replace("/onboard/add-organization")
         return
       }
 
       if (!session.session.activeOrganizationId) {
-        authClient.organization.setActive({ organizationId: orgs[0].id }).then(() => {
+        authClient.organization.setActive({ organizationId: organizations[0].id }).then(() => {
           refetchSession()
         })
       }
@@ -58,9 +59,9 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   )
 
   const refetchOrganizations = useCallback(async () => {
-    const res = await authClient.organization.list()
-    setOrganizations(res.data ?? [])
-  }, [])
+    const { organizations } = await utils.member.listActiveOrganizations.fetch()
+    setOrganizations(organizations)
+  }, [utils])
 
   const loading = sessionLoading || !orgsLoaded
 

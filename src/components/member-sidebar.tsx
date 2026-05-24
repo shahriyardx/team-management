@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { useParams } from "next/navigation"
-import { BookBookmark, House, ListChecks, Megaphone, Target, Users } from "@phosphor-icons/react"
+import { ArrowLeft, BookBookmark, House, ListChecks, Megaphone, Target, Users } from "@phosphor-icons/react"
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +14,7 @@ import { TeamSwitcher } from "@/components/team-switcher"
 import { NavUser } from "@/components/nav-user"
 import { SidebarNavItems, type NavItem } from "@/components/sidebar-nav-items"
 import { useOrganization } from "@/lib/organization-context"
+import { useMemberRole } from "@/lib/use-member-role"
 import { api } from "@/lib/trpc/client"
 import type { authClient } from "@/lib/auth-client"
 
@@ -58,6 +59,7 @@ export function MemberSidebar({
   const params = useParams()
   const slug = params.companySlug as string | undefined
   const { organization } = useOrganization()
+  const { role } = useMemberRole()
   const activeTeamId = _session?.session?.activeTeamId ?? null
 
   const { data: todoCountData } = api.task.getTodoCount.useQuery(
@@ -66,7 +68,14 @@ export function MemberSidebar({
   )
   const todoCount = todoCountData?.count ?? 0
 
-  const items = useMemo(() => (slug ? memberItems(slug, todoCount) : []), [slug, todoCount])
+  const items = useMemo(() => {
+    if (!slug) return []
+    const base = memberItems(slug, todoCount)
+    if (role === "owner" || role === "admin") {
+      base.unshift({ title: "Organization", url: `/${slug}`, icon: ArrowLeft })
+    }
+    return base
+  }, [slug, todoCount, role])
 
   return (
     <Sidebar collapsible="icon" {...props}>

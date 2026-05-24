@@ -42,12 +42,11 @@ export default async function ManageTeamLayout({
   const activeTeamId = session.session.activeTeamId
 
   if (member.role === "owner" || member.role === "admin") {
-    if (activeTeamId) {
-      const isTeamLeader = await prisma.team.findFirst({
-        where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
-      })
-      if (!isTeamLeader) redirect(`/${companySlug}/team`)
-    }
+    if (!activeTeamId) redirect(`/${companySlug}`)
+    const isTeamLeader = await prisma.team.findFirst({
+      where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
+    })
+    if (!isTeamLeader) redirect(`/${companySlug}/team`)
   } else {
     const ledTeam = await prisma.team.findFirst({
       where: { organizationId: orgId, leaderId: member.id },

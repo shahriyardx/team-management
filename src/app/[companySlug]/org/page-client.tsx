@@ -22,37 +22,36 @@ export default function OrgWelcomePage() {
       const { data: sessionData } = await authClient.getSession()
       const activeTeamId = sessionData?.session?.activeTeamId
       const orgId = sessionData?.session?.activeOrganizationId
+      const userId = sessionData?.user?.id
       if (!orgId) { setChecking(false); return }
 
       // Fetch teams user actually belongs to
-      let myTeams: Array<{ id: string }> = []
+      let rawTeams: Array<{ id: string; members?: Array<{ userId: string; status: string }> }> = []
       try {
         const data = await utils.team.getMyTeams.fetch({ organizationId: orgId })
-        myTeams = (data as { teams: Array<{ id: string }> }).teams ?? []
+        rawTeams = (data as { teams: typeof rawTeams }).teams ?? []
       } catch {}
 
       if (cancelled) return
 
+      // Filter out teams where user's membership is inactive
+      const myTeams = userId
+        ? rawTeams.filter((t) => {
+            const m = t.members?.find((tm) => tm.userId === userId)
+            return m && m.status !== "inactive"
+          })
+        : rawTeams
+
       // Validate active team is still valid
       if (activeTeamId && myTeams.some((t) => t.id === activeTeamId)) {
-        const { data: member } = await authClient.organization.getActiveMember()
-        const role = member && typeof member === "object" && "role" in member
-          ? (member as { role: string }).role
-          : null
-        if (role === "team_leader") router.replace(`/${slug}/manage-team`)
-        else router.replace(`/${slug}/team`)
+        router.replace(`/${slug}/team`)
         return
       }
 
       // Set first available team
       if (myTeams.length > 0) {
         await authClient.organization.setActiveTeam({ teamId: myTeams[0].id })
-        const { data: member } = await authClient.organization.getActiveMember()
-        const role = member && typeof member === "object" && "role" in member
-          ? (member as { role: string }).role
-          : null
-        if (role === "team_leader") router.replace(`/${slug}/manage-team`)
-        else router.replace(`/${slug}/team`)
+        router.replace(`/${slug}/team`)
         return
       }
 

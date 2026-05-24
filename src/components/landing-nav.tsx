@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { api } from "@/lib/trpc/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -22,11 +23,14 @@ export function LandingNav() {
   const user = session?.user
   const [orgs, setOrgs] = useState<Org[]>([])
   const [menuOpen, setMenuOpen] = useState(false)
+  const utils = api.useUtils()
 
   useEffect(() => {
     if (!session) return
-    authClient.organization.list().then((res) => setOrgs(res.data ?? []))
-  }, [session])
+    utils.member.listActiveOrganizations.fetch().then(({ organizations }) => {
+      setOrgs(organizations)
+    })
+  }, [session, utils])
 
   async function handleSignOut() {
     await authClient.signOut()
@@ -40,7 +44,6 @@ export function LandingNav() {
       ? (member as { role: string }).role
       : null
     if (role === "owner" || role === "admin") router.push(`/${org.slug}`)
-    else if (role === "team_leader") router.push(`/${org.slug}/manage-team`)
     else router.push(`/${org.slug}/team`)
   }
 

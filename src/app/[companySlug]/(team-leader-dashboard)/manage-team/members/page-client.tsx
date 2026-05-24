@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { UserMinus, UserPlus } from "@phosphor-icons/react"
+import { Prohibit, UserCheck, UserMinus, UserPlus } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { useMemberRole } from "@/lib/use-member-role"
 import { authClient } from "@/lib/auth-client"
@@ -79,6 +79,10 @@ export default function TeamMembersPage() {
   }
 
   const removeMemberMutation = api.team.removeTeamMember.useMutation({
+    onSuccess: () => refetch(),
+  })
+
+  const setMemberStatus = api.team.setTeamMemberStatus.useMutation({
     onSuccess: () => refetch(),
   })
 
@@ -196,20 +200,45 @@ export default function TeamMembersPage() {
                     Leader
                   </Badge>
                 )}
+                {tm.status === "inactive" && (
+                  <Badge variant="secondary" className="text-[9px]">
+                    Inactive
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground truncate">
                 {tm.user.email}
               </p>
             </div>
             {canManage && team.leader?.user?.id !== tm.user.id && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-muted-foreground hover:text-destructive"
-                onClick={() => setRemoveConfirm(tm.user.id)}
-              >
-                <UserMinus className="size-3.5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    if (!activeTeamId || !organization) return
+                    setMemberStatus.mutate({
+                      teamId: activeTeamId,
+                      organizationId: organization.id,
+                      userId: tm.user.id,
+                      status: tm.status === "inactive" ? "active" : "inactive",
+                    })
+                  }}
+                  disabled={setMemberStatus.isPending}
+                >
+                  <Prohibit className="size-3 mr-1" />
+                  {tm.status === "inactive" ? "Activate" : "Deactivate"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => setRemoveConfirm(tm.user.id)}
+                >
+                  <UserMinus className="size-3.5" />
+                </Button>
+              </div>
             )}
           </div>
         ))}

@@ -39,16 +39,23 @@ export default async function TeamLayout({
 
   if (!member) redirect("/onboard")
 
-  if (member.role === "owner" || member.role === "admin") redirect(`/${companySlug}`)
-
-  const ledTeam = await prisma.team.findFirst({
-    where: { organizationId: orgId, leaderId: member.id },
-  })
-
-  if (ledTeam) {
+  if (member.role === "owner" || member.role === "admin") {
     const activeTeamId = session.session.activeTeamId
-    if (!activeTeamId || activeTeamId === ledTeam.id) {
-      redirect(`/${companySlug}/manage-team`)
+    if (!activeTeamId) redirect(`/${companySlug}`)
+    const ledTeam = await prisma.team.findFirst({
+      where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
+    })
+    if (ledTeam) redirect(`/${companySlug}/manage-team`)
+  } else {
+    const ledTeam = await prisma.team.findFirst({
+      where: { organizationId: orgId, leaderId: member.id },
+    })
+
+    if (ledTeam) {
+      const activeTeamId = session.session.activeTeamId
+      if (!activeTeamId || activeTeamId === ledTeam.id) {
+        redirect(`/${companySlug}/manage-team`)
+      }
     }
   }
 
@@ -65,6 +72,17 @@ export default async function TeamLayout({
       where: { userId: session.user.id, teamId: activeTeamId },
     })
     if (!validMember) redirect(`/${companySlug}/org`)
+    if (validMember.status === "inactive") {
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 p-6">
+          <h2 className="text-sm font-medium text-foreground">Access Deactivated</h2>
+          <p className="text-xs text-muted-foreground text-center max-w-md">
+            Your access to this team has been deactivated. Contact your team leader or organization
+            owner for more information.
+          </p>
+        </div>
+      )
+    }
   }
 
   return <>{children}</>

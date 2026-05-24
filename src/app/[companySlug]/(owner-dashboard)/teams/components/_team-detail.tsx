@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import {
+  Prohibit,
   Trash,
   UserPlus,
   Users as UsersIcon,
@@ -40,6 +41,7 @@ type OrgMember = {
 interface TeamMember {
   id: string
   role: string
+  status: string
   userId: string
   user: { id: string; name: string; email: string; image: string | null | undefined }
 }
@@ -77,6 +79,18 @@ export function TeamDetail({ teamId }: { teamId: string }) {
     onSuccess: () => { setSwitchLeaderOpen(false); setNewLeaderMemberId(""); refetch() },
   })
 
+  const deleteTeam = api.team.delete.useMutation({
+    onSuccess: () => router.push(`/${companySlug}/teams`),
+  })
+
+  const removeMember = api.team.removeTeamMember.useMutation({
+    onSuccess: () => refetch(),
+  })
+
+  const setMemberStatus = api.team.setTeamMemberStatus.useMutation({
+    onSuccess: () => refetch(),
+  })
+
   const canManage = currentUserRole === "owner" || currentUserRole === "admin"
 
   const loadOrgMembers = useCallback(async () => {
@@ -112,20 +126,16 @@ export function TeamDetail({ teamId }: { teamId: string }) {
     } catch { /* silent */ }
   }
 
-  const handleRemoveMember = async (userId: string) => {
+  const handleRemoveMember = (userId: string) => {
     setRemoving(userId)
-    try {
-      await authClient.organization.removeTeamMember({ teamId, userId })
-      refetch()
-    } catch { /* silent */ }
-    finally { setRemoving(null) }
+    removeMember.mutate(
+      { teamId, organizationId: organization?.id ?? "", userId },
+      { onSettled: () => setRemoving(null) },
+    )
   }
 
-  const handleDeleteTeam = async () => {
-    try {
-      await authClient.organization.removeTeam({ teamId })
-      router.push(`/${companySlug}/teams`)
-    } catch { /* silent */ }
+  const handleDeleteTeam = () => {
+    deleteTeam.mutate({ teamId, organizationId: organization?.id ?? "" })
   }
 
   const isTeamLeader = () => {
@@ -174,9 +184,9 @@ export function TeamDetail({ teamId }: { teamId: string }) {
           </div>
           <div className="flex items-center gap-2">
             {canManage && (
-              <Button variant="destructive" size="sm" onClick={handleDeleteTeam}>
+              <Button variant="destructive" size="sm" onClick={handleDeleteTeam} disabled={deleteTeam.isPending}>
                 <Trash className="size-3.5" />
-                Delete
+                {deleteTeam.isPending ? "Deleting..." : "Delete"}
               </Button>
             )}
           </div>
@@ -320,18 +330,40 @@ export function TeamDetail({ teamId }: { teamId: string }) {
                     <p className="text-xs font-medium text-foreground truncate">
                       {tm.user.name}
                       {isLeader && <span className="ml-1.5 text-xs text-muted-foreground font-normal">(leader)</span>}
+                      {tm.status === "inactive" && (
+                        <span className="ml-1.5 text-xs text-destructive font-normal">inactive</span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">{tm.user.email}</p>
                   </div>
-                  {!isLeader && canManageTeam() && (
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleRemoveMember(tm.userId)}
-                      disabled={removing === tm.userId}
-                    >
-                      <Trash className="size-3.5 text-muted-foreground hover:text-destructive" />
-                    </Button>
+                  {canManageTeam() && (canManage || !isLeader) && (
+                    <div className="flex items-center gap-1">
+                      {!isLeader && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => setMemberStatus.mutate({
+                            teamId,
+                            organizationId: organization?.id ?? "",
+                            userId: tm.userId,
+                            status: tm.status === "inactive" ? "active" : "inactive",
+                          })}
+                          disabled={setMemberStatus.isPending}
+                        >
+                          <Prohibit className="size-3 mr-1" />
+                          {tm.status === "inactive" ? "Activate" : "Deactivate"}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleRemoveMember(tm.userId)}
+                        disabled={removing === tm.userId}
+                      >
+                        <Trash className="size-3.5 text-muted-foreground hover:text-destructive" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               )

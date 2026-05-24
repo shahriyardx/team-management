@@ -52,6 +52,18 @@ export default async function CompanyLayout({
     redirect(`/${userOrgs[0].organization.slug}`)
   }
 
+  if (member.status === "inactive") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6">
+        <h1 className="text-lg font-semibold text-foreground">Account Deactivated</h1>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          Your access to this organization has been deactivated. Contact your organization owner
+          for more information.
+        </p>
+      </div>
+    )
+  }
+
   // If active org doesn't match URL slug, update session
   if (org.id !== session.session.activeOrganizationId) {
     await prisma.session.update({

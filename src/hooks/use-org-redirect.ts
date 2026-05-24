@@ -1,13 +1,22 @@
 import { useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { api } from "@/lib/trpc/client"
 
 export function useOrgRedirect() {
   const router = useRouter()
+  const utils = api.useUtils()
 
   const redirectToFirstOrg = useCallback(async (fallbackPath = "/onboard") => {
-    const { data: orgs } = await authClient.organization.list()
-    if (!orgs?.length) {
+    let orgs: Array<{ id: string; slug: string }> = []
+    try {
+      const { organizations } = await utils.member.listActiveOrganizations.fetch()
+      orgs = organizations
+    } catch {
+      const { data } = await authClient.organization.list()
+      orgs = (data ?? []) as Array<{ id: string; slug: string }>
+    }
+    if (!orgs.length) {
       router.replace(fallbackPath)
       return
     }
@@ -18,8 +27,6 @@ export function useOrgRedirect() {
       ? (member as { role: string }).role
       : "member"
     if (role === "owner" || role === "admin") router.replace(`/${org.slug}`)
-    else if (role === "team_leader") router.replace(`/${org.slug}/manage-team`)
-    else if (role === "pending") router.replace(`/${org.slug}/org`)
     else router.replace(`/${org.slug}/team`)
   }, [router])
 

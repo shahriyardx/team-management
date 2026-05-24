@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { CaretDown, Check, CopySimple, EnvelopeSimple, House, SignOut, Sparkle, UserPlus, X } from "@phosphor-icons/react"
+import { CaretDown, Check, CopySimple, EnvelopeSimple, House, Prohibit, SignOut, Sparkle, UserPlus, X } from "@phosphor-icons/react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,11 +33,13 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useOrganization } from "@/lib/organization-context"
 import { authClient } from "@/lib/auth-client"
+import { api } from "@/lib/trpc/client"
 
 type Member = {
   id: string
   userId: string
   role: string
+  status: string
   user: { id: string; name: string; email: string; image: string | null | undefined }
 }
 
@@ -67,10 +69,16 @@ type InviteForm = z.infer<typeof inviteSchema>
 export default function OrgMembersPage() {
   const { session, organization } = useOrganization()
 
-  const [members, setMembers] = useState<Member[]>([])
+  const { data: membersData, isLoading: membersLoading } = api.member.listWithStatus.useQuery(
+    { organizationId: organization?.id ?? "" },
+    { enabled: !!organization },
+  )
+  const members = membersData?.members ?? []
+  const currentUser = members.find((m) => m.userId === session?.user?.id)
+  const currentUserRole = currentUser?.role ?? null
+
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
 
   const [inviteOpen, setInviteOpen] = useState(false)
   const [teams, setTeams] = useState<Team[]>([])
@@ -82,27 +90,24 @@ export default function OrgMembersPage() {
     defaultValues: { email: "", role: "member", teamId: undefined },
   })
 
+  const utils = api.useUtils()
   const [changingRole, setChangingRole] = useState<string | null>(null)
   const [removingMember, setRemovingMember] = useState<string | null>(null)
+
+  const updateOrgStatus = api.member.updateOrgMemberStatus.useMutation({
+    onSuccess: () => utils.member.listWithStatus.invalidate(),
+  })
 
   const canManage = currentUserRole === "owner" || currentUserRole === "admin"
 
   const loadData = useCallback(async () => {
     if (!organization) return
     try {
-      const [membersRes, invitationsRes] = await Promise.all([
-        authClient.organization.listMembers({ query: { organizationSlug: organization.slug } }),
+      const [invitationsRes] = await Promise.all([
         authClient.organization.listInvitations({ query: { organizationId: organization.id } }),
       ])
-      const membersData = membersRes.data?.members ?? []
       const invitationsData = (invitationsRes.data as Invitation[]) ?? []
-      setMembers(membersData)
       setInvitations(invitationsData.filter((inv) => inv.status === "pending"))
-
-      if (session?.user?.id) {
-        const me = membersData.find((m: Member) => m.userId === session.user.id)
-        if (me) setCurrentUserRole(me.role)
-      }
 
       // Load teams for the org
       const teamsRes = await authClient.organization.getFullOrganization({
@@ -117,7 +122,7 @@ export default function OrgMembersPage() {
     } finally {
       setLoading(false)
     }
-  }, [organization, session?.user?.id])
+  }, [organization])
 
   useEffect(() => {
     if (organization) loadData()
@@ -176,7 +181,7 @@ export default function OrgMembersPage() {
     finally { setChangingRole(null) }
   }, [organization, loadData])
 
-  if (loading) {
+  if (loading || membersLoading) {
     return (
       <div className="flex flex-1 items-center justify-center bg-background">
         <span className="size-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
@@ -314,6 +319,12 @@ export default function OrgMembersPage() {
                       : "bg-muted text-muted-foreground ring-1 border-border"
                     }`}>{member.role}</span>
 
+                    {member.status === "inactive" && (
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+                        Inactive
+                      </span>
+                    )}
+
                     {canManage && member.role !== "owner" && member.userId !== session?.user?.id && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -340,6 +351,18 @@ export default function OrgMembersPage() {
                             </DropdownMenuItem>
                           )}
                           {(currentUserRole === "owner" || (currentUserRole === "admin" && member.role === "member")) && <DropdownMenuSeparator />}
+                          <DropdownMenuItem
+                            onClick={() => updateOrgStatus.mutate({
+                              organizationId: organization?.id ?? "",
+                              userId: member.userId,
+                              status: member.status === "inactive" ? "active" : "inactive",
+                            })}
+                            disabled={updateOrgStatus.isPending}
+                          >
+                            <Prohibit className="size-3.5" />
+                            {member.status === "inactive" ? "Activate" : "Deactivate"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleRemoveMember(member.id)} disabled={removingMember === member.id} variant="destructive">
                             <SignOut className="size-3.5" />Remove
                           </DropdownMenuItem>

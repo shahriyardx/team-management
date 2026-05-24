@@ -16,7 +16,7 @@ export function KbCommentSection({ kbItemId }: { kbItemId: string }) {
   const currentUserId = session?.user?.id
   const { role } = useMemberRole()
   const utils = api.useUtils()
-  const isPrivileged = role === "owner" || role === "admin" || role === "team_leader"
+  const isPrivileged = role === "owner" || role === "admin"
 
   const { data, isLoading } = api.knowledgeBase.commentList.useQuery({ kbItemId })
   const createComment = api.knowledgeBase.commentCreate.useMutation()

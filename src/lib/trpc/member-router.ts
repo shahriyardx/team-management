@@ -36,34 +36,88 @@ export const memberRouter = router({
         return { role: member.role as "owner" | "admin" }
       }
 
-      // Check team leader status via memberId
-      const ledTeam = await prisma.team.findFirst({
-        where: { leaderId: member.id, organizationId: input.organizationId },
-      })
+      return { role: "member" as const }
+    }),
 
-      if (ledTeam) {
-        return { role: "team_leader" as const }
-      }
-
-      // Check if member is in any real team (not the default org team)
-      const org = await prisma.organization.findUnique({
-        where: { id: input.organizationId },
-        select: { name: true },
-      })
-      const realTeam = await prisma.teamMember.findFirst({
+  updateOrgMemberStatus: protectedProcedure
+    .input(z.object({
+      organizationId: z.string(),
+      userId: z.string(),
+      status: z.enum(["active", "inactive"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const caller = await prisma.member.findUnique({
         where: {
-          userId: member.userId,
-          team: {
+          organizationId_userId: {
             organizationId: input.organizationId,
-            name: { not: org?.name ?? "" },
+            userId: ctx.session.user.id,
           },
         },
       })
-
-      if (realTeam) {
-        return { role: "member" as const }
+      if (!caller || (caller.role !== "owner" && caller.role !== "admin")) {
+        throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      return { role: "pending" as const }
+      const target = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: input.userId,
+          },
+        },
+      })
+      if (!target) throw new TRPCError({ code: "BAD_REQUEST", message: "Member not found" })
+      if (target.role === "owner" || target.role === "admin") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change status of org owners/admins" })
+      }
+
+      await prisma.member.update({
+        where: { id: target.id },
+        data: { status: input.status },
+      })
+
+      return { success: true }
+    }),
+
+  listWithStatus: protectedProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const caller = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!caller) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const members = await prisma.member.findMany({
+        where: { organizationId: input.organizationId },
+        select: {
+          id: true,
+          userId: true,
+          role: true,
+          status: true,
+          user: { select: { id: true, name: true, email: true, image: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      })
+
+      return { members }
+    }),
+
+  listActiveOrganizations: protectedProcedure
+    .query(async ({ ctx }) => {
+      const memberships = await prisma.member.findMany({
+        where: { userId: ctx.session.user.id, status: "active" },
+        include: {
+          organization: {
+            select: { id: true, name: true, slug: true, logo: true, websiteUrl: true, department: true, teamSize: true },
+          },
+        },
+      })
+      const organizations = memberships.map((m) => m.organization)
+      return { organizations }
     }),
 })
