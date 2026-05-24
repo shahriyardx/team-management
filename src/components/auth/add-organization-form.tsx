@@ -191,28 +191,26 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
           <span className="mb-2 block text-xs font-medium text-foreground">
             Logo
           </span>
-          <button
-            type="button"
-            disabled={form.formState.isSubmitting}
-            onClick={() => document.getElementById("org-logo-upload")?.click()}
-            className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-          >
-            {logoPreview ? (
-              <img src={logoPreview} alt="Organization logo" className="size-full object-cover" />
-            ) : (
-              <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
-                <Building className="size-5" />
-                <span className="text-xs">Upload logo</span>
-              </div>
-            )}
-          </button>
-          <input
-            id="org-logo-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleLogoUpload}
-          />
+          <div className="relative h-32 w-32">
+            <div className="pointer-events-none flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 overflow-hidden">
+              {logoPreview ? (
+                <img src={logoPreview} alt="Organization logo" className="size-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+                  <Building className="size-5" />
+                  <span className="text-xs">Upload logo</span>
+                </div>
+              )}
+            </div>
+            <input
+              id="org-logo-upload"
+              type="file"
+              accept="image/*"
+              disabled={form.formState.isSubmitting}
+              className="absolute inset-0 size-full cursor-pointer opacity-0"
+              onChange={handleLogoUpload}
+            />
+          </div>
         </div>
 
         {/* Name */}
