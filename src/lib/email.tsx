@@ -73,6 +73,38 @@ export async function sendVerificationEmail({
   if (error) throw error
 }
 
+export async function sendContactEmail({
+  name,
+  email,
+  subject,
+  message,
+}: {
+  name: string
+  email: string
+  subject: string
+  message: string
+}) {
+  if (!process.env.RESEND_API_KEY) return
+
+  const text = [
+    `Name: ${name}`,
+    `Email: ${email}`,
+    `Subject: ${subject}`,
+    `Message:\n${message}`,
+  ].join("\n\n")
+
+  const resend = await getResend()
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: "teamcontact@weirdsoft.co.uk",
+    replyTo: email,
+    subject: `[Contact] ${subject}`,
+    text,
+  })
+
+  if (error) throw error
+}
+
 export async function sendResetPasswordEmail({
   to,
   url,
