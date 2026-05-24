@@ -200,7 +200,6 @@ export function OrgOkrDashboard() {
       title: data.title,
       description: data.description || null,
       cycleId: selectedCycleId,
-      organizationId: organization.id,
     })
   })
 

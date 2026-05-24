@@ -269,7 +269,6 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
       ownerId: data.ownerId,
       teamId,
       cycleId,
-      organizationId: organization.id,
     })
   })
 

@@ -179,7 +179,6 @@ export default function TeamOkrAssignment() {
       description: data.description || null,
       cycleId: selectedCycleId,
       teamId: data.teamId,
-      organizationId: organization.id,
     })
   })
 
@@ -349,7 +348,6 @@ export default function TeamOkrAssignment() {
                                       item.objective.description ?? null,
                                     teamId: team.id,
                                     cycleId: selectedCycleId,
-                                    organizationId: organization.id,
                                   })
                                 for (const kr of item.keyResults ?? []) {
                                   await utils.client.keyResult.create.mutate({
