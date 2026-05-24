@@ -267,6 +267,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
       title: data.title,
       description: data.description || null,
       ownerId: data.ownerId,
+      teamId,
       cycleId,
       organizationId: organization.id,
     })
