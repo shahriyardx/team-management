@@ -799,6 +799,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
+              <TableHead>Created by</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Due</TableHead>
               <TableHead>Status</TableHead>
@@ -810,7 +811,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
             {filteredTasks.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="py-16 text-center text-muted-foreground"
                 >
                   {hasActiveFilters
@@ -837,6 +838,11 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                         className={`truncate ${task.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}
                       >
                         {task.title}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-muted-foreground">
+                        {task.createdBy.name}
                       </span>
                     </TableCell>
                     <TableCell>
