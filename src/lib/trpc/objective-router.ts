@@ -162,14 +162,16 @@ export const objectiveRouter = router({
 
       if (hasOwner) {
         // Member-level — must be team leader of target's team
+        const teamId = ctx.session.session.activeTeamId
+        if (!teamId) throw new TRPCError({ code: "FORBIDDEN", message: "No active team" })
         const targetOwner = await prisma.member.findUnique({ where: { id: input.ownerId } })
         if (!targetOwner || targetOwner.organizationId !== orgId) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid owner" })
         }
-        const isTeamLeader = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: orgId, members: { some: { userId: targetOwner.userId } } },
+        const team = await prisma.team.findFirst({
+          where: { id: teamId, organizationId: orgId, leaderId: member.id, members: { some: { userId: targetOwner.userId } } },
         })
-        if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN", message: "Only team leaders can assign OKRs to members." })
+        if (!team) throw new TRPCError({ code: "FORBIDDEN", message: "Only team leaders can assign OKRs to members." })
       } else if (hasTeam) {
         // Team-level — admin/owner only
         if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" })
@@ -190,12 +192,15 @@ export const objectiveRouter = router({
         }
       }
 
+      // Resolve teamId: member-level uses activeTeamId from session, team-level from input
+      const resolvedTeamId = hasOwner ? ctx.session.session.activeTeamId : (input.teamId ?? null)
+
       const objective = await prisma.objective.create({
         data: {
           title: input.title,
           description: input.description ?? null,
           ownerId: input.ownerId ?? null,
-          teamId: input.teamId ?? null,
+          teamId: resolvedTeamId,
           cycleId: input.cycleId,
           organizationId: orgId,
         },
