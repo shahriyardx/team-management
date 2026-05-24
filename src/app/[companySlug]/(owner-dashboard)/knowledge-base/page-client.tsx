@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { MagnifyingGlassIcon, PlusIcon, X } from "@phosphor-icons/react"
@@ -14,11 +15,13 @@ import { useKbBrowser } from "@/components/knowledge-base/use-kb-browser"
 import { KbAllCategoriesView } from "@/components/knowledge-base/kb-all-categories-view"
 import { KbItemRow, type KbItem } from "@/components/knowledge-base/kb-item-row"
 import { KbSpecificCategoryView } from "@/components/knowledge-base/kb-specific-category-view"
+import { KbDetailOverlay } from "@/components/knowledge-base/kb-detail-overlay"
 
 export default function KnowledgeTimelinePage() {
   const { companySlug } = useParams<{ companySlug: string }>()
   const { organization } = useOrganization()
   const { role, loading: roleLoading } = useMemberRole()
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
 
   const {
     categories, isCategoryLoading, selectedCategoryId, setSelectedCategoryId,
@@ -66,7 +69,7 @@ export default function KnowledgeTimelinePage() {
                 ))}
               </SelectContent>
             </Select>
-            <Link href="add">
+            <Link href={`${baseHref}/add`}>
               <Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button>
             </Link>
           </div>
@@ -86,7 +89,7 @@ export default function KnowledgeTimelinePage() {
           <div className="space-y-1">
             <p className="mb-3 text-xs text-muted-foreground">{totalResults} result{totalResults !== 1 ? "s" : ""}</p>
             {searchResults.map((item: KbItem) => (
-              <KbItemRow key={item.id} item={item} baseHref={baseHref} />
+              <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={setSelectedSlug} />
             ))}
             {totalResults > PAGE && (
               <div className="flex items-center justify-between pt-3">
@@ -104,10 +107,14 @@ export default function KnowledgeTimelinePage() {
       ) : categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 border border-border p-6"><p className="text-xs text-muted-foreground">No knowledge base yet.</p></div>
       ) : showAll ? (
-        <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} />
+        <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} onItemSelect={setSelectedSlug} />
       ) : selectedCat ? (
-        <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} baseHref={baseHref} />
+        <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} baseHref={baseHref} onItemSelect={setSelectedSlug} />
       ) : null}
+
+      {selectedSlug && (
+        <KbDetailOverlay slug={selectedSlug} onClose={() => setSelectedSlug(null)} />
+      )}
     </div>
   )
 }

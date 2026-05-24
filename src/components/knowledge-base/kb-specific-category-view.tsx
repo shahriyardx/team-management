@@ -18,11 +18,13 @@ export function KbSpecificCategoryView({
   organizationId,
   teamId,
   baseHref,
+  onItemSelect,
 }: {
   subcategories: SubcategoryItem[]
   organizationId: string
   teamId?: string
   baseHref: string
+  onItemSelect?: (id: string) => void
 }) {
   const [collapsedSubs, setCollapsedSubs] = useState<Set<string>>(() => new Set(subcategories.map((s) => s.id)))
 
@@ -47,7 +49,7 @@ export function KbSpecificCategoryView({
                 className="overflow-hidden border-t border-border"
               >
                 <div className="space-y-1.5 px-4 py-3">
-                  <LazySubcategoryItems subcategoryId={sub.id} organizationId={organizationId} teamId={teamId} baseHref={baseHref} />
+                  <LazySubcategoryItems subcategoryId={sub.id} organizationId={organizationId} teamId={teamId} baseHref={baseHref} onItemSelect={onItemSelect} />
                 </div>
               </motion.div>
             )}
@@ -63,11 +65,13 @@ function LazySubcategoryItems({
   organizationId,
   teamId,
   baseHref,
+  onItemSelect,
 }: {
   subcategoryId: string
   organizationId: string
   teamId?: string
   baseHref: string
+  onItemSelect?: (id: string) => void
 }) {
   const [take, setTake] = useState(PAGE)
 
@@ -97,7 +101,7 @@ function LazySubcategoryItems({
   return (
     <>
       {items.map((item: KbItem) => (
-        <KbItemRow key={item.id} item={item} baseHref={baseHref} />
+        <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={onItemSelect} />
       ))}
       {hasMore ? (
         <button

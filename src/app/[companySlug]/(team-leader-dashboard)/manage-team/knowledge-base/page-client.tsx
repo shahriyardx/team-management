@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { MagnifyingGlassIcon, PlusIcon, X } from "@phosphor-icons/react"
@@ -15,6 +16,7 @@ import { useKbBrowser } from "@/components/knowledge-base/use-kb-browser"
 import { KbAllCategoriesView } from "@/components/knowledge-base/kb-all-categories-view"
 import { KbItemRow, type KbItem } from "@/components/knowledge-base/kb-item-row"
 import { KbSpecificCategoryView } from "@/components/knowledge-base/kb-specific-category-view"
+import { KbDetailOverlay } from "@/components/knowledge-base/kb-detail-overlay"
 
 export default function TeamKnowledgeBasePage() {
   const { companySlug } = useParams<{ companySlug: string }>()
@@ -22,6 +24,7 @@ export default function TeamKnowledgeBasePage() {
   const { loading: roleLoading } = useMemberRole()
   const { data: session } = authClient.useSession()
   const activeTeamId = session?.session?.activeTeamId
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
 
   const {
     categories, isCategoryLoading, selectedCategoryId, setSelectedCategoryId,
@@ -69,7 +72,7 @@ export default function TeamKnowledgeBasePage() {
                 {categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}
               </SelectContent>
             </Select>
-            <Link href="add"><Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button></Link>
+            <Link href={`${baseHref}/add`}><Button><PlusIcon className="mr-1.5 size-3.5" />Add Knowledge</Button></Link>
           </div>
         </div>
       </div>
@@ -87,7 +90,7 @@ export default function TeamKnowledgeBasePage() {
           <div className="space-y-1">
             <p className="mb-3 text-xs text-muted-foreground">{totalResults} result{totalResults !== 1 ? "s" : ""}</p>
             {searchResults.map((item: KbItem) => (
-              <KbItemRow key={item.id} item={item} baseHref={baseHref} />
+              <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={setSelectedSlug} />
             ))}
             {totalResults > PAGE && (
               <div className="flex items-center justify-between pt-3">
@@ -105,10 +108,14 @@ export default function TeamKnowledgeBasePage() {
       ) : categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 border border-border p-6"><p className="text-xs text-muted-foreground">No knowledge base yet.</p></div>
       ) : showAll ? (
-        <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} />
+        <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} onItemSelect={setSelectedSlug} />
       ) : selectedCat ? (
-        <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} baseHref={baseHref} />
+        <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} baseHref={baseHref} onItemSelect={setSelectedSlug} />
       ) : null}
+
+      {selectedSlug && (
+        <KbDetailOverlay slug={selectedSlug} onClose={() => setSelectedSlug(null)} />
+      )}
     </div>
   )
 }

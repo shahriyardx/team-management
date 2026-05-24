@@ -26,6 +26,7 @@ export function KbAllCategoriesView({
   collapsedCategories,
   toggleCategory,
   baseHref,
+  onItemSelect,
 }: {
   categories: CategoryItem[]
   organizationId: string
@@ -33,6 +34,7 @@ export function KbAllCategoriesView({
   collapsedCategories: Set<string>
   toggleCategory: (id: string) => void
   baseHref: string
+  onItemSelect?: (id: string) => void
 }) {
   return (
     <div className="space-y-3">
@@ -69,6 +71,7 @@ export function KbAllCategoriesView({
                           organizationId={organizationId}
                           teamId={teamId}
                           baseHref={baseHref}
+                          onItemSelect={onItemSelect}
                         />
                       ))
                     )}
@@ -88,11 +91,13 @@ function LazySubcategorySection({
   organizationId,
   teamId,
   baseHref,
+  onItemSelect,
 }: {
   subcategory: SubcategoryItem
   organizationId: string
   teamId?: string
   baseHref: string
+  onItemSelect?: (id: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const [take, setTake] = useState(PAGE)
@@ -142,7 +147,7 @@ function LazySubcategorySection({
               ) : (
                 <>
                   {items.map((item: KbItem) => (
-                    <KbItemRow key={item.id} item={item} baseHref={baseHref} />
+                    <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={onItemSelect} />
                   ))}
                   {hasMore ? (
                     <button
