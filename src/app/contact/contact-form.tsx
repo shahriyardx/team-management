@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useActionState, startTransition } from "react"
-import { submitContact } from "./actions"
+import { api } from "@/lib/trpc/client"
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -22,27 +21,21 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>
 
 export function ContactForm() {
-  const [state, formAction, pending] = useActionState(submitContact, null)
+  const mutation = api.contact.submit.useMutation()
 
   const { control, handleSubmit } = useForm<ContactFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(contactSchema) as any,
+    resolver: zodResolver(contactSchema),
     defaultValues: { name: "", email: "", subject: "", message: "" },
   })
 
   const onSubmit = useCallback(
     (data: ContactFormData) => {
-      const fd = new FormData()
-      fd.set("name", data.name)
-      fd.set("email", data.email)
-      fd.set("subject", data.subject)
-      fd.set("message", data.message)
-      startTransition(() => formAction(fd))
+      mutation.mutate(data)
     },
-    [formAction],
+    [mutation],
   )
 
-  if (state?.success) {
+  if (mutation.isSuccess) {
     return (
       <div className="mt-6 text-center py-12">
         <div className="inline-flex size-12 items-center justify-center rounded-full bg-emerald-500/10 mb-4">
@@ -103,11 +96,11 @@ export function ContactForm() {
           </Field>
         )}
       />
-      {state?.error && (
-        <p className="text-xs text-red-500">{state.error}</p>
+      {mutation.isError && (
+        <p className="text-xs text-red-500">{mutation.error.message}</p>
       )}
-      <Button type="submit" disabled={pending}>
-        {pending ? "Sending..." : "Send message"}
+      <Button type="submit" disabled={mutation.isPending}>
+        {mutation.isPending ? "Sending..." : "Send message"}
         <ArrowRight className="size-3" />
       </Button>
     </form>

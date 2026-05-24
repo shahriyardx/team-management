@@ -11,6 +11,7 @@ import { memberRouter } from "./member-router"
 import { dashboardRouter } from "./dashboard-router"
 import { knowledgeBaseRouter } from "./knowledge-base-router"
 import { announcementRouter } from "./announcement-router"
+import { contactRouter } from "./contact-router"
 
 export const appRouter = router({
   task: taskRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   knowledgeBase: knowledgeBaseRouter,
   announcement: announcementRouter,
+  contact: contactRouter,
 })
 
 export type AppRouter = typeof appRouter
