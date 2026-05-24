@@ -36,7 +36,7 @@ export const objectiveRouter = router({
       } else if (input.scope === "team") {
         where.teamId = { not: null }
       } else if (input.scope === "member") {
-        where.ownerId = { not: null }
+        where.ownerId = member.id
       }
 
       // Optional explicit filters override scope

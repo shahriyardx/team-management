@@ -65,7 +65,7 @@ export function MemberOkrView({ cycleId: initialCycleId, locked: initialLocked }
   const locked = selectedCycle?.locked ?? initialLocked ?? false
 
   const { data: objectivesData, isLoading } = api.objective.list.useQuery(
-    { cycleId, organizationId: organization?.id ?? "" },
+    { cycleId, organizationId: organization?.id ?? "", scope: "member" },
     { enabled: !!cycleId && !!organization },
   )
   const objectives = (objectivesData?.objectives ?? []) as Array<{
