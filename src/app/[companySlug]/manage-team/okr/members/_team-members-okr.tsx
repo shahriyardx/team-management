@@ -23,7 +23,6 @@ import {
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useOrganization } from "@/lib/organization-context"
@@ -437,14 +436,6 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                             {memberObjs.length} objective
                             {memberObjs.length !== 1 ? "s" : ""}
                           </span>
-                          {member.role === "leader" && (
-                            <Badge
-                              variant="outline"
-                              className="ml-2 text-[9px]"
-                            >
-                              Leader
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 sm:w-auto">

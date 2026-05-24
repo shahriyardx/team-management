@@ -181,6 +181,42 @@ export const teamRouter = router({
       return { success: true }
     }),
 
+  removeTeamMember: protectedProcedure
+    .input(z.object({ teamId: z.string(), organizationId: z.string(), userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const team = await prisma.team.findFirst({
+        where: { id: input.teamId, organizationId: input.organizationId },
+      })
+      if (!team) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const isOwnerAdmin = member.role === "owner" || member.role === "admin"
+      const isLeader = team.leaderId === member.id
+      if (!isOwnerAdmin && !isLeader) throw new TRPCError({ code: "FORBIDDEN" })
+
+      // Can't remove the leader
+      const targetTeamMember = await prisma.teamMember.findUnique({
+        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+      })
+      if (!targetTeamMember) throw new TRPCError({ code: "BAD_REQUEST", message: "Not a team member" })
+      if (targetTeamMember.role === "leader") throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot remove team leader" })
+
+      await prisma.teamMember.delete({
+        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+      })
+
+      return { success: true }
+    }),
+
   setLeader: protectedProcedure
     .input(z.object({ teamId: z.string(), leaderMemberId: z.string() }))
     .mutation(async ({ ctx, input }) => {

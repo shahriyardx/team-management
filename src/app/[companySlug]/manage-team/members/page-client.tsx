@@ -78,27 +78,24 @@ export default function TeamMembersPage() {
     }
   }
 
+  const removeMemberMutation = api.team.removeTeamMember.useMutation({
+    onSuccess: () => refetch(),
+  })
+
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null)
-  const [removing, setRemoving] = useState(false)
 
   const handleRemoveMember = async (userId: string) => {
-    if (!activeTeamId) return
-    setRemoving(true)
+    if (!activeTeamId || !organization) return
     try {
-      const res = await authClient.organization.removeTeamMember({
+      await removeMemberMutation.mutateAsync({
         teamId: activeTeamId,
+        organizationId: organization.id,
         userId,
       })
-      if (res.error) {
-        setError(res.error.message ?? "Failed to remove member")
-      } else {
-        setRemoveConfirm(null)
-        refetch()
-      }
+      setRemoveConfirm(null)
+      refetch()
     } catch {
-      setError("Something went wrong")
-    } finally {
-      setRemoving(false)
+      setError("Failed to remove member")
     }
   }
 
@@ -235,10 +232,10 @@ export default function TeamMembersPage() {
             </Button>
             <Button
               variant="destructive"
-              disabled={removing}
+              disabled={removeMemberMutation.isPending}
               onClick={() => removeConfirm && handleRemoveMember(removeConfirm)}
             >
-              {removing ? "Removing..." : "Remove"}
+              {removeMemberMutation.isPending ? "Removing..." : "Remove"}
             </Button>
           </DialogFooter>
         </DialogContent>
