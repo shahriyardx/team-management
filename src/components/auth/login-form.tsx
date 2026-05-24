@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { authClient } from "@/lib/auth-client"
+import { useOrgRedirect } from "@/hooks/use-org-redirect"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -18,26 +19,9 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
-function redirectToDashboard(router: ReturnType<typeof useRouter>) {
-  authClient.organization.list().then(({ data: orgs }) => {
-    if (!orgs?.length) { router.push("/onboard"); return }
-    const org = orgs[0]
-    authClient.organization.setActive({ organizationId: org.id }).then(() => {
-      authClient.organization.getActiveMember().then(({ data: member }) => {
-        const role = member && typeof member === "object" && "role" in member
-          ? (member as { role: string }).role
-          : null
-        if (role === "owner" || role === "admin") router.replace(`/${org.slug}`)
-        else if (role === "team_leader") router.replace(`/${org.slug}/manage-team`)
-        else if (role === "pending") router.replace(`/${org.slug}/org`)
-        else router.replace(`/${org.slug}/team`)
-      })
-    })
-  })
-}
-
 export function LoginForm({ callbackURL }: { callbackURL?: string }) {
   const router = useRouter()
+  const { redirectToFirstOrg } = useOrgRedirect()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -59,10 +43,10 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       if (callbackURL) {
         router.replace(callbackURL)
       } else {
-        redirectToDashboard(router)
+        redirectToFirstOrg("/onboard")
       }
     },
-    [router, callbackURL],
+    [router, callbackURL, redirectToFirstOrg],
   )
 
   const handleGoogleSignIn = useCallback(async () => {
@@ -79,8 +63,8 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       setLoading(false)
       return
     }
-    redirectToDashboard(router)
-  }, [router])
+    redirectToFirstOrg("/onboard")
+  }, [redirectToFirstOrg])
 
   return (
     <div className="w-full max-w-sm mx-auto">
