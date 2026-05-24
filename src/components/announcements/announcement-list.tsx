@@ -137,12 +137,12 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
               onClick={() => router.push(`${basePath}/${a.id}`)}
               className="w-full text-left border border-border p-4 hover:bg-accent/50 transition-colors"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                 {a.thumbnail && (
                   <img
                     src={a.thumbnail}
                     alt=""
-                    className="size-16 object-cover rounded-none shrink-0"
+                    className="w-full sm:w-24 h-48 sm:h-16 object-cover rounded-none shrink-0"
                   />
                 )}
                 <div className="flex-1 min-w-0">
