@@ -14,6 +14,8 @@ import { KbEditSheet } from "@/components/knowledge-base/kb-edit-sheet"
 import { MarkdownRenderer } from "@/components/knowledge-base/markdown-renderer"
 import { api } from "@/lib/trpc/client"
 import { useOrganization } from "@/lib/organization-context"
+import { useMemberRole } from "@/lib/use-member-role"
+import { authClient } from "@/lib/auth-client"
 
 interface KbDetailOverlayProps {
   slug: string
@@ -25,8 +27,17 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
   const { data, isLoading } = api.knowledgeBase.itemGet.useQuery({ id: slug })
   const deleteItem = api.knowledgeBase.itemDelete.useMutation()
   const utils = api.useUtils()
+  const { data: session } = authClient.useSession()
+  const { role } = useMemberRole()
   const [showDelete, setShowDelete] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+
+  const currentUserId = session?.user?.id
+  const item = data?.item
+  const isAuthor = !!currentUserId && !!item && item.author.id === currentUserId
+  const isPrivileged = role === "owner" || role === "admin" || role === "team_leader"
+  const canEdit = isAuthor || isPrivileged
+  const canDelete = isAuthor || isPrivileged
 
   const handleDelete = async () => {
     if (!data?.item) return
@@ -76,16 +87,20 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
               onClose={onClose}
             />
           </div>
-          {data?.item && (
+          {item && (canEdit || canDelete) && (
             <DialogFooter className="border-t border-border px-6 py-4 sm:px-6">
-              <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
-                <PencilSimple className="mr-1.5 size-3.5" />
-                Edit
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => setShowDelete(true)} disabled={deleteItem.isPending}>
-                <TrashSimple className="mr-1.5 size-3.5" />
-                Delete
-              </Button>
+              {canEdit && (
+                <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+                  <PencilSimple className="mr-1.5 size-3.5" />
+                  Edit
+                </Button>
+              )}
+              {canDelete && (
+                <Button variant="destructive" size="sm" onClick={() => setShowDelete(true)} disabled={deleteItem.isPending}>
+                  <TrashSimple className="mr-1.5 size-3.5" />
+                  Delete
+                </Button>
+              )}
             </DialogFooter>
           )}
         </DialogContent>
@@ -173,7 +188,7 @@ interface OverlayItem {
   title: string
   description: string | null
   createdAt: string
-  author: { name: string | null; email: string | null }
+  author: { id: string; name: string | null; email: string | null }
   subcategory: { name: string; category: { name: string } }
   attachments: Array<{ id: string; name: string; url: string; type: string; size: number }>
   links: Array<{ id: string; url: string; title: string }>
