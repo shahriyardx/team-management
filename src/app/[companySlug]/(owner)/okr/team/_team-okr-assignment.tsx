@@ -27,7 +27,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ProgressBar } from "@/components/okrs/progress-bar"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
-import { authClient } from "@/lib/auth-client"
 import { KrFormDialog, type KrForm } from "@/components/okrs/kr-form-dialog"
 import { ObjectiveCardWithKRs } from "@/components/okrs/objective-card-with-krs"
 import { OkrDndProvider } from "@/components/okrs/okr-dnd-provider"
@@ -173,12 +172,12 @@ export default function TeamOkrAssignment() {
     },
   })
 
-  const handleCreateObjective = objectiveForm.handleSubmit(async (data) => {
+  const handleCreateObjective = objectiveForm.handleSubmit((data) => {
     if (!organization || !selectedCycleId) return
-    await authClient.organization.setActiveTeam({ teamId: data.teamId })
     createObjectiveMutation.mutate({
       title: data.title,
       description: data.description || null,
+      teamId: data.teamId,
       cycleId: selectedCycleId,
     })
   })
@@ -341,13 +340,13 @@ export default function TeamOkrAssignment() {
                               const text = await file.text()
                               const data = JSON.parse(text)
                               if (!organization || !selectedCycleId) return
-                              await authClient.organization.setActiveTeam({ teamId: team.id })
                               for (const item of data) {
                                 const obj =
                                   await utils.client.objective.createTeamLevel.mutate({
                                     title: item.objective.title,
                                     description:
                                       item.objective.description ?? null,
+                                    teamId: team.id,
                                     cycleId: selectedCycleId,
                                   })
                                 for (const kr of item.keyResults ?? []) {

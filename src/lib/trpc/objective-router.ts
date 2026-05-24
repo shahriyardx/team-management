@@ -181,13 +181,13 @@ export const objectiveRouter = router({
       z.object({
         title: z.string().min(1),
         description: z.string().nullable().optional(),
+        teamId: z.string(),
         cycleId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const orgId = ctx.session.session.activeOrganizationId
-      const activeTeamId = ctx.session.session.activeTeamId
-      if (!orgId || !activeTeamId) throw new TRPCError({ code: "FORBIDDEN" })
+      if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
       const member = await prisma.member.findUnique({
         where: { organizationId_userId: { organizationId: orgId, userId: ctx.session.user.id } },
@@ -201,7 +201,7 @@ export const objectiveRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Cycle not found" })
       }
 
-      const team = await prisma.team.findUnique({ where: { id: activeTeamId } })
+      const team = await prisma.team.findUnique({ where: { id: input.teamId } })
       if (!team || team.organizationId !== orgId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid team" })
       }
@@ -210,7 +210,7 @@ export const objectiveRouter = router({
         data: {
           title: input.title,
           description: input.description ?? null,
-          teamId: activeTeamId,
+          teamId: input.teamId,
           cycleId: input.cycleId,
           organizationId: orgId,
         },
