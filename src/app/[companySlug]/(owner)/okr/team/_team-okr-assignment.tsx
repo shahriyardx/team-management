@@ -309,32 +309,32 @@ export default function TeamOkrAssignment() {
           }))}
           organizationId={organization?.id ?? ""}
         >
-        <div className="space-y-6">
-          {teamSections.map(({ team, objectives }) => {
-            const avg =
-              objectives.length > 0
-                ? Math.round(
-                    objectives.reduce((s, o) => s + o.progress, 0) /
-                      objectives.length,
-                  )
-                : 0
-            return (
-              <details key={team.id} className="border border-border">
-                <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-sm font-medium">{team.name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {objectives.length} objective
-                      {objectives.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 sm:w-auto">
-                    <div className="flex-1 sm:w-32">
-                      <ProgressBar value={avg} size="sm" showLabel={false} />
+          <div className="space-y-3">
+            {teamSections.map(({ team, objectives }) => {
+              const avg =
+                objectives.length > 0
+                  ? Math.round(
+                      objectives.reduce((s, o) => s + o.progress, 0) /
+                        objectives.length,
+                    )
+                  : 0
+              return (
+                <details key={team.id} className="border border-border">
+                  <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-sm font-medium">{team.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {objectives.length} objective
+                        {objectives.length !== 1 ? "s" : ""}
+                      </span>
                     </div>
-                    <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
-                      {avg}%
-                    </span>
+                    <div className="flex items-center gap-3 sm:w-auto">
+                      <div className="flex-1 sm:w-32">
+                        <ProgressBar value={avg} size="sm" showLabel={false} />
+                      </div>
+                      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
+                        {avg}%
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
@@ -381,72 +381,77 @@ export default function TeamOkrAssignment() {
                       >
                         <UploadSimple className="size-4" />
                       </button>
-                  </div>
-                </summary>
-                <div className="border-t border-border">
-                  {objectives.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">
-                      No objectives assigned to this team yet.
                     </div>
-                  ) : (
-                    <>
-                      <div className="space-y-3">
-                        {objectives.map((obj) => (
-                          <ObjectiveCardWithKRs
-                            key={obj.id}
-                            objective={obj as any}
-                            onAddKr={openKrForm}
-                            onDeleteObjective={setDeleteObj}
-                            onEditObjective={(id, title) =>
-                              updateObjectiveMutation.mutate({ id, title })
-                            }
-                          />
-                        ))}
+                  </summary>
+                  <div className="border-t border-border">
+                    {objectives.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-muted-foreground">
+                        No objectives assigned to this team yet.
                       </div>
-                      <div className="flex justify-end border-t border-border px-4 py-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const data = objectives.map((obj) => ({
-                              objective: { title: obj.title },
-                              keyResults: obj.keyResults.map((kr) => ({
-                                title: kr.title,
-                                description: kr.description,
-                                targetValue: kr.targetValue,
-                                unit: kr.unit,
-                                weight: kr.weight,
-                                currentValue: 0,
-                                status: "not_started",
-                              })),
-                            }))
-                            const blob = new Blob(
-                              [JSON.stringify(data, null, 2)],
-                              { type: "application/json" },
-                            )
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement("a")
-                            a.href = url
-                            const cycleExport = cycles.find((c) => c.id === selectedCycleId)
-                            const cycleYear = cycleExport?.startDate?.slice(0, 4) ?? "unknown"
-                            const cycleLabel = cycleExport?.title?.replace(/\s+/g, "_") ?? "unknown"
-                            a.download = `${cycleYear}_${cycleLabel}_${team.name.replace(/\s+/g, "_")}.json`
-                            a.click()
-                            URL.revokeObjectURL(url)
-                          }}
-                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Export className="size-3.5" />
-                          Export
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </details>
-            )
-          })}
-        </div>
+                    ) : (
+                      <>
+                        <div>
+                          {objectives.map((obj) => (
+                            <ObjectiveCardWithKRs
+                              key={obj.id}
+                              objective={obj as any}
+                              onAddKr={openKrForm}
+                              onDeleteObjective={setDeleteObj}
+                              onEditObjective={(id, title) =>
+                                updateObjectiveMutation.mutate({ id, title })
+                              }
+                            />
+                          ))}
+                        </div>
+                        <div className="flex justify-end border-t border-border px-4 py-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const data = objectives.map((obj) => ({
+                                objective: { title: obj.title },
+                                keyResults: obj.keyResults.map((kr) => ({
+                                  title: kr.title,
+                                  description: kr.description,
+                                  targetValue: kr.targetValue,
+                                  unit: kr.unit,
+                                  weight: kr.weight,
+                                  currentValue: 0,
+                                  status: "not_started",
+                                })),
+                              }))
+                              const blob = new Blob(
+                                [JSON.stringify(data, null, 2)],
+                                { type: "application/json" },
+                              )
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement("a")
+                              a.href = url
+                              const cycleExport = cycles.find(
+                                (c) => c.id === selectedCycleId,
+                              )
+                              const cycleYear =
+                                cycleExport?.startDate?.slice(0, 4) ?? "unknown"
+                              const cycleLabel =
+                                cycleExport?.title?.replace(/\s+/g, "_") ??
+                                "unknown"
+                              a.download = `${cycleYear}_${cycleLabel}_${team.name.replace(/\s+/g, "_")}.json`
+                              a.click()
+                              URL.revokeObjectURL(url)
+                            }}
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Export className="size-3.5" />
+                            Export
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </details>
+              )
+            })}
+          </div>
         </OkrDndProvider>
       )}
 
