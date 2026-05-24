@@ -52,9 +52,19 @@ export const dashboardRouter = router({
       })
       const memberIds = memberRecords.map((m) => m.id)
 
-      // Find active cycle
+      // Find active cycle covering today, else first active
+      const now = new Date()
       const activeCycle = await prisma.okrCycle.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          status: "active",
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        orderBy: { startDate: "desc" },
+      }) || await prisma.okrCycle.findFirst({
         where: { organizationId: input.organizationId, status: "active" },
+        orderBy: { startDate: "desc" },
       })
 
       let okrProgress = 0
@@ -68,9 +78,9 @@ export const dashboardRouter = router({
           : 0
       }
 
-      // Get team member task count
+      // Get team member task count (excluding done)
       const taskCount = await prisma.taskAssignee.count({
-        where: { memberId: { in: memberIds } },
+        where: { memberId: { in: memberIds }, task: { status: { not: "done" } } },
       })
 
       return { okrProgress, taskCount }
@@ -89,9 +99,19 @@ export const dashboardRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      // Find active cycle
+      // Find active cycle covering today, else first active
+      const now = new Date()
       const activeCycle = await prisma.okrCycle.findFirst({
+        where: {
+          organizationId: input.organizationId,
+          status: "active",
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        orderBy: { startDate: "desc" },
+      }) || await prisma.okrCycle.findFirst({
         where: { organizationId: input.organizationId, status: "active" },
+        orderBy: { startDate: "desc" },
       })
 
       let okrProgress = 0
@@ -106,7 +126,7 @@ export const dashboardRouter = router({
       }
 
       const taskCount = await prisma.taskAssignee.count({
-        where: { memberId: member.id },
+        where: { memberId: member.id, task: { status: { not: "done" } } },
       })
 
       return { okrProgress, taskCount }
