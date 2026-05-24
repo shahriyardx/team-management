@@ -123,14 +123,6 @@ export const okrCycleRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      // If activating this cycle, deactivate all others in the org
-      if (input.status === "active") {
-        await prisma.okrCycle.updateMany({
-          where: { organizationId: existing.organizationId, id: { not: input.id }, status: "active" },
-          data: { status: "inactive" },
-        })
-      }
-
       const cycle = await prisma.okrCycle.update({
         where: { id: input.id },
         data: {

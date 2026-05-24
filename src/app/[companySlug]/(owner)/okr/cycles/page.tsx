@@ -319,7 +319,7 @@ export default function Page() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {c.status !== "active" && (
+                      {c.status !== "active" ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -332,6 +332,20 @@ export default function Page() {
                           className="text-xs"
                         >
                           Set active
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            activateCycleMutation.mutate({
+                              id: c.id,
+                              status: "inactive",
+                            })
+                          }
+                          className="text-xs"
+                        >
+                          Set inactive
                         </Button>
                       )}
                       <Button
