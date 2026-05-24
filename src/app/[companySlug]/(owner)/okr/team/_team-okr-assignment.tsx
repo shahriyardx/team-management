@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Plus } from "@phosphor-icons/react"
+import { Plus, Export, UploadSimple } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -324,6 +324,52 @@ export default function TeamOkrAssignment() {
                     <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
                       {avg}%
                     </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.createElement("input")
+                          input.type = "file"
+                          input.accept = ".json"
+                          input.onchange = async () => {
+                            const file = input.files?.[0]
+                            if (!file) return
+                            try {
+                              const text = await file.text()
+                              const data = JSON.parse(text)
+                              if (!organization || !selectedCycleId) return
+                              for (const item of data) {
+                                const obj =
+                                  await utils.client.objective.create.mutate({
+                                    title: item.objective.title,
+                                    description:
+                                      item.objective.description ?? null,
+                                    teamId: team.id,
+                                    cycleId: selectedCycleId,
+                                    organizationId: organization.id,
+                                  })
+                                for (const kr of item.keyResults ?? []) {
+                                  await utils.client.keyResult.create.mutate({
+                                    title: kr.title,
+                                    description: kr.description ?? null,
+                                    targetValue: kr.targetValue,
+                                    unit: kr.unit ?? "number",
+                                    weight: kr.weight ?? 1,
+                                    objectiveId: obj.objective.id,
+                                    organizationId: organization.id,
+                                  })
+                                }
+                              }
+                              utils.objective.list.invalidate()
+                            } catch (e) {
+                              console.error("Import failed:", e)
+                            }
+                          }
+                          input.click()
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                      >
+                        <UploadSimple className="size-4" />
+                      </button>
                   </div>
                 </summary>
                 <div className="border-t border-border">
@@ -332,19 +378,58 @@ export default function TeamOkrAssignment() {
                       No objectives assigned to this team yet.
                     </div>
                   ) : (
-                    <div className="space-y-3 p-4">
-                      {objectives.map((obj) => (
-                        <ObjectiveCardWithKRs
-                          key={obj.id}
-                          objective={obj as any}
-                          onAddKr={openKrForm}
-                          onDeleteObjective={setDeleteObj}
-                          onEditObjective={(id, title) =>
-                            updateObjectiveMutation.mutate({ id, title })
-                          }
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <div className="space-y-3">
+                        {objectives.map((obj) => (
+                          <ObjectiveCardWithKRs
+                            key={obj.id}
+                            objective={obj as any}
+                            onAddKr={openKrForm}
+                            onDeleteObjective={setDeleteObj}
+                            onEditObjective={(id, title) =>
+                              updateObjectiveMutation.mutate({ id, title })
+                            }
+                          />
+                        ))}
+                      </div>
+                      <div className="flex justify-end border-t border-border px-4 py-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const data = objectives.map((obj) => ({
+                              objective: { title: obj.title },
+                              keyResults: obj.keyResults.map((kr) => ({
+                                title: kr.title,
+                                description: kr.description,
+                                targetValue: kr.targetValue,
+                                unit: kr.unit,
+                                weight: kr.weight,
+                                currentValue: 0,
+                                status: "not_started",
+                              })),
+                            }))
+                            const blob = new Blob(
+                              [JSON.stringify(data, null, 2)],
+                              { type: "application/json" },
+                            )
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement("a")
+                            a.href = url
+                            const cycleExport = cycles.find((c) => c.id === selectedCycleId)
+                            const cycleYear = cycleExport?.startDate?.slice(0, 4) ?? "unknown"
+                            const cycleLabel = cycleExport?.title?.replace(/\s+/g, "_") ?? "unknown"
+                            a.download = `${cycleYear}_${cycleLabel}_${team.name.replace(/\s+/g, "_")}.json`
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          }}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Export className="size-3.5" />
+                          Export
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </div>
               </details>
