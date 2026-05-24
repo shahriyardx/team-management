@@ -158,51 +158,26 @@ export const objectiveRouter = router({
       const hasOwner = !!input.ownerId
       const hasTeam = !!input.teamId
 
-      // Permission rules:
-      // Admin/owner: can create org-level (no owner, no team) and team-level (teamId set)
-      // Admin/owner: CANNOT create member-level (ownerId set) — only team leader does that
-      // Team leader: can create member-level (ownerId set, teamId implied by their team)
-      // Team leader: CANNOT create org-level or team-level
-
-      if (isAdmin) {
-        if (hasOwner) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admins cannot assign OKRs to members directly. Only team leaders can." })
-        }
-        // Validate team if teamId set
-        if (hasTeam) {
-          const team = await prisma.team.findUnique({ where: { id: input.teamId } })
-          if (!team || team.organizationId !== input.organizationId) {
-            throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid team" })
-          }
-        }
-      } else {
-        const isTeamLeader = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: input.organizationId },
-        })
-        if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
-
-        if (!hasOwner) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Team leaders can only assign OKRs to team members." })
-        }
-        if (hasTeam) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Team leaders cannot assign team-level OKRs." })
-        }
-
-        // Validate owner is in their team
+      if (hasOwner) {
+        // Member-level — must be team leader of target's team
         const targetOwner = await prisma.member.findUnique({ where: { id: input.ownerId } })
         if (!targetOwner || targetOwner.organizationId !== input.organizationId) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid owner" })
         }
-
-        const teamMember = await prisma.teamMember.findFirst({
-          where: {
-            userId: targetOwner.userId,
-            team: { leaderId: member.id, organizationId: input.organizationId },
-          },
+        const isTeamLeader = await prisma.team.findFirst({
+          where: { leaderId: member.id, organizationId: input.organizationId, members: { some: { userId: targetOwner.userId } } },
         })
-        if (!teamMember) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Can only assign OKRs to your team members" })
+        if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN", message: "Only team leaders can assign OKRs to members." })
+      } else if (hasTeam) {
+        // Team-level — admin/owner only
+        if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" })
+        const team = await prisma.team.findUnique({ where: { id: input.teamId } })
+        if (!team || team.organizationId !== input.organizationId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid team" })
         }
+      } else if (!isAdmin) {
+        // Org-level — admin/owner only
+        throw new TRPCError({ code: "FORBIDDEN" })
       }
 
       // Validate owner if provided
