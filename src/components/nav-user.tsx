@@ -2,11 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +25,11 @@ export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
   const { data: session } = authClient.useSession()
-  const { organizations, organization: activeOrg, onSwitchOrg } = useOrganization()
+  const {
+    organizations,
+    organization: activeOrg,
+    onSwitchOrg,
+  } = useOrganization()
   const user = session?.user
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -49,9 +49,9 @@ export function NavUser() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={user.image ?? ""} alt={user.name} />
-                <AvatarFallback className="rounded-lg">
+                <AvatarFallback>
                   {user.name?.charAt(0).toUpperCase() ?? "U"}
                 </AvatarFallback>
               </Avatar>
@@ -70,9 +70,9 @@ export function NavUser() {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={user.image ?? ""} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">
+                  <AvatarFallback>
                     {user.name?.charAt(0).toUpperCase() ?? "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -101,7 +101,11 @@ export function NavUser() {
                     {org.name.charAt(0)}
                   </span>
                   <span className="flex-1">{org.name}</span>
-                  {isActive && <span className="text-[10px] text-muted-foreground">(active)</span>}
+                  {isActive && (
+                    <span className="text-[10px] text-muted-foreground">
+                      (active)
+                    </span>
+                  )}
                 </DropdownMenuItem>
               )
             })}

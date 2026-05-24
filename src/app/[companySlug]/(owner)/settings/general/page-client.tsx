@@ -23,7 +23,11 @@ const TEAM_SIZES = ["1-10", "11-50", "51-200", "200+"] as const
 
 const orgSchema = z.object({
   name: z.string().min(1, "Name is required.").max(100),
-  slug: z.string().min(1, "Slug is required.").max(100).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens."),
+  slug: z
+    .string()
+    .min(1, "Slug is required.")
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens."),
   websiteUrl: z.string().url("Enter a valid URL.").optional().or(z.literal("")),
   department: z.string().optional(),
   teamSize: z.string().optional(),
@@ -80,7 +84,9 @@ export default function GeneralSettingsPage() {
 
     const slugChanged = data.slug !== organization.slug
     if (slugChanged) {
-      const { error } = await authClient.organization.checkSlug({ slug: data.slug })
+      const { error } = await authClient.organization.checkSlug({
+        slug: data.slug,
+      })
       if (error) {
         form.setError("slug", { message: "This slug is already taken." })
         return
@@ -106,30 +112,55 @@ export default function GeneralSettingsPage() {
   }
 
   if (!organization) {
-    return <div className="flex flex-1 items-center justify-center p-6"><Skeleton className="size-8 rounded-full" /></div>
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Skeleton className="size-8 rounded-full" />
+      </div>
+    )
   }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6 max-w-lg">
       <div>
         <h1 className="text-lg font-semibold">General Settings</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Manage your organization settings.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Manage your organization settings.
+        </p>
       </div>
 
       <Field>
         <FieldLabel>Organization Logo</FieldLabel>
         <div className="flex items-center gap-3">
-          <Avatar className="size-12 rounded-lg">
-            <AvatarImage src={organization.logo ?? undefined} className="rounded-lg" />
-            <AvatarFallback className="rounded-lg text-sm font-bold">{organization.name.charAt(0).toUpperCase()}</AvatarFallback>
+          <Avatar className="size-12">
+            <AvatarImage
+              src={organization.logo ?? undefined}
+              // className="rounded-full"
+            />
+            <AvatarFallback className=" text-sm font-bold">
+              {organization.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <Button type="button" variant="outline" size="sm" disabled={logoUploading} onClick={() => document.getElementById("logo-upload")?.click()}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={logoUploading}
+              onClick={() => document.getElementById("logo-upload")?.click()}
+            >
               {logoUploading ? "Uploading..." : "Upload Logo"}
             </Button>
-            {logoError && <p className="text-xs text-destructive mt-1">{logoError}</p>}
+            {logoError && (
+              <p className="text-xs text-destructive mt-1">{logoError}</p>
+            )}
           </div>
-          <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+          <input
+            id="logo-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
         </div>
       </Field>
 
@@ -137,21 +168,34 @@ export default function GeneralSettingsPage() {
         <Field>
           <FieldLabel>Organization Name</FieldLabel>
           <Input {...form.register("name")} maxLength={100} />
-          {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
+          {form.formState.errors.name && (
+            <FieldError>{form.formState.errors.name.message}</FieldError>
+          )}
         </Field>
         <Field>
           <FieldLabel>Organization Slug</FieldLabel>
           <Input {...form.register("slug")} maxLength={100} />
-          {form.formState.errors.slug && <FieldError>{form.formState.errors.slug.message}</FieldError>}
+          {form.formState.errors.slug && (
+            <FieldError>{form.formState.errors.slug.message}</FieldError>
+          )}
         </Field>
         <Field>
           <FieldLabel>Website URL (optional)</FieldLabel>
-          <Input type="url" placeholder="https://acme.com" {...form.register("websiteUrl")} />
-          {form.formState.errors.websiteUrl && <FieldError>{form.formState.errors.websiteUrl.message}</FieldError>}
+          <Input
+            type="url"
+            placeholder="https://acme.com"
+            {...form.register("websiteUrl")}
+          />
+          {form.formState.errors.websiteUrl && (
+            <FieldError>{form.formState.errors.websiteUrl.message}</FieldError>
+          )}
         </Field>
         <Field>
           <FieldLabel>Department</FieldLabel>
-          <Input placeholder="e.g. Engineering, Marketing" {...form.register("department")} />
+          <Input
+            placeholder="e.g. Engineering, Marketing"
+            {...form.register("department")}
+          />
         </Field>
         <Field>
           <FieldLabel>Team size</FieldLabel>
@@ -165,14 +209,18 @@ export default function GeneralSettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {TEAM_SIZES.map((size) => (
-                    <SelectItem key={size} value={size}>{size} people</SelectItem>
+                    <SelectItem key={size} value={size}>
+                      {size} people
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
           />
         </Field>
-        <Button type="submit" size="sm" disabled={saving}>Save</Button>
+        <Button type="submit" size="sm" disabled={saving}>
+          Save
+        </Button>
       </form>
     </div>
   )
