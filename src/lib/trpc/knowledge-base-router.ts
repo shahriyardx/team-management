@@ -283,7 +283,27 @@ export const knowledgeBaseRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      return { item }
+      let canEdit = false
+      let canDelete = false
+
+      if (member.role === "owner" || member.role === "admin") {
+        canEdit = true
+        canDelete = true
+      } else if (item.authorId === ctx.session.user.id) {
+        canEdit = true
+        canDelete = true
+      } else if (item.teamId) {
+        const team = await prisma.team.findUnique({
+          where: { id: item.teamId },
+          select: { leaderId: true },
+        })
+        if (team?.leaderId === member.id) {
+          canEdit = true
+          canDelete = true
+        }
+      }
+
+      return { item, canEdit, canDelete }
     }),
 
   itemCreate: protectedProcedure

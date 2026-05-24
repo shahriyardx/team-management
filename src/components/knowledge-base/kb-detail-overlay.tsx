@@ -14,8 +14,6 @@ import { KbEditSheet } from "@/components/knowledge-base/kb-edit-sheet"
 import { MarkdownRenderer } from "@/components/knowledge-base/markdown-renderer"
 import { api } from "@/lib/trpc/client"
 import { useOrganization } from "@/lib/organization-context"
-import { useMemberRole } from "@/lib/use-member-role"
-import { authClient } from "@/lib/auth-client"
 
 interface KbDetailOverlayProps {
   slug: string
@@ -27,17 +25,12 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
   const { data, isLoading } = api.knowledgeBase.itemGet.useQuery({ id: slug })
   const deleteItem = api.knowledgeBase.itemDelete.useMutation()
   const utils = api.useUtils()
-  const { data: session } = authClient.useSession()
-  const { role } = useMemberRole()
   const [showDelete, setShowDelete] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
 
-  const currentUserId = session?.user?.id
   const item = data?.item
-  const isAuthor = !!currentUserId && !!item && item.author.id === currentUserId
-  const isPrivileged = role === "owner" || role === "admin" || role === "team_leader"
-  const canEdit = isAuthor || isPrivileged
-  const canDelete = isAuthor || isPrivileged
+  const canEdit = data?.canEdit ?? false
+  const canDelete = data?.canDelete ?? false
 
   const handleDelete = async () => {
     if (!data?.item) return
@@ -187,6 +180,7 @@ interface OverlayItem {
   id: string
   title: string
   description: string | null
+  teamId: string | null
   createdAt: string
   author: { id: string; name: string | null; email: string | null }
   subcategory: { name: string; category: { name: string } }
