@@ -87,16 +87,10 @@ export default function Page() {
     { enabled: !!organization },
   )
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
+  const years = cyclesData?.years ?? [String(new Date().getFullYear())]
   const [selectedYear, setSelectedYear] = useState(
     String(new Date().getFullYear()),
   )
-
-  const years = useMemo(() => {
-    const cur = new Date().getFullYear()
-    return Array.from({ length: cur - 2020 + 2 }, (_, i) =>
-      String(2020 + i),
-    ).reverse()
-  }, [])
 
   const [cycleFormOpen, setCycleFormOpen] = useState(false)
   const cycleForm = useForm<CycleForm>({
@@ -176,6 +170,7 @@ export default function Page() {
   const createCycleMutation = api.okrCycle.create.useMutation({
     onSuccess: () => {
       utils.okrCycle.list.invalidate()
+      utils.okrCycle.listActive.invalidate()
       utils.okrCycle.getActive.invalidate()
       setCycleFormOpen(false)
       cycleForm.reset()
@@ -198,6 +193,7 @@ export default function Page() {
   const deleteCycleMutation = api.okrCycle.delete.useMutation({
     onSuccess: () => {
       utils.okrCycle.list.invalidate()
+      utils.okrCycle.listActive.invalidate()
       utils.okrCycle.getActive.invalidate()
       setDeleteCycle(null)
     },
@@ -213,6 +209,7 @@ export default function Page() {
   const updateCycleMutation = api.okrCycle.update.useMutation({
     onSuccess: () => {
       utils.okrCycle.list.invalidate()
+      utils.okrCycle.listActive.invalidate()
       utils.okrCycle.getActive.invalidate()
       setEditCycle(null)
     },
@@ -221,6 +218,7 @@ export default function Page() {
   const activateCycleMutation = api.okrCycle.update.useMutation({
     onSuccess: () => {
       utils.okrCycle.list.invalidate()
+      utils.okrCycle.listActive.invalidate()
       utils.okrCycle.getActive.invalidate()
     },
   })
@@ -228,6 +226,7 @@ export default function Page() {
   const toggleLockMutation = api.okrCycle.update.useMutation({
     onSuccess: () => {
       utils.okrCycle.list.invalidate()
+      utils.okrCycle.listActive.invalidate()
       utils.okrCycle.getActive.invalidate()
     },
   })
@@ -244,10 +243,9 @@ export default function Page() {
         <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
-              {selectedYear === "all" ? "All years" : selectedYear}
+              {selectedYear}
             </SelectTrigger>
             <SelectContent position="popper">
-              <SelectItem value="all">All years</SelectItem>
               {years.map((yr) => (
                 <SelectItem key={yr} value={yr}>
                   {yr}
@@ -275,10 +273,7 @@ export default function Page() {
       ) : (
         <div className="border border-border">
           {(() => {
-            const filtered =
-              selectedYear === "all"
-                ? cycles
-                : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+            const filtered = cycles.filter((c) => c.startDate?.startsWith(selectedYear))
             if (filtered.length === 0) {
               return (
                 <div className="p-8 text-center text-xs text-muted-foreground">

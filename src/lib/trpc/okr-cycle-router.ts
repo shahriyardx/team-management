@@ -3,6 +3,15 @@ import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
 import { router, protectedProcedure } from "./server"
 
+function deriveYears(cycles: { startDate: Date }[]) {
+  const yearSet = new Set([String(new Date().getFullYear())])
+  for (const c of cycles) {
+    const y = c.startDate?.getFullYear()
+    if (y) yearSet.add(String(y))
+  }
+  return Array.from(yearSet).sort().reverse()
+}
+
 export const okrCycleRouter = router({
   list: protectedProcedure
     .input(
@@ -23,7 +32,7 @@ export const okrCycleRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const [cycles, total] = await prisma.$transaction(async (tx) => {
+      const [cycles, total, yearItems] = await prisma.$transaction(async (tx) => {
         const items = await tx.okrCycle.findMany({
           where: { organizationId: input.organizationId },
           include: { _count: { select: { objectives: true } } },
@@ -32,10 +41,56 @@ export const okrCycleRouter = router({
           take: input.take,
         })
         const count = await tx.okrCycle.count({ where: { organizationId: input.organizationId } })
-        return [items, count] as const
+        const allYears = await tx.okrCycle.findMany({
+          where: { organizationId: input.organizationId },
+          select: { startDate: true },
+          orderBy: { startDate: "desc" },
+        })
+        return [items, count, allYears] as const
       })
 
-      return { cycles, total }
+      return { cycles, total, years: deriveYears(yearItems) }
+    }),
+
+  listActive: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        skip: z.number().int().min(0).default(0),
+        take: z.number().int().min(1).max(100).default(25),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const [cycles, total, yearItems] = await prisma.$transaction(async (tx) => {
+        const items = await tx.okrCycle.findMany({
+          where: { organizationId: input.organizationId, status: "active" },
+          include: { _count: { select: { objectives: true } } },
+          orderBy: { startDate: "desc" },
+          skip: input.skip,
+          take: input.take,
+        })
+        const count = await tx.okrCycle.count({
+          where: { organizationId: input.organizationId, status: "active" },
+        })
+        const allYears = await tx.okrCycle.findMany({
+          where: { organizationId: input.organizationId, status: "active" },
+          select: { startDate: true },
+          orderBy: { startDate: "desc" },
+        })
+        return [items, count, allYears] as const
+      })
+
+      return { cycles, total, years: deriveYears(yearItems) }
     }),
 
   getActive: protectedProcedure

@@ -1,10 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -20,6 +19,7 @@ type OkrCycleItem = {
   status: string
   locked?: boolean
   startDate: string
+  endDate: string
 }
 
 type OkrObjective = {
@@ -47,32 +47,35 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   const { organization } = useOrganization()
 
   // All cycles for selector
-  const { data: cyclesData } = api.okrCycle.list.useQuery(
+  const { data: cyclesData, isLoading: isCyclesLoading } = api.okrCycle.listActive.useQuery(
     { organizationId: organization?.id ?? "", skip: 0, take: 25 },
     { enabled: !!organization },
   )
-  const { data: activeCycleData } = api.okrCycle.getActive.useQuery(
-    { organizationId: organization?.id ?? "" },
-    { enabled: !!organization },
-  )
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
-  const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
+  const years = cyclesData?.years ?? [String(new Date().getFullYear())]
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()))
+  const [selectedYear, setSelectedYear] = useState<string>(
+    String(new Date().getFullYear()),
+  )
 
-  // Years 2020 to current + 1
-  const years = useMemo(() => {
-    const cur = new Date().getFullYear()
-    return Array.from({ length: cur - 2020 + 2 }, (_, i) => String(2020 + i)).reverse()
-  }, [])
+  const filteredCycles = useMemo(
+    () => cycles.filter((c) => c.startDate?.startsWith(selectedYear)),
+    [cycles, selectedYear],
+  )
 
-  // Auto-select active or first cycle
-  useMemo(() => {
-    if (!selectedCycleId && cycles.length > 0) {
-      const target = activeCycle ?? cycles[0]
-      if (target) setSelectedCycleId(target.id)
+  // Auto-select cycle whose date range includes today, else first active
+  useEffect(() => {
+    if (!selectedCycleId && filteredCycles.length > 0) {
+      const now = new Date()
+      const current = filteredCycles.find((c) => {
+        const s = new Date(c.startDate)
+        const e = new Date(c.endDate)
+        return s <= now && now <= e
+      })
+      if (current) { setSelectedCycleId(current.id); return }
+      setSelectedCycleId(filteredCycles[0].id)
     }
-  }, [cycles, activeCycle, selectedCycleId])
+  }, [filteredCycles, selectedCycleId])
 
   const cycleId = selectedCycleId ?? ""
 
@@ -92,7 +95,7 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
     }
   }, [objectives])
 
-  if (isLoading) {
+  if (isLoading || isCyclesLoading || (!cycleId && filteredCycles.length > 0)) {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-5 gap-3">
@@ -103,10 +106,10 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
     )
   }
 
-  if (!cycleId || cycles.length === 0) {
+  if (cycles.length === 0) {
     return (
       <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-        No OKR cycles yet. Your org admin will create one.
+        No active OKR cycle right now.
       </div>
     )
   }
@@ -117,18 +120,17 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Team OKR</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives. Fill in progress for your team.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives for the active cycle.</p>
           <p className="text-xs text-muted-foreground sm:hidden">
-            {cycles.find((c) => c.id === selectedCycleId)?.title ?? ""}
+            {filteredCycles.find((c) => c.id === selectedCycleId)?.title ?? ""}
           </p>
         </div>
         <div className="hidden sm:flex flex-wrap items-center gap-3 shrink-0">
           <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
             <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
-              {selectedYear === "all" ? "All years" : selectedYear}
+              {selectedYear}
             </SelectTrigger>
             <SelectContent position="popper">
-              <SelectItem value="all">All years</SelectItem>
               {years.map((yr) => (
                 <SelectItem key={yr} value={yr}>{yr}</SelectItem>
               ))}
@@ -137,16 +139,13 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
           <Select value={selectedCycleId ?? ""} onValueChange={setSelectedCycleId}>
             <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
               <span className="truncate">
-                {cycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
+                {filteredCycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
               </span>
             </SelectTrigger>
             <SelectContent position="popper">
-              {(selectedYear === "all" ? cycles : cycles.filter((c) => c.startDate?.startsWith(selectedYear))).map((c) => (
+              {filteredCycles.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{c.title}</span>
-                    <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
-                  </div>
+                  <span>{c.title}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -154,7 +153,11 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
         </div>
       </div>
 
-      {objectives.length === 0 ? (
+      {filteredCycles.length === 0 ? (
+        <div className="border border-border p-8 text-center text-xs text-muted-foreground">
+          No active OKR cycles in {selectedYear}.
+        </div>
+      ) : objectives.length === 0 ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
           No team objectives in this cycle. Your org admin will assign them.
         </div>

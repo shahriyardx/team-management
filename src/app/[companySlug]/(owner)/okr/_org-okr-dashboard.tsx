@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -80,33 +79,32 @@ export function OrgOkrDashboard() {
     { organizationId: organization?.id ?? "", skip: 0, take: 25 },
     { enabled: !!organization },
   )
-  const { data: activeCycleData } = api.okrCycle.getActive.useQuery(
-    { organizationId: organization?.id ?? "" },
-    { enabled: !!organization },
-  )
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
-  const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
+  const years = cyclesData?.years ?? [String(new Date().getFullYear())]
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
   const [selectedYear, setSelectedYear] = useState<string>(
     String(new Date().getFullYear()),
   )
   const [isEditMode, setIsEditMode] = useState(false)
 
-  // Years 2020 to current + 1
-  const years = useMemo(() => {
-    const cur = new Date().getFullYear()
-    return Array.from({ length: cur - 2020 + 2 }, (_, i) =>
-      String(2020 + i),
-    ).reverse()
-  }, [])
+  const filteredCycles = useMemo(
+    () => cycles.filter((c) => c.startDate?.startsWith(selectedYear)),
+    [cycles, selectedYear],
+  )
 
-  // Auto-select active or first cycle
-  useMemo(() => {
-    if (!selectedCycleId && cycles.length > 0) {
-      const target = activeCycle ?? cycles[0]
-      if (target) setSelectedCycleId(target.id)
+  // Auto-select cycle whose date range includes today, else first cycle
+  useEffect(() => {
+    if (!selectedCycleId && filteredCycles.length > 0) {
+      const now = new Date()
+      const current = filteredCycles.find((c) => {
+        const s = new Date(c.startDate)
+        const e = new Date(c.endDate)
+        return s <= now && now <= e
+      })
+      if (current) { setSelectedCycleId(current.id); return }
+      setSelectedCycleId(filteredCycles[0].id)
     }
-  }, [cycles, activeCycle, selectedCycleId])
+  }, [filteredCycles, selectedCycleId])
 
   // Objectives — org-level only (scope: "org")
   const { data: objectivesData, isLoading: objectivesLoading } =
@@ -236,10 +234,9 @@ export function OrgOkrDashboard() {
               }}
             >
               <SelectTrigger className="h-8 w-auto min-w-20 rounded-none text-xs">
-                {selectedYear === "all" ? "All years" : selectedYear}
+                {selectedYear}
               </SelectTrigger>
               <SelectContent position="popper">
-                <SelectItem value="all">All years</SelectItem>
                 {years.map((yr) => (
                   <SelectItem key={yr} value={yr}>
                     {yr}
@@ -258,17 +255,9 @@ export function OrgOkrDashboard() {
                 </span>
               </SelectTrigger>
               <SelectContent position="popper">
-                {(selectedYear === "all"
-                  ? cycles
-                  : cycles.filter((c) => c.startDate?.startsWith(selectedYear))
-                ).map((c) => (
+                {filteredCycles.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{c.title}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {c.status}
-                      </Badge>
-                    </div>
+                    <span>{c.title}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -315,7 +304,9 @@ export function OrgOkrDashboard() {
         </div>
       ) : !selectedCycleId ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-          No cycles yet.
+          {cycles.length === 0
+            ? "No cycles yet."
+            : `No cycles in ${selectedYear}.`}
         </div>
       ) : objectives.length === 0 ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">

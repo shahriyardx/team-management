@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -47,6 +47,7 @@ type OkrCycleItem = {
   status: string
   locked?: boolean
   startDate: string
+  endDate: string
 }
 
 type TeamMember = {
@@ -121,34 +122,38 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     { organizationId: organization?.id ?? "", skip: 0, take: 25 },
     { enabled: !!organization },
   )
-  const { data: activeCycleData } = api.okrCycle.getActive.useQuery(
-    { organizationId: organization?.id ?? "" },
-    { enabled: !!organization },
-  )
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
-  const activeCycle = activeCycleData?.cycle as OkrCycleItem | null
+  const years = cyclesData?.years ?? [String(new Date().getFullYear())]
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
   const [selectedYear, setSelectedYear] = useState<string>(
     String(new Date().getFullYear()),
   )
 
-  // Years 2020 to current + 1
-  const years = useMemo(() => {
-    const cur = new Date().getFullYear()
-    return Array.from({ length: cur - 2020 + 2 }, (_, i) =>
-      String(2020 + i),
-    ).reverse()
-  }, [])
+  const filteredCycles = useMemo(
+    () =>
+      cycles.filter((c) => c.startDate?.startsWith(selectedYear)),
+    [cycles, selectedYear],
+  )
 
-  // Auto-select active or first cycle
-  useMemo(() => {
-    if (!selectedCycleId && cycles.length > 0) {
-      const target = activeCycle ?? cycles[0]
-      if (target) setSelectedCycleId(target.id)
+  // Auto-select: cycle with today in date range → first active → placeholder
+  useEffect(() => {
+    if (!selectedCycleId && filteredCycles.length > 0) {
+      const now = new Date()
+      const current = filteredCycles.find((c) => {
+        if (c.status !== "active") return false
+        const s = new Date(c.startDate)
+        const e = new Date(c.endDate)
+        return s <= now && now <= e
+      })
+      if (current) { setSelectedCycleId(current.id); return }
+      const firstActive = filteredCycles.find((c) => c.status === "active")
+      if (firstActive) { setSelectedCycleId(firstActive.id); return }
     }
-  }, [cycles, activeCycle, selectedCycleId])
+  }, [filteredCycles, selectedCycleId])
 
   const cycleId = selectedCycleId ?? ""
+  const selectedCycle = cycles.find((c) => c.id === cycleId)
+  const isActiveCycle = selectedCycle?.status === "active"
 
   // Member-level objectives for this team's members
   const { data: objectivesData, isLoading: objectivesLoading } =
@@ -276,18 +281,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     return <Skeleton className="h-48" />
   }
 
-  return (
-    <OkrDndProvider
-      objectives={objectives.map((o) => ({
-        id: o.id,
-        krIds: o.keyResults.map((kr) => kr.id),
-        krTitles: Object.fromEntries(
-          o.keyResults.map((kr) => [kr.id, kr.title]),
-        ),
-      }))}
-      organizationId={organization?.id ?? ""}
-    >
-      <div className="space-y-6">
+  const content = (
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -314,10 +309,9 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                 }}
               >
                 <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
-                  {selectedYear === "all" ? "All years" : selectedYear}
+                  {selectedYear}
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  <SelectItem value="all">All years</SelectItem>
                   {years.map((yr) => (
                     <SelectItem key={yr} value={yr}>
                       {yr}
@@ -328,45 +322,39 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
               <Select value={cycleId} onValueChange={setSelectedCycleId}>
                 <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
                   <span className="truncate">
-                    {cycles.find((c) => c.id === cycleId)?.title ??
+                    {filteredCycles.find((c) => c.id === cycleId)?.title ??
                       "Select cycle"}
                   </span>
                 </SelectTrigger>
                 <SelectContent position="popper">
-                  {(selectedYear === "all"
-                    ? cycles
-                    : cycles.filter((c) =>
-                        c.startDate?.startsWith(selectedYear),
-                      )
-                  ).map((c) => (
+                  {filteredCycles.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{c.title}</span>
-                        <Badge variant="outline" className="text-[10px]">
-                          {c.status}
-                        </Badge>
-                      </div>
+                      <span>{c.title}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button
-              onClick={() => {
-                objectiveForm.reset()
-                setObjFormOpen(true)
-              }}
-              disabled={!cycleId}
-            >
-              <Plus className="mr-1 size-3.5" />
-              New Objective
-            </Button>
+            {isActiveCycle && (
+              <Button
+                onClick={() => {
+                  objectiveForm.reset()
+                  setObjFormOpen(true)
+                }}
+                disabled={!cycleId}
+              >
+                <Plus className="mr-1 size-3.5" />
+                New Objective
+              </Button>
+            )}
           </div>
         </div>
 
-        {!cycleId || cycles.length === 0 ? (
+        {!cycleId || filteredCycles.length === 0 ? (
           <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-            No OKR cycles yet. Your org admin will create one.
+            {cycles.length === 0
+              ? "No OKR cycles yet. Your org admin will create one."
+              : `No cycles in ${selectedYear}.`}
           </div>
         ) : objectivesLoading ? (
           <div className="space-y-3">
@@ -470,60 +458,62 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                         <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
                           {avgProgress}%
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const input = document.createElement("input")
-                            input.type = "file"
-                            input.accept = ".json"
-                            input.onchange = async () => {
-                              const file = input.files?.[0]
-                              if (!file) return
-                              try {
-                                const text = await file.text()
-                                const data = JSON.parse(text)
-                                const memberId = memberByUserId.get(
-                                  member.userId,
-                                )
-                                if (!memberId || !organization || !cycleId)
-                                  return
+                        {isActiveCycle && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const input = document.createElement("input")
+                              input.type = "file"
+                              input.accept = ".json"
+                              input.onchange = async () => {
+                                const file = input.files?.[0]
+                                if (!file) return
+                                try {
+                                  const text = await file.text()
+                                  const data = JSON.parse(text)
+                                  const memberId = memberByUserId.get(
+                                    member.userId,
+                                  )
+                                  if (!memberId || !organization || !cycleId)
+                                    return
 
-                                for (const item of data) {
-                                  const obj =
-                                    await utils.client.objective.create.mutate({
-                                      title: item.objective.title,
-                                      description:
-                                        item.objective.description ?? null,
-                                      ownerId: memberId,
-                                      cycleId,
-                                      organizationId: organization.id,
-                                    })
-                                  for (const kr of item.keyResults ?? []) {
-                                    await utils.client.keyResult.create.mutate({
-                                      title: kr.title,
-                                      description: kr.description ?? null,
-                                      targetValue: kr.targetValue,
-                                      unit: kr.unit ?? "number",
-                                      weight: kr.weight ?? 1,
-                                      objectiveId: obj.objective.id,
-                                      organizationId: organization.id,
-                                    })
+                                  for (const item of data) {
+                                    const obj =
+                                      await utils.client.objective.create.mutate({
+                                        title: item.objective.title,
+                                        description:
+                                          item.objective.description ?? null,
+                                        ownerId: memberId,
+                                        cycleId,
+                                        organizationId: organization.id,
+                                      })
+                                    for (const kr of item.keyResults ?? []) {
+                                      await utils.client.keyResult.create.mutate({
+                                        title: kr.title,
+                                        description: kr.description ?? null,
+                                        targetValue: kr.targetValue,
+                                        unit: kr.unit ?? "number",
+                                        weight: kr.weight ?? 1,
+                                        objectiveId: obj.objective.id,
+                                        organizationId: organization.id,
+                                      })
+                                    }
                                   }
+                                  utils.objective.list.invalidate({
+                                    cycleId,
+                                    scope: "member",
+                                  })
+                                } catch (e) {
+                                  console.error("Import failed:", e)
                                 }
-                                utils.objective.list.invalidate({
-                                  cycleId,
-                                  scope: "member",
-                                })
-                              } catch (e) {
-                                console.error("Import failed:", e)
                               }
-                            }
-                            input.click()
-                          }}
-                          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                        >
-                          <UploadSimple className="size-4" />
-                        </button>
+                              input.click()
+                            }}
+                            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                          >
+                            <UploadSimple className="size-4" />
+                          </button>
+                        )}
                       </div>
                     </summary>
                     <div className="border-t border-border">
@@ -537,16 +527,15 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                             <ObjectiveCardWithKRs
                               key={obj.id}
                               objective={obj as any}
-                              onAddKr={openKrForm}
-                              onEditObjective={(id, title) =>
-                                updateObjectiveMutation.mutate({ id, title })
-                              }
-                              onDeleteObjective={setDeleteObj}
+                              onAddKr={isActiveCycle ? openKrForm : undefined}
+                              onEditObjective={isActiveCycle ? (id, title) =>
+                                updateObjectiveMutation.mutate({ id, title }) : undefined}
+                              onDeleteObjective={isActiveCycle ? setDeleteObj : undefined}
                             />
                           ))}
                         </div>
                       )}
-                      {memberObjs.length > 0 && (
+                      {isActiveCycle && memberObjs.length > 0 && (
                         <div className="flex justify-end border-t border-border px-4 py-2">
                           <Button
                             variant="ghost"
@@ -730,6 +719,22 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
           </DialogContent>
         </Dialog>
       </div>
+    )
+
+  return isActiveCycle ? (
+    <OkrDndProvider
+      objectives={objectives.map((o) => ({
+        id: o.id,
+        krIds: o.keyResults.map((kr) => kr.id),
+        krTitles: Object.fromEntries(
+          o.keyResults.map((kr) => [kr.id, kr.title]),
+        ),
+      }))}
+      organizationId={organization?.id ?? ""}
+    >
+      {content}
     </OkrDndProvider>
+  ) : (
+    content
   )
 }

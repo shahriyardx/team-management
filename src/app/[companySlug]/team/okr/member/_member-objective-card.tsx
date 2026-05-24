@@ -30,23 +30,20 @@ interface MemberObjectiveCardProps {
 
 export function MemberObjectiveCard({ cycleId, locked, objective }: MemberObjectiveCardProps) {
   return (
-    <div className="border border-border p-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">{objective.title}</span>
-        <StatusBadge status={objective.status} />
+    <div className="border border-border p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-medium">{objective.title}</span>
+          <StatusBadge status={objective.status} />
+        </div>
+        <div className="sm:w-64 shrink-0">
+          <ProgressBar value={objective.progress} size="sm" status={objective.status} showLabel />
+        </div>
       </div>
       {objective.description && (
         <p className="mt-1 text-xs text-muted-foreground">{objective.description}</p>
       )}
-      <div className="mt-2 flex items-center gap-3">
-        <div className="flex-1">
-          <ProgressBar value={objective.progress} size="sm" status={objective.status} />
-        </div>
-        <span className="text-xs tabular-nums text-muted-foreground shrink-0">
-          {Math.round(objective.progress)}%
-        </span>
-      </div>
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 space-y-1">
         {objective.keyResults.map((kr) => (
           <CheckInKrRow key={kr.id} kr={kr} cycleId={cycleId} locked={locked} />
         ))}
