@@ -49,7 +49,7 @@ function PasswordStrength({ password }: { password: string }) {
   )
 }
 
-export function RegisterForm() {
+export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -92,12 +92,12 @@ export function RegisterForm() {
         setLoading(false)
         return
       }
-      router.push("/onboard")
+      router.push(callbackURL || "/onboard")
     } catch {
       setError("Registration failed.")
       setLoading(false)
     }
-  }, [router, avatarFile])
+  }, [router, avatarFile, callbackURL])
 
   return (
     <div className="w-full max-w-sm mx-auto">
@@ -157,7 +157,10 @@ export function RegisterForm() {
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/auth/login" className="text-foreground underline underline-offset-4 hover:text-muted-foreground">
+        <Link
+          href={`/auth/login${callbackURL ? `?callbackURL=${encodeURIComponent(callbackURL)}` : ""}`}
+          className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+        >
           Sign in
         </Link>
       </p>

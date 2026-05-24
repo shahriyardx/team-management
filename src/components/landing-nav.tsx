@@ -48,16 +48,9 @@ export function LandingNav() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-3">
-        <Link href="/auth/login">
-          <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">Sign in</span>
-        </Link>
-        <Link href="/auth/register">
-          <span className="inline-flex h-8 items-center rounded-md bg-foreground px-4 text-xs font-medium text-background hover:bg-foreground/90 transition-colors">
-            Get started
-          </span>
-        </Link>
-      </div>
+      <Link href="/auth/login">
+        <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">Sign in</span>
+      </Link>
     )
   }
 

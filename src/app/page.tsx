@@ -10,7 +10,9 @@ import {
   Target,
   Users,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { PublicHeader } from "@/components/public-header"
+import { HeroCta } from "@/components/hero-cta"
 import { Footer } from "@/components/footer"
 import { FAQItem } from "@/components/faq-item"
 
@@ -89,7 +91,7 @@ const plans = [
       "Basic analytics",
     ],
     cta: "Get started free",
-    href: "/auth/register",
+    href: "/onboard",
   },
   {
     name: "Pro",
@@ -104,7 +106,7 @@ const plans = [
       "Priority support",
     ],
     cta: "Start free trial",
-    href: "/auth/register",
+    href: "/onboard",
     highlighted: true,
   },
 ]
@@ -149,21 +151,7 @@ export default function Home() {
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground sm:text-base max-w-lg">
               Tasks. Knowledge. OKRs. One workspace. No noise.
             </p>
-            <div className="mt-10 flex items-center gap-3 sm:gap-4">
-              <Link
-                href="/auth/register"
-                className="inline-flex h-11 items-center gap-1.5 rounded-md bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors"
-              >
-                Get started free
-                <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                href="/auth/login"
-                className="inline-flex h-11 items-center rounded-md border border-border px-7 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
+            <HeroCta />
           </div>
         </div>
       </section>
@@ -251,17 +239,12 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={plan.href}
-                  className={`mt-8 inline-flex h-10 items-center justify-center rounded-md px-5 text-xs font-semibold transition-colors ${
-                    plan.highlighted
-                      ? "bg-foreground text-background hover:bg-foreground/90"
-                      : "border border-border text-foreground hover:bg-accent"
-                  }`}
-                >
-                  {plan.cta}
-                  <ArrowRight className="ml-1.5 size-3.5" />
-                </Link>
+                <Button asChild variant={plan.highlighted ? "default" : "outline"} className="mt-8 h-10 px-5">
+                  <Link href={plan.href}>
+                    {plan.cta}
+                    <ArrowRight className="ml-1.5 size-3.5" />
+                  </Link>
+                </Button>
               </div>
             ))}
           </div>
@@ -299,7 +282,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex items-center gap-3">
               <Link
-                href="/auth/register"
+                href="/onboard"
                 className="inline-flex h-11 items-center gap-1.5 rounded-md bg-foreground px-7 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors"
               >
                 Get started free

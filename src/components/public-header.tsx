@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ArrowRight } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
+import { Button } from "@/components/ui/button"
 import { LandingNav } from "@/components/landing-nav"
 import { SiteLogo } from "@/components/site-logo"
 
@@ -40,20 +41,13 @@ export function PublicHeader() {
         </nav>
         </div>
         <div className="flex items-center gap-3">
-          {session?.user ? (
-            <>
-              <Link
-                href="/auth/register"
-                className="hidden sm:inline-flex h-8 items-center gap-1 rounded-md bg-foreground px-4 text-xs font-semibold text-background hover:bg-foreground/90 transition-colors"
-              >
-                Get started
-                <ArrowRight className="size-3" />
-              </Link>
-              <LandingNav />
-            </>
-          ) : (
-            <LandingNav />
-          )}
+          <Button asChild className="hidden sm:inline-flex">
+            <Link href="/onboard">
+              Get started
+              <ArrowRight className="size-3" />
+            </Link>
+          </Button>
+          <LandingNav />
         </div>
       </div>
     </header>

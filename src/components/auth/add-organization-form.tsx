@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Check, Building, X } from "@phosphor-icons/react"
+import { Check, Building, ShieldCheck, X } from "@phosphor-icons/react"
 import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -44,10 +45,19 @@ function generateSlug(name: string) {
 export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: string) => void }) {
   const router = useRouter()
 
+  const [emailNotVerified, setEmailNotVerified] = useState(false)
   const [slug, setSlug] = useState("")
   const [manualSlug, setManualSlug] = useState(false)
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const checkTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => {
+    authClient.getSession().then(({ data: session }) => {
+      if (session && !session.user.emailVerified) setEmailNotVerified(true)
+    })
+  }, [])
 
   const form = useForm<OrgForm>({
     resolver: zodResolver(orgSchema),
@@ -85,35 +95,89 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
     setManualSlug(true)
   }, [])
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    URL.revokeObjectURL(logoPreview ?? "")
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  useEffect(() => {
+    return () => { URL.revokeObjectURL(logoPreview ?? "") }
+  }, [logoPreview])
+
   const onSubmit = useCallback(
     async (data: OrgForm) => {
       if (slugStatus !== "available" && slugStatus !== "idle") return
-      try {
-        const { data: org } = await authClient.organization.create({
+
+      let logo: string | undefined
+
+      if (logoFile) {
+        const body = new FormData()
+        body.set("file", logoFile)
+        const uploadRes = await fetch("/api/upload", { method: "POST", body })
+        if (!uploadRes.ok) {
+          form.setError("name", { message: "Logo upload failed." })
+          return
+        }
+        const { url } = await uploadRes.json()
+        logo = url
+      }
+
+      const res = await authClient.organization.create({
           name: data.name,
           slug,
-          logo: undefined,
+          logo,
           websiteUrl: data.websiteUrl || undefined,
           department: data.department || undefined,
           teamSize: data.teamSize || undefined,
         } as any)
-        if (org) {
-          await authClient.organization.setActive({ organizationId: org.id })
-          router.replace(`/${org.slug}`)
+        const r = res as { data: { id: string; slug: string } | null; error: { message: string } | null }
+        if (r.error) {
+          if (r.error.message.toLowerCase().includes("verify your email")) {
+            setEmailNotVerified(true)
+          } else {
+            form.setError("name", { message: r.error.message })
+          }
+          return
+        }
+        if (r.data) {
+          await authClient.organization.setActive({ organizationId: r.data.id })
+          router.replace(`/${r.data.slug}`)
         } else {
           router.replace("/onboard")
         }
-      } catch {
-        form.setError("name", { message: "Failed to create organization." })
-      }
     },
-    [form, router, slug, slugStatus],
+    [form, router, slug, slugStatus, logoFile],
   )
 
   const hostname = typeof window !== "undefined" ? window.location.hostname : "teams.weirdsoft.co.uk"
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full">
+      {emailNotVerified && (
+        <div className="mb-6 rounded-lg border border-border bg-amber-50 p-4 dark:bg-amber-950/20">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                Email not verified
+              </p>
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                You need to verify your email before creating an organization.{" "}
+                <Link
+                  href="/profile"
+                  className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-300"
+                >
+                  Go to profile
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-lg font-semibold text-foreground">
         Create your organization
       </h2>
@@ -122,17 +186,33 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
       </p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Logo placeholder */}
+        {/* Logo upload */}
         <div>
           <span className="mb-2 block text-xs font-medium text-foreground">
             Logo
           </span>
-          <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30">
-            <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
-              <Building className="size-5" />
-              <span className="text-xs">Your logo</span>
-            </div>
-          </div>
+          <button
+            type="button"
+            disabled={form.formState.isSubmitting}
+            onClick={() => document.getElementById("org-logo-upload")?.click()}
+            className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+          >
+            {logoPreview ? (
+              <img src={logoPreview} alt="Organization logo" className="size-full object-cover" />
+            ) : (
+              <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+                <Building className="size-5" />
+                <span className="text-xs">Upload logo</span>
+              </div>
+            )}
+          </button>
+          <input
+            id="org-logo-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoUpload}
+          />
         </div>
 
         {/* Name */}
@@ -289,6 +369,7 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
           type="submit"
           className="h-10 w-full"
           disabled={
+            emailNotVerified ||
             form.formState.isSubmitting ||
             slugStatus === "checking" ||
             slugStatus === "taken"

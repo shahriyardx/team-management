@@ -1,5 +1,8 @@
 import { LoginForm } from "@/components/auth/login-form"
 
-export default function LoginPage() {
-  return <LoginForm />
+export default async function LoginPage(props: {
+  searchParams: Promise<{ callbackURL?: string }>
+}) {
+  const { callbackURL } = await props.searchParams
+  return <LoginForm callbackURL={callbackURL} />
 }

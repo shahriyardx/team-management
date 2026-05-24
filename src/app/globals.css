@@ -129,6 +129,11 @@
   html {
     font-family: var(--font-space-grotesk), sans-serif;
   }
+
+  html,
+  body {
+    height: 100%;
+  }
 }
 
 .contains-task-list {

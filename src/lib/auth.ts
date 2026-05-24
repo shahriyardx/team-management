@@ -1,16 +1,24 @@
-import { betterAuth } from "better-auth"
+import { betterAuth, APIError } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { organization } from "better-auth/plugins/organization"
 import { twoFactor } from "better-auth/plugins"
 import { passkey } from "@better-auth/passkey"
 import { haveIBeenPwned } from "better-auth/plugins/haveibeenpwned"
 import { prisma } from "./prisma"
-import { sendInvitationEmail } from "./email"
+import { sendInvitationEmail, sendVerificationEmail as sendVerificationEmailFn, sendResetPasswordEmail } from "./email"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendResetPasswordEmail({ to: user.email, url })
+    },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendVerificationEmailFn({ to: user.email, url })
+    },
   },
   socialProviders: {
     google: {
@@ -25,6 +33,15 @@ export const auth = betterAuth({
     organization({
       teams: { enabled: true },
       requireEmailVerificationOnInvitation: false,
+      organizationHooks: {
+        beforeCreateOrganization: async ({ user }) => {
+          if (!user.emailVerified) {
+            throw new APIError("BAD_REQUEST", {
+              message: "You must verify your email before creating an organization.",
+            })
+          }
+        },
+      },
       schema: {
         organization: {
           additionalFields: {
@@ -41,8 +58,8 @@ export const auth = betterAuth({
         },
       },
       sendInvitationEmail: async (data) => {
-        const url = `${process.env.BETTER_AUTH_URL}/invitations/accept?id=${data.id}`
-        console.log(url)
+        const q = `org=${encodeURIComponent(data.organization.name)}&slug=${data.organization.slug}&role=${data.role}&inviter=${encodeURIComponent(data.inviter.user.email)}&email=${encodeURIComponent(data.email)}`
+        const url = `${process.env.BETTER_AUTH_URL}/invitation/${data.id}?${q}`
         await sendInvitationEmail({
           to: data.email,
           organizationName: data.organization.name,

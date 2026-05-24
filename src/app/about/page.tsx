@@ -83,7 +83,7 @@ export default function AboutPage() {
           </p>
           <div className="mt-8">
             <Link
-              href="/auth/register"
+              href="/onboard"
               className="inline-flex h-10 items-center gap-1.5 rounded-md bg-foreground px-6 text-sm font-medium text-background hover:bg-foreground/90 transition-colors"
             >
               Get started free

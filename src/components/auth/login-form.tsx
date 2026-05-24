@@ -36,7 +36,7 @@ function redirectToDashboard(router: ReturnType<typeof useRouter>) {
   })
 }
 
-export function LoginForm() {
+export function LoginForm({ callbackURL }: { callbackURL?: string }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -56,15 +56,19 @@ export function LoginForm() {
         setLoading(false)
         return
       }
-      redirectToDashboard(router)
+      if (callbackURL) {
+        router.replace(callbackURL)
+      } else {
+        redirectToDashboard(router)
+      }
     },
-    [router],
+    [router, callbackURL],
   )
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true)
-    await authClient.signIn.social({ provider: "google", callbackURL: "/onboard" })
-  }, [])
+    await authClient.signIn.social({ provider: "google", callbackURL: callbackURL || "/onboard" })
+  }, [callbackURL])
 
   const handlePasskeySignIn = useCallback(async () => {
     setLoading(true)
@@ -95,6 +99,12 @@ export function LoginForm() {
           <FieldLabel htmlFor="password">Password</FieldLabel>
           <Input id="password" type="password" placeholder="Enter your password" {...form.register("password")} disabled={loading} />
           {form.formState.errors.password && <FieldError errors={[form.formState.errors.password]} />}
+          <Link
+            href={`/auth/forgot-password${callbackURL ? `?callbackURL=${encodeURIComponent(callbackURL)}` : ""}`}
+            className="mt-1 block text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Forgot password?
+          </Link>
         </Field>
         {error && <p className="text-xs text-destructive">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
@@ -124,7 +134,10 @@ export function LoginForm() {
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link href="/auth/register" className="text-foreground underline underline-offset-4 hover:text-muted-foreground">
+        <Link
+          href={`/auth/register${callbackURL ? `?callbackURL=${encodeURIComponent(callbackURL)}` : ""}`}
+          className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+        >
           Create one
         </Link>
       </p>

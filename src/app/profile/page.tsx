@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { Envelope } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 
 const profileSchema = z.object({
@@ -18,11 +20,15 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>
 
 export default function ProfilePage() {
-  const { data: session, isPending: sessionLoading } = authClient.useSession()
+  const { data: session, isPending: sessionLoading, refetch: refreshSession } = authClient.useSession()
   const user = session?.user
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+
+  const [verifySent, setVerifySent] = useState(false)
+  const [verifySending, setVerifySending] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
 
   const { control, handleSubmit, reset, formState: { errors, isDirty, isSubmitting } } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -54,6 +60,24 @@ export default function ProfilePage() {
       setUploading(false)
     }
   }, [])
+
+  const handleSendVerification = useCallback(async () => {
+    if (!user?.email) return
+    setVerifySent(false)
+    setVerifyError(null)
+    setVerifySending(true)
+    try {
+      const res = await authClient.$fetch("/send-verification-email", {
+        method: "POST",
+        body: { email: user.email },
+      })
+      setVerifySent(true)
+    } catch (err: any) {
+      setVerifyError(err?.message ?? "Failed to send verification email.")
+    } finally {
+      setVerifySending(false)
+    }
+  }, [user?.email])
 
   if (sessionLoading) {
     return <Skeleton className="h-48" />
@@ -91,14 +115,42 @@ export default function ProfilePage() {
           />
           <FieldError>{errors.name?.message}</FieldError>
         </Field>
-        <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" value={user?.email ?? ""} disabled className="text-muted-foreground" />
-        </Field>
         <Button type="submit" disabled={!isDirty || isSubmitting}>
           {isSubmitting ? "Saving..." : "Save"}
         </Button>
       </form>
+
+      <div className="border border-border p-5">
+        <h2 className="text-sm font-medium mb-3">Email</h2>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Envelope className="size-4 text-muted-foreground shrink-0" />
+            <span className="text-sm truncate">{user?.email ?? ""}</span>
+          </div>
+          <Badge variant={user?.emailVerified ? "default" : "outline"} className="text-[10px] shrink-0">
+            {user?.emailVerified ? "Verified" : "Not verified"}
+          </Badge>
+        </div>
+        {user && !user.emailVerified && (
+          <div className="mt-3 flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSendVerification}
+              disabled={verifySending}
+            >
+              {verifySending ? "Sending..." : verifySent ? "Sent" : "Send verification"}
+            </Button>
+            {verifySent && (
+              <span className="text-xs text-emerald-500">Check your inbox.</span>
+            )}
+            {verifyError && (
+              <span className="text-xs text-destructive">{verifyError}</span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
