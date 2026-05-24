@@ -1,36 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WeirdTeams
 
-## Getting Started
+WeirdTeams helps teams set goals, track progress, and stay organized — all in one place.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **OKRs** — Set team and individual objectives, define key results, and track progress with check-ins.
+- **Knowledge base** — Create and organize internal docs, guides, and resources for your team.
+- **Tasks** — Assign and manage tasks within your team.
+- **Team management** — Org owners create teams, assign leaders, and manage members. Team leaders assign OKRs and review progress. Members track their own goals and tasks.
+- **Role-based access** — Org owner, admin, team leader, and member roles control what you can see and do.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Who it's for
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Org owners/admins** — Set up your organization, create teams, and see everything across teams.
+- **Team leaders** — Assign objectives to your team, review progress, and manage team knowledge.
+- **Team members** — Track your personal OKRs, check in on key results, and contribute to the knowledge base.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built with Next.js, tRPC, Prisma, and Better Auth.
