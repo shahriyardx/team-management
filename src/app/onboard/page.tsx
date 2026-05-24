@@ -6,7 +6,7 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthPageLayout } from "@/components/auth/auth-page-layout"
-import { BarChart3, BookOpen, ListChecks, Users } from "lucide-react"
+import { ArrowRight, BarChart3, BookOpen, Building, ListChecks, UserPlus, Users } from "lucide-react"
 
 type Org = { id: string; name: string; slug: string; logo?: string | null }
 
@@ -116,35 +116,55 @@ export default function OnboardPage() {
     <AuthPageLayout
       left={<LeftPanel />}
       right={
-        <div className="w-full max-w-2xl mx-auto space-y-6">
-          <h2 className="text-lg font-semibold text-foreground text-center">Get started with WeirdTeams</h2>
-          <p className="mt-1 text-xs text-muted-foreground text-center">
-            Create your own organization or join an existing one.
-          </p>
-          <div className="border border-border p-6">
-            <h3 className="text-sm font-semibold text-foreground">Create an organization</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Set up a new workspace for your team.
+        <div className="w-full max-w-xl mx-auto px-8 py-24 space-y-16">
+          <div className="space-y-2 text-center lg:text-left">
+            <h2 className="text-xl font-bold text-foreground">Get started with WeirdTeams</h2>
+            <p className="text-sm text-muted-foreground">
+              Set up your workspace or join an existing team.
             </p>
-            <Button className="mt-4 w-full" size="sm" onClick={() => router.push("/onboard/add-organization")}>
-              Create
-            </Button>
           </div>
-          <div className="border border-border p-6">
-            <h3 className="text-sm font-semibold text-foreground">Join an organization</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Enter your invitation code to join a team.
-            </p>
-            <div className="mt-4 space-y-3">
-              <Input
-                placeholder="Invitation code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-              />
-              {inviteError && <p className="text-xs text-destructive">{inviteError}</p>}
-              <Button className="w-full" size="sm" onClick={handleJoin} disabled={joining}>
-                {joining ? "Joining..." : "Join"}
+          <div className="flex items-start gap-5">
+            <div className="flex size-12 shrink-0 items-center justify-center border border-border bg-accent">
+              <Building className="size-5 text-foreground" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Create an organization</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Set up a new workspace for your team.</p>
+              </div>
+              <Button
+                onClick={() => router.push("/onboard/add-organization")}
+                className="h-11 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-0"
+              >
+                Create workspace
+                <ArrowRight className="ml-2 size-4" />
               </Button>
+            </div>
+          </div>
+          <div className="flex items-start gap-5">
+            <div className="flex size-12 shrink-0 items-center justify-center border border-border bg-accent">
+              <UserPlus className="size-5 text-foreground" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Join an organization</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Enter your invitation code to join a team.</p>
+              </div>
+              <div className="space-y-3">
+                <Input
+                  placeholder="Invitation code"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                />
+                {inviteError && <p className="text-xs text-destructive">{inviteError}</p>}
+                <Button
+                  onClick={handleJoin}
+                  disabled={joining}
+                  className="h-11 px-6 bg-zinc-800 hover:bg-zinc-700 text-white border-0"
+                >
+                  {joining ? "Joining..." : "Join organization"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
