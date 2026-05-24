@@ -191,8 +191,8 @@ export const taskRouter = router({
         await createNotifications(
           notifyUserIds,
           "task_assigned",
-          `You were assigned: ${task.title}`,
-          undefined,
+          "New task: " + task.title,
+          "Assigned by " + ctx.session.user.name,
           input.organizationId,
           task.id,
         )

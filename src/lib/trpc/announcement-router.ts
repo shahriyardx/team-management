@@ -249,7 +249,7 @@ export const announcementRouter = router({
         await prisma.notification.createMany({
           data: notifyIds.map((userId) => ({
             type: "announcement",
-            title: input.title,
+            title: "New announcement: " + input.title,
             organizationId: input.organizationId,
             userId,
             announcementId: announcement.id,
