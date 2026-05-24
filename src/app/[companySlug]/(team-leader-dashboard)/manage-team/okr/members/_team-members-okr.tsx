@@ -189,7 +189,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   const [krFormOpen, setKrFormOpen] = useState(false)
   const [krObjectiveId, setKrObjectiveId] = useState("")
 
-  const createKrMutation = api.keyResult.create.useMutation({
+  const createKrMutation = api.keyResult.createMemberLevel.useMutation({
     onSuccess: () => {
       utils.objective.listMemberLevel.invalidate({
         cycleId: cycleId ?? "",
@@ -268,7 +268,6 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
       ...data,
       description: data.description || null,
       objectiveId: krObjectiveId,
-      organizationId: organization.id,
     })
   }
 
@@ -474,14 +473,13 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                                       cycleId,
                                     })
                                   for (const kr of item.keyResults ?? []) {
-                                    await utils.client.keyResult.create.mutate({
+                                    await utils.client.keyResult.createMemberLevel.mutate({
                                       title: kr.title,
                                       description: kr.description ?? null,
                                       targetValue: kr.targetValue,
                                       unit: kr.unit ?? "number",
                                       weight: kr.weight ?? 1,
                                       objectiveId: obj.objective.id,
-                                      organizationId: organization.id,
                                     })
                                   }
                                 }
@@ -713,7 +711,6 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
           o.keyResults.map((kr) => [kr.id, kr.title]),
         ),
       }))}
-      organizationId={organization?.id ?? ""}
     >
       {content}
     </OkrDndProvider>

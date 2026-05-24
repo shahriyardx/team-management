@@ -144,7 +144,7 @@ export default function TeamOkrAssignment() {
   // Create KR
   const [krFormOpen, setKrFormOpen] = useState(false)
   const [krObjectiveId, setKrObjectiveId] = useState("")
-  const createKrMutation = api.keyResult.create.useMutation({
+  const createKrMutation = api.keyResult.createTeamLevel.useMutation({
     onSuccess: () => {
       utils.objective.listTeamLevel.invalidate()
       setKrFormOpen(false)
@@ -188,7 +188,6 @@ export default function TeamOkrAssignment() {
       ...data,
       description: data.description || null,
       objectiveId: krObjectiveId,
-      organizationId: organization.id,
     })
   }
 
@@ -299,7 +298,6 @@ export default function TeamOkrAssignment() {
               o.keyResults.map((kr) => [kr.id, kr.title]),
             ),
           }))}
-          organizationId={organization?.id ?? ""}
         >
           <div className="space-y-3">
             {teamSections.map(({ team, objectives }) => {
@@ -350,14 +348,13 @@ export default function TeamOkrAssignment() {
                                     cycleId: selectedCycleId,
                                   })
                                 for (const kr of item.keyResults ?? []) {
-                                  await utils.client.keyResult.create.mutate({
+                                  await utils.client.keyResult.createTeamLevel.mutate({
                                     title: kr.title,
                                     description: kr.description ?? null,
                                     targetValue: kr.targetValue,
                                     unit: kr.unit ?? "number",
                                     weight: kr.weight ?? 1,
                                     objectiveId: obj.objective.id,
-                                    organizationId: organization.id,
                                   })
                                 }
                               }

@@ -135,7 +135,7 @@ export function OrgOkrDashboard() {
   const [krFormOpen, setKrFormOpen] = useState(false)
   const [krObjectiveId, setKrObjectiveId] = useState("")
 
-  const createKrMutation = api.keyResult.create.useMutation({
+  const createKrMutation = api.keyResult.createOrgLevel.useMutation({
     onSuccess: () => {
       utils.objective.listOrgLevel.invalidate({
         cycleId: selectedCycleId ?? "",
@@ -201,7 +201,6 @@ export function OrgOkrDashboard() {
       ...data,
       description: data.description || null,
       objectiveId: krObjectiveId,
-      organizationId: organization.id,
     })
   }
 
@@ -348,7 +347,6 @@ export function OrgOkrDashboard() {
                 o.keyResults.map((kr) => [kr.id, kr.title]),
               ),
             }))}
-            organizationId={organization?.id ?? ""}
           >
             <div className="space-y-3">
               {objectives.map((obj) => (

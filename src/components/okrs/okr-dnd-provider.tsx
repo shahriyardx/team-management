@@ -28,13 +28,11 @@ export interface ObjectiveData {
 interface OkrDndProviderProps {
   children: ReactNode
   objectives: ObjectiveData[]
-  organizationId: string
 }
 
 export function OkrDndProvider({
   children,
   objectives,
-  organizationId,
 }: OkrDndProviderProps) {
   const utils = api.useUtils()
   const queryClient = useQueryClient()
@@ -108,23 +106,22 @@ export function OkrDndProvider({
 
         // Optimistic cache update (flushSync prevents @dnd-kit snap-back)
         flushSync(() => {
-          queryClient.setQueriesData(
-            { queryKey: [["objective", "list"]] },
-            (oldData: any) => {
-              if (!oldData?.objectives) return oldData
-              return {
-                ...oldData,
-                objectives: moveKrInCache(oldData.objectives, krId, srcObjId, dstObjId, targetIdx),
-              }
-            },
-          )
+          const updater = (oldData: any) => {
+            if (!oldData?.objectives) return oldData
+            return {
+              ...oldData,
+              objectives: moveKrInCache(oldData.objectives, krId, srcObjId, dstObjId, targetIdx),
+            }
+          }
+          queryClient.setQueriesData({ queryKey: [["objective", "listOrgLevel"]] }, updater)
+          queryClient.setQueriesData({ queryKey: [["objective", "listTeamLevel"]] }, updater)
+          queryClient.setQueriesData({ queryKey: [["objective", "listMemberLevel"]] }, updater)
         })
 
         moveMutation.mutate({
           krId,
           targetObjectiveId: dstObjId,
           sortOrder: targetIdx,
-          organizationId,
         })
         return
       }
@@ -142,27 +139,26 @@ export function OkrDndProvider({
 
         // Optimistic cache update (flushSync prevents @dnd-kit snap-back)
         flushSync(() => {
-          queryClient.setQueriesData(
-            { queryKey: [["objective", "list"]] },
-            (oldData: any) => {
-              if (!oldData?.objectives) return oldData
-              return {
-                ...oldData,
-                objectives: oldData.objectives.map((o: any) => {
-                  if (o.id !== srcObjId) return o
-                  return {
-                    ...o,
-                    keyResults: arrayMove(o.keyResults, oldIdx, newIdx),
-                  }
-                }),
-              }
-            },
-          )
+          const updater = (oldData: any) => {
+            if (!oldData?.objectives) return oldData
+            return {
+              ...oldData,
+              objectives: oldData.objectives.map((o: any) => {
+                if (o.id !== srcObjId) return o
+                return {
+                  ...o,
+                  keyResults: arrayMove(o.keyResults, oldIdx, newIdx),
+                }
+              }),
+            }
+          }
+          queryClient.setQueriesData({ queryKey: [["objective", "listOrgLevel"]] }, updater)
+          queryClient.setQueriesData({ queryKey: [["objective", "listTeamLevel"]] }, updater)
+          queryClient.setQueriesData({ queryKey: [["objective", "listMemberLevel"]] }, updater)
         })
 
         reorderMutation.mutate({
           items: reorderedIds.map((id, idx) => ({ id, sortOrder: idx })),
-          organizationId,
         })
       } else {
         // ── Move to different objective ──
@@ -171,27 +167,26 @@ export function OkrDndProvider({
 
         // Optimistic cache update (flushSync prevents @dnd-kit snap-back)
         flushSync(() => {
-          queryClient.setQueriesData(
-            { queryKey: [["objective", "list"]] },
-            (oldData: any) => {
-              if (!oldData?.objectives) return oldData
-              return {
-                ...oldData,
-                objectives: moveKrInCache(oldData.objectives, krId, srcObjId, dstObjId, targetIdx),
-              }
-            },
-          )
+          const updater = (oldData: any) => {
+            if (!oldData?.objectives) return oldData
+            return {
+              ...oldData,
+              objectives: moveKrInCache(oldData.objectives, krId, srcObjId, dstObjId, targetIdx),
+            }
+          }
+          queryClient.setQueriesData({ queryKey: [["objective", "listOrgLevel"]] }, updater)
+          queryClient.setQueriesData({ queryKey: [["objective", "listTeamLevel"]] }, updater)
+          queryClient.setQueriesData({ queryKey: [["objective", "listMemberLevel"]] }, updater)
         })
 
         moveMutation.mutate({
           krId,
           targetObjectiveId: dstObjId,
           sortOrder: targetIdx,
-          organizationId,
         })
       }
     },
-    [krObjectiveMap, objectives, reorderMutation, moveMutation, organizationId, queryClient],
+    [krObjectiveMap, objectives, reorderMutation, moveMutation, queryClient],
   )
 
   const activeKrTitle = activeId ? krTitlesMap[activeId] : null

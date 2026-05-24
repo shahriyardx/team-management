@@ -4,6 +4,7 @@ import "./globals.css"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { TRPCProvider } from "@/lib/trpc/provider"
+import { NavigationProgress } from "@/components/ui/navigation-progress"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -36,7 +37,12 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        <TRPCProvider><TooltipProvider>{children}</TooltipProvider></TRPCProvider>
+        <TRPCProvider>
+          <TooltipProvider>
+            <NavigationProgress />
+            {children}
+          </TooltipProvider>
+        </TRPCProvider>
       </body>
     </html>
   )
