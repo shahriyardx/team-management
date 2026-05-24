@@ -115,7 +115,7 @@ export const objectiveRouter = router({
               },
               checkIns: { orderBy: { createdAt: "desc" }, take: 5 },
             },
-            orderBy: { createdAt: "asc" },
+            orderBy: { sortOrder: "asc" },
           },
         },
         orderBy: { createdAt: "asc" },

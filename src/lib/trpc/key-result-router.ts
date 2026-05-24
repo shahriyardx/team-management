@@ -40,7 +40,7 @@ export const keyResultRouter = router({
           },
           checkIns: { orderBy: { createdAt: "desc" }, take: 5 },
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { sortOrder: "asc" },
       })
       return { keyResults }
     }),
@@ -257,6 +257,91 @@ export const keyResultRouter = router({
       })
 
       await recalcObjectiveProgress(existing.objectiveId)
+
+      return { success: true }
+    }),
+
+  reorder: protectedProcedure
+    .input(
+      z.object({
+        items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
+        organizationId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member || (member.role !== "admin" && member.role !== "owner")) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      await prisma.$transaction(
+        input.items.map((item) =>
+          prisma.keyResult.update({
+            where: { id: item.id },
+            data: { sortOrder: item.sortOrder },
+          }),
+        ),
+      )
+
+      return { success: true }
+    }),
+
+  move: protectedProcedure
+    .input(
+      z.object({
+        krId: z.string(),
+        targetObjectiveId: z.string(),
+        sortOrder: z.number(),
+        organizationId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member || (member.role !== "admin" && member.role !== "owner")) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const kr = await prisma.keyResult.findUnique({ where: { id: input.krId } })
+      if (!kr) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const fromObjectiveId = kr.objectiveId
+
+      await prisma.$transaction(async (tx) => {
+        // Make room by bumping sortOrder of existing KRs at/after target
+        await tx.keyResult.updateMany({
+          where: { objectiveId: input.targetObjectiveId, sortOrder: { gte: input.sortOrder } },
+          data: { sortOrder: { increment: 1 } },
+        })
+
+        // Move KR to new objective
+        await tx.keyResult.update({
+          where: { id: input.krId },
+          data: {
+            objectiveId: input.targetObjectiveId,
+            sortOrder: input.sortOrder,
+          },
+        })
+      })
+
+      // Recalc both objectives
+      await recalcObjectiveProgress(fromObjectiveId)
+      if (fromObjectiveId !== input.targetObjectiveId) {
+        await recalcObjectiveProgress(input.targetObjectiveId)
+      }
 
       return { success: true }
     }),

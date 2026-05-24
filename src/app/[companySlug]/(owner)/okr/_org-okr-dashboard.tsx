@@ -30,6 +30,7 @@ import { api } from "@/lib/trpc/client"
 import { CheckInKrRow } from "@/components/okrs/check-in-kr-row"
 import { KrFormDialog, type KrForm } from "@/components/okrs/kr-form-dialog"
 import { ObjectiveCardWithKRs } from "@/components/okrs/objective-card-with-krs"
+import { OkrDndProvider } from "@/components/okrs/okr-dnd-provider"
 
 const objectiveSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -357,29 +358,40 @@ export function OrgOkrDashboard() {
           </div>
 
           {/* Objective list */}
-          <div className="space-y-3">
-            {objectives.map((obj) => (
-              <ObjectiveCardWithKRs
-                key={obj.id}
-                objective={obj as any}
-                {...(isEditMode
-                  ? {
-                      onAddKr: openKrForm,
-                      onDeleteObjective: setDeleteObj,
-                      onEditObjective: (id, title) =>
-                        updateObjectiveMutation.mutate({ id, title }),
-                    }
-                  : {
-                      krRenderer: (kr) => (
-                        <CheckInKrRow
-                          kr={kr as any}
-                          cycleId={selectedCycleId!}
-                        />
-                      ),
-                    })}
-              />
-            ))}
-          </div>
+          <OkrDndProvider
+            objectives={objectives.map((o) => ({
+              id: o.id,
+              krIds: o.keyResults.map((kr) => kr.id),
+              krTitles: Object.fromEntries(
+                o.keyResults.map((kr) => [kr.id, kr.title]),
+              ),
+            }))}
+            organizationId={organization?.id ?? ""}
+          >
+            <div className="space-y-3">
+              {objectives.map((obj) => (
+                <ObjectiveCardWithKRs
+                  key={obj.id}
+                  objective={obj as any}
+                  {...(isEditMode
+                    ? {
+                        onAddKr: openKrForm,
+                        onDeleteObjective: setDeleteObj,
+                        onEditObjective: (id, title) =>
+                          updateObjectiveMutation.mutate({ id, title }),
+                      }
+                    : {
+                        krRenderer: (kr) => (
+                          <CheckInKrRow
+                            kr={kr as any}
+                            cycleId={selectedCycleId!}
+                          />
+                        ),
+                      })}
+                />
+              ))}
+            </div>
+          </OkrDndProvider>
         </>
       )}
 

@@ -31,6 +31,7 @@ import { api } from "@/lib/trpc/client"
 import { ProgressBar } from "@/components/okrs/progress-bar"
 import { KrFormDialog, type KrForm } from "@/components/okrs/kr-form-dialog"
 import { ObjectiveCardWithKRs } from "@/components/okrs/objective-card-with-krs"
+import { OkrDndProvider } from "@/components/okrs/okr-dnd-provider"
 
 const objectiveSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -276,6 +277,16 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   }
 
   return (
+    <OkrDndProvider
+      objectives={objectives.map((o) => ({
+        id: o.id,
+        krIds: o.keyResults.map((kr) => kr.id),
+        krTitles: Object.fromEntries(
+          o.keyResults.map((kr) => [kr.id, kr.title]),
+        ),
+      }))}
+      organizationId={organization?.id ?? ""}
+    >
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -695,5 +706,6 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
         </DialogContent>
       </Dialog>
     </div>
+    </OkrDndProvider>
   )
 }

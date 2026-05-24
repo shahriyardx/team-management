@@ -8,6 +8,8 @@ import { ProgressBar } from "@/components/okrs/progress-bar"
 import { EditObjectiveDialog } from "@/components/okrs/edit-objective-dialog"
 import { StatusBadge } from "@/components/okrs/status-badge"
 
+import { SortableKRContainer, DropZone } from "@/components/okrs/sortable-kr-list"
+
 export type KrItem = {
   id: string
   title: string
@@ -30,6 +32,7 @@ interface ObjectiveCardProps {
   onEdit?: (id: string, title: string) => void
   onDelete?: (id: string) => void
   krRenderer?: (kr: KrItem) => ReactNode
+  sortable?: boolean
 }
 
 export function ObjectiveCard({
@@ -38,6 +41,7 @@ export function ObjectiveCard({
   onEdit,
   onDelete,
   krRenderer,
+  sortable,
 }: ObjectiveCardProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [open, setOpen] = useState(true)
@@ -80,23 +84,40 @@ export function ObjectiveCard({
           </div>
         </div>
       </div>
-      {open && objective.keyResults.length > 0 && !krRenderer && (
-        <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
-          {objective.keyResults.map((kr) => (
-            <div key={kr.id} className="flex items-center gap-3">
-              <span className="text-[11px] text-muted-foreground truncate">{kr.title}</span>
-              <span className="text-[10px] text-muted-foreground/60 shrink-0">
-                {kr.currentValue}/{kr.targetValue} {kr.unit}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-      {open && krRenderer && objective.keyResults.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {objective.keyResults.map((kr) => krRenderer(kr))}
-        </div>
-      )}
+      <div className="overflow-hidden">
+        {open && objective.keyResults.length > 0 && !krRenderer && (
+          <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
+            {objective.keyResults.map((kr) => (
+              <div key={kr.id} className="flex items-center gap-3">
+                <span className="text-[11px] text-muted-foreground truncate">{kr.title}</span>
+                <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                  {kr.currentValue}/{kr.targetValue} {kr.unit}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {open && krRenderer && objective.keyResults.length > 0 && sortable && (
+          <div className="mt-2 space-y-1">
+            <SortableKRContainer
+              krIds={objective.keyResults.map((kr) => kr.id)}
+              objectiveId={objective.id}
+              renderItem={(id) => {
+                const kr = objective.keyResults.find((k) => k.id === id)!
+                return krRenderer(kr)
+              }}
+            />
+          </div>
+        )}
+        {open && krRenderer && objective.keyResults.length === 0 && sortable && (
+          <DropZone objectiveId={objective.id} isEmpty />
+        )}
+        {open && krRenderer && objective.keyResults.length > 0 && !sortable && (
+          <div className="mt-2 space-y-1">
+            {objective.keyResults.map((kr) => krRenderer(kr))}
+          </div>
+        )}
+      </div>
       {onEdit && (
         <EditObjectiveDialog
           open={editOpen}

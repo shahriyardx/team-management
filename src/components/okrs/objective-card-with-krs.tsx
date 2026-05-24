@@ -28,6 +28,7 @@ export function ObjectiveCardWithKRs({
       onEdit={onEditObjective}
       onDelete={onDeleteObjective}
       krRenderer={krRenderer as any ?? ((kr) => <KrRow kr={kr as KrRowItem} />)}
+      sortable={!krRenderer}
     />
   )
 }
