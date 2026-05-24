@@ -31,6 +31,7 @@ import { ProgressBar } from "@/components/okrs/progress-bar"
 import { KrFormDialog, type KrForm } from "@/components/okrs/kr-form-dialog"
 import { ObjectiveCardWithKRs } from "@/components/okrs/objective-card-with-krs"
 import { OkrDndProvider } from "@/components/okrs/okr-dnd-provider"
+import { Badge } from "@/components/ui/badge"
 
 const objectiveSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -129,8 +130,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   )
 
   const filteredCycles = useMemo(
-    () =>
-      cycles.filter((c) => c.startDate?.startsWith(selectedYear)),
+    () => cycles.filter((c) => c.startDate?.startsWith(selectedYear)),
     [cycles, selectedYear],
   )
 
@@ -144,9 +144,15 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
         const e = new Date(c.endDate)
         return s <= now && now <= e
       })
-      if (current) { setSelectedCycleId(current.id); return }
+      if (current) {
+        setSelectedCycleId(current.id)
+        return
+      }
       const firstActive = filteredCycles.find((c) => c.status === "active")
-      if (firstActive) { setSelectedCycleId(firstActive.id); return }
+      if (firstActive) {
+        setSelectedCycleId(firstActive.id)
+        return
+      }
     }
   }, [filteredCycles, selectedCycleId])
 
@@ -282,435 +288,433 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   const content = (
     <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-medium">{team.name} Members</h2>
-                <Badge variant="outline" className="text-[10px]">
-                  {objectives.length} objective
-                  {objectives.length !== 1 ? "s" : ""}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground sm:hidden">
-                {cycles.find((c) => c.id === cycleId)?.title ?? ""}
-              </p>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-medium">{team.name} Members</h2>
+              <Badge variant="outline" className="text-[10px]">
+                {objectives.length} objective
+                {objectives.length !== 1 ? "s" : ""}
+              </Badge>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <div className="hidden sm:flex items-center gap-3">
-              <Select
-                value={selectedYear}
-                onValueChange={(v) => {
-                  setSelectedYear(v)
-                  setSelectedCycleId(null)
-                }}
-              >
-                <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
-                  {selectedYear}
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  {years.map((yr) => (
-                    <SelectItem key={yr} value={yr}>
-                      {yr}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={cycleId} onValueChange={setSelectedCycleId}>
-                <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
-                  <span className="truncate">
-                    {filteredCycles.find((c) => c.id === cycleId)?.title ??
-                      "Select cycle"}
-                  </span>
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  {filteredCycles.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      <span>{c.title}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {isActiveCycle && (
-              <Button
-                onClick={() => {
-                  objectiveForm.reset()
-                  setObjFormOpen(true)
-                }}
-                disabled={!cycleId}
-              >
-                <Plus className="mr-1 size-3.5" />
-                New Objective
-              </Button>
-            )}
+            <p className="text-xs text-muted-foreground sm:hidden">
+              {cycles.find((c) => c.id === cycleId)?.title ?? ""}
+            </p>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="hidden sm:flex items-center gap-3">
+            <Select
+              value={selectedYear}
+              onValueChange={(v) => {
+                setSelectedYear(v)
+                setSelectedCycleId(null)
+              }}
+            >
+              <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
+                {selectedYear}
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {years.map((yr) => (
+                  <SelectItem key={yr} value={yr}>
+                    {yr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={cycleId} onValueChange={setSelectedCycleId}>
+              <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
+                <span className="truncate">
+                  {filteredCycles.find((c) => c.id === cycleId)?.title ??
+                    "Select cycle"}
+                </span>
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {filteredCycles.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    <span>{c.title}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {isActiveCycle && (
+            <Button
+              onClick={() => {
+                objectiveForm.reset()
+                setObjFormOpen(true)
+              }}
+              disabled={!cycleId}
+            >
+              <Plus className="mr-1 size-3.5" />
+              New Objective
+            </Button>
+          )}
+        </div>
+      </div>
 
-        {!cycleId || filteredCycles.length === 0 ? (
-          <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-            {cycles.length === 0
-              ? "No OKR cycles yet. Your org admin will create one."
-              : `No cycles in ${selectedYear}.`}
-          </div>
-        ) : objectivesLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        ) : objectives.length === 0 && teamMembers.length === 0 ? (
-          <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-            No members in this team yet.
-          </div>
-        ) : (
-          <>
-            {/* Analytics */}
-            {objectives.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Avg Progress</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums">
-                    {analytics.avgProgress}%
-                  </p>
-                </div>
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">On Track</p>
-                  <p className="mt-1 text-lg font-semibold text-emerald-500">
-                    {analytics.onTrack}
-                  </p>
-                </div>
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">At Risk</p>
-                  <p className="mt-1 text-lg font-semibold text-amber-400">
-                    {analytics.atRisk}
-                  </p>
-                </div>
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Behind</p>
-                  <p className="mt-1 text-lg font-semibold text-red-400">
-                    {analytics.behind}
-                  </p>
-                </div>
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">Completed</p>
-                  <p className="mt-1 text-lg font-semibold text-emerald-500">
-                    {analytics.completed}
-                  </p>
-                </div>
+      {!cycleId || filteredCycles.length === 0 ? (
+        <div className="border border-border p-8 text-center text-xs text-muted-foreground">
+          {cycles.length === 0
+            ? "No OKR cycles yet. Your org admin will create one."
+            : `No cycles in ${selectedYear}.`}
+        </div>
+      ) : objectivesLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+      ) : objectives.length === 0 && teamMembers.length === 0 ? (
+        <div className="border border-border p-8 text-center text-xs text-muted-foreground">
+          No members in this team yet.
+        </div>
+      ) : (
+        <>
+          {/* Analytics */}
+          {objectives.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="border border-border p-3">
+                <p className="text-xs text-muted-foreground">Avg Progress</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">
+                  {analytics.avgProgress}%
+                </p>
               </div>
-            )}
+              <div className="border border-border p-3">
+                <p className="text-xs text-muted-foreground">On Track</p>
+                <p className="mt-1 text-lg font-semibold text-emerald-500">
+                  {analytics.onTrack}
+                </p>
+              </div>
+              <div className="border border-border p-3">
+                <p className="text-xs text-muted-foreground">At Risk</p>
+                <p className="mt-1 text-lg font-semibold text-amber-400">
+                  {analytics.atRisk}
+                </p>
+              </div>
+              <div className="border border-border p-3">
+                <p className="text-xs text-muted-foreground">Behind</p>
+                <p className="mt-1 text-lg font-semibold text-red-400">
+                  {analytics.behind}
+                </p>
+              </div>
+              <div className="border border-border p-3">
+                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="mt-1 text-lg font-semibold text-emerald-500">
+                  {analytics.completed}
+                </p>
+              </div>
+            </div>
+          )}
 
-            {/* Per-member sections */}
-            <div className="space-y-3">
-              {teamMembers.map((member) => {
-                const memberId = memberByUserId.get(member.userId)
-                const memberObjs = memberId
-                  ? (memberObjectives.get(memberId) ?? [])
-                  : []
-                const avgProgress =
-                  memberObjs.length > 0
-                    ? Math.round(
-                        memberObjs.reduce((s, o) => s + o.progress, 0) /
-                          memberObjs.length,
-                      )
-                    : 0
+          {/* Per-member sections */}
+          <div className="space-y-3">
+            {teamMembers.map((member) => {
+              const memberId = memberByUserId.get(member.userId)
+              const memberObjs = memberId
+                ? (memberObjectives.get(memberId) ?? [])
+                : []
+              const avgProgress =
+                memberObjs.length > 0
+                  ? Math.round(
+                      memberObjs.reduce((s, o) => s + o.progress, 0) /
+                        memberObjs.length,
+                    )
+                  : 0
 
-                return (
-                  <details key={member.id} className="border border-border">
-                    <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-7">
-                          <AvatarImage src={member.user.image ?? undefined} />
-                          <AvatarFallback className="text-[10px]">
-                            {member.user.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <span className="text-sm font-medium">
-                            {member.user.name}
-                          </span>
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {memberObjs.length} objective
-                            {memberObjs.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 sm:w-auto">
-                        <div className="flex-1 sm:w-32">
-                          <ProgressBar
-                            value={avgProgress}
-                            size="sm"
-                            showLabel={false}
-                          />
-                        </div>
-                        <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
-                          {avgProgress}%
+              return (
+                <details key={member.id} className="border border-border">
+                  <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="size-7">
+                        <AvatarImage src={member.user.image ?? undefined} />
+                        <AvatarFallback className="text-[10px]">
+                          {member.user.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <span className="text-sm font-medium">
+                          {member.user.name}
                         </span>
-                        {isActiveCycle && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const input = document.createElement("input")
-                              input.type = "file"
-                              input.accept = ".json"
-                              input.onchange = async () => {
-                                const file = input.files?.[0]
-                                if (!file) return
-                                try {
-                                  const text = await file.text()
-                                  const data = JSON.parse(text)
-                                  const memberId = memberByUserId.get(
-                                    member.userId,
-                                  )
-                                  if (!memberId || !organization || !cycleId)
-                                    return
-
-                                  for (const item of data) {
-                                    const obj =
-                                      await utils.client.objective.create.mutate({
-                                        title: item.objective.title,
-                                        description:
-                                          item.objective.description ?? null,
-                                        ownerId: memberId,
-                                        cycleId,
-                                        organizationId: organization.id,
-                                      })
-                                    for (const kr of item.keyResults ?? []) {
-                                      await utils.client.keyResult.create.mutate({
-                                        title: kr.title,
-                                        description: kr.description ?? null,
-                                        targetValue: kr.targetValue,
-                                        unit: kr.unit ?? "number",
-                                        weight: kr.weight ?? 1,
-                                        objectiveId: obj.objective.id,
-                                        organizationId: organization.id,
-                                      })
-                                    }
-                                  }
-                                  utils.objective.list.invalidate({
-                                    cycleId,
-                                    scope: "member",
-                                  })
-                                } catch (e) {
-                                  console.error("Import failed:", e)
-                                }
-                              }
-                              input.click()
-                            }}
-                            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                          >
-                            <UploadSimple className="size-4" />
-                          </button>
-                        )}
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {memberObjs.length} objective
+                          {memberObjs.length !== 1 ? "s" : ""}
+                        </span>
                       </div>
-                    </summary>
-                    <div className="border-t border-border">
-                      {memberObjs.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-2">
-                          No objectives assigned yet.
-                        </p>
-                      ) : (
-                        <div>
-                          {memberObjs.map((obj) => (
-                            <ObjectiveCardWithKRs
-                              key={obj.id}
-                              objective={obj as any}
-                              onAddKr={isActiveCycle ? openKrForm : undefined}
-                              onEditObjective={isActiveCycle ? (id, title) =>
-                                updateObjectiveMutation.mutate({ id, title }) : undefined}
-                              onDeleteObjective={isActiveCycle ? setDeleteObj : undefined}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      {isActiveCycle && memberObjs.length > 0 && (
-                        <div className="flex justify-end border-t border-border px-4 py-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const data = memberObjs.map((obj) => ({
-                                objective: {
-                                  title: obj.title,
-                                },
-                                keyResults: obj.keyResults.map((kr) => ({
-                                  title: kr.title,
-                                  description: kr.description,
-                                  targetValue: kr.targetValue,
-                                  unit: kr.unit,
-                                  weight: kr.weight,
-                                  currentValue: 0,
-                                  status: "not_started",
-                                })),
-                              }))
-                              const blob = new Blob(
-                                [JSON.stringify(data, null, 2)],
-                                { type: "application/json" },
-                              )
-                              const url = URL.createObjectURL(blob)
-                              const a = document.createElement("a")
-                              a.href = url
-                              const cycleExport = cycles.find(
-                                (c) => c.id === cycleId,
-                              )
-                              const cycleYear =
-                                cycleExport?.startDate?.slice(0, 4) ?? "unknown"
-                              const cycleLabel =
-                                cycleExport?.title?.replace(/\s+/g, "_") ??
-                                "unknown"
-                              a.download = `${cycleYear}_${cycleLabel}_${member.user.name.replace(/\s+/g, "_")}.json`
-                              a.click()
-                              URL.revokeObjectURL(url)
-                            }}
-                          >
-                            <Export className="size-3.5" />
-                            Export JSON
-                          </Button>
-                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 sm:w-auto">
+                      <div className="flex-1 sm:w-32">
+                        <ProgressBar
+                          value={avgProgress}
+                          size="sm"
+                          showLabel={false}
+                        />
+                      </div>
+                      <span className="w-8 text-right text-xs tabular-nums text-muted-foreground shrink-0">
+                        {avgProgress}%
+                      </span>
+                      {isActiveCycle && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const input = document.createElement("input")
+                            input.type = "file"
+                            input.accept = ".json"
+                            input.onchange = async () => {
+                              const file = input.files?.[0]
+                              if (!file) return
+                              try {
+                                const text = await file.text()
+                                const data = JSON.parse(text)
+                                const memberId = memberByUserId.get(
+                                  member.userId,
+                                )
+                                if (!memberId || !organization || !cycleId)
+                                  return
+
+                                for (const item of data) {
+                                  const obj =
+                                    await utils.client.objective.create.mutate({
+                                      title: item.objective.title,
+                                      description:
+                                        item.objective.description ?? null,
+                                      ownerId: memberId,
+                                      cycleId,
+                                      organizationId: organization.id,
+                                    })
+                                  for (const kr of item.keyResults ?? []) {
+                                    await utils.client.keyResult.create.mutate({
+                                      title: kr.title,
+                                      description: kr.description ?? null,
+                                      targetValue: kr.targetValue,
+                                      unit: kr.unit ?? "number",
+                                      weight: kr.weight ?? 1,
+                                      objectiveId: obj.objective.id,
+                                      organizationId: organization.id,
+                                    })
+                                  }
+                                }
+                                utils.objective.list.invalidate({
+                                  cycleId,
+                                  scope: "member",
+                                })
+                              } catch (e) {
+                                console.error("Import failed:", e)
+                              }
+                            }
+                            input.click()
+                          }}
+                          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                        >
+                          <UploadSimple className="size-4" />
+                        </button>
                       )}
                     </div>
-                  </details>
-                )
-              })}
+                  </summary>
+                  <div className="border-t border-border">
+                    {memberObjs.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        No objectives assigned yet.
+                      </p>
+                    ) : (
+                      <div>
+                        {memberObjs.map((obj) => (
+                          <ObjectiveCardWithKRs
+                            key={obj.id}
+                            objective={obj as any}
+                            onAddKr={isActiveCycle ? openKrForm : undefined}
+                            onEditObjective={
+                              isActiveCycle
+                                ? (id, title) =>
+                                    updateObjectiveMutation.mutate({
+                                      id,
+                                      title,
+                                    })
+                                : undefined
+                            }
+                            onDeleteObjective={
+                              isActiveCycle ? setDeleteObj : undefined
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {isActiveCycle && memberObjs.length > 0 && (
+                      <div className="flex justify-end border-t border-border px-4 py-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const data = memberObjs.map((obj) => ({
+                              objective: {
+                                title: obj.title,
+                              },
+                              keyResults: obj.keyResults.map((kr) => ({
+                                title: kr.title,
+                                description: kr.description,
+                                targetValue: kr.targetValue,
+                                unit: kr.unit,
+                                weight: kr.weight,
+                                currentValue: 0,
+                                status: "not_started",
+                              })),
+                            }))
+                            const blob = new Blob(
+                              [JSON.stringify(data, null, 2)],
+                              { type: "application/json" },
+                            )
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement("a")
+                            a.href = url
+                            const cycleExport = cycles.find(
+                              (c) => c.id === cycleId,
+                            )
+                            const cycleYear =
+                              cycleExport?.startDate?.slice(0, 4) ?? "unknown"
+                            const cycleLabel =
+                              cycleExport?.title?.replace(/\s+/g, "_") ??
+                              "unknown"
+                            a.download = `${cycleYear}_${cycleLabel}_${member.user.name.replace(/\s+/g, "_")}.json`
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          }}
+                        >
+                          <Export className="size-3.5" />
+                          Export JSON
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Create Objective Dialog */}
+      <Dialog open={objFormOpen} onOpenChange={setObjFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign objective to member</DialogTitle>
+            <DialogDescription>
+              Create a member-level objective. This member can check in on
+              progress.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateObjective}>
+            <div className="space-y-4">
+              <Field>
+                <FieldLabel>Title</FieldLabel>
+                <Controller
+                  control={objectiveForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <Input {...field} placeholder="Complete onboarding flow" />
+                  )}
+                />
+                <FieldError>
+                  {objectiveForm.formState.errors.title?.message}
+                </FieldError>
+              </Field>
+              <Field>
+                <FieldLabel>Description (optional)</FieldLabel>
+                <Controller
+                  control={objectiveForm.control}
+                  name="description"
+                  render={({ field }) => <Textarea {...field} rows={2} />}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Member</FieldLabel>
+                <Controller
+                  control={objectiveForm.control}
+                  name="ownerId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="h-8 w-full rounded-none text-xs">
+                        {teamMembers.find(
+                          (m) => memberByUserId.get(m.userId) === field.value,
+                        )?.user.name ?? "Select member"}
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {teamMembers.map((m) => (
+                          <SelectItem
+                            key={m.id}
+                            value={memberByUserId.get(m.userId) ?? ""}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Avatar className="size-5">
+                                <AvatarImage src={m.user.image ?? undefined} />
+                                <AvatarFallback className="text-[9px]">
+                                  {m.user.name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              {m.user.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError>
+                  {objectiveForm.formState.errors.ownerId?.message}
+                </FieldError>
+              </Field>
             </div>
-          </>
-        )}
-
-        {/* Create Objective Dialog */}
-        <Dialog open={objFormOpen} onOpenChange={setObjFormOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Assign objective to member</DialogTitle>
-              <DialogDescription>
-                Create a member-level objective. This member can check in on
-                progress.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateObjective}>
-              <div className="space-y-4">
-                <Field>
-                  <FieldLabel>Title</FieldLabel>
-                  <Controller
-                    control={objectiveForm.control}
-                    name="title"
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        placeholder="Complete onboarding flow"
-                      />
-                    )}
-                  />
-                  <FieldError>
-                    {objectiveForm.formState.errors.title?.message}
-                  </FieldError>
-                </Field>
-                <Field>
-                  <FieldLabel>Description (optional)</FieldLabel>
-                  <Controller
-                    control={objectiveForm.control}
-                    name="description"
-                    render={({ field }) => <Textarea {...field} rows={2} />}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>Member</FieldLabel>
-                  <Controller
-                    control={objectiveForm.control}
-                    name="ownerId"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className="h-8 w-full rounded-none text-xs">
-                          {teamMembers.find(
-                            (m) => memberByUserId.get(m.userId) === field.value,
-                          )?.user.name ?? "Select member"}
-                        </SelectTrigger>
-                        <SelectContent position="popper">
-                          {teamMembers.map((m) => (
-                            <SelectItem
-                              key={m.id}
-                              value={memberByUserId.get(m.userId) ?? ""}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Avatar className="size-5">
-                                  <AvatarImage
-                                    src={m.user.image ?? undefined}
-                                  />
-                                  <AvatarFallback className="text-[9px]">
-                                    {m.user.name.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {m.user.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <FieldError>
-                    {objectiveForm.formState.errors.ownerId?.message}
-                  </FieldError>
-                </Field>
-              </div>
-              <DialogFooter className="mt-4">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => setObjFormOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createObjectiveMutation.isPending}
-                >
-                  {createObjectiveMutation.isPending ? "Creating..." : "Create"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        <KrFormDialog
-          open={krFormOpen}
-          onOpenChange={setKrFormOpen}
-          mode="create"
-          onSubmit={handleCreateKr}
-          isPending={createKrMutation.isPending}
-        />
-
-        {/* Delete Confirmation */}
-        <Dialog
-          open={!!deleteObj}
-          onOpenChange={(o) => !o && setDeleteObj(null)}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete objective?</DialogTitle>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteObj(null)}>
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setObjFormOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
-                variant="destructive"
-                onClick={() =>
-                  deleteObj && deleteObjectiveMutation.mutate({ id: deleteObj })
-                }
+                type="submit"
+                disabled={createObjectiveMutation.isPending}
               >
-                Delete
+                {createObjectiveMutation.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    )
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <KrFormDialog
+        open={krFormOpen}
+        onOpenChange={setKrFormOpen}
+        mode="create"
+        onSubmit={handleCreateKr}
+        isPending={createKrMutation.isPending}
+      />
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteObj} onOpenChange={(o) => !o && setDeleteObj(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete objective?</DialogTitle>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteObj(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                deleteObj && deleteObjectiveMutation.mutate({ id: deleteObj })
+              }
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
 
   return isActiveCycle ? (
     <OkrDndProvider
