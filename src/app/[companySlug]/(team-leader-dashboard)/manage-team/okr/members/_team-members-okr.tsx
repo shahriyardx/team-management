@@ -158,7 +158,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   const cycleId = selectedCycleId ?? ""
   const selectedCycle = cycles.find((c) => c.id === cycleId)
-  const isActiveCycle = selectedCycle?.status === "active"
+  const isActiveCycle = selectedCycle?.status === "active" && !selectedCycle?.locked
 
   // Member-level objectives for this team's members
   const { data: objectivesData, isLoading: objectivesLoading } =
@@ -523,6 +523,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                             onDeleteObjective={
                               isActiveCycle ? setDeleteObj : undefined
                             }
+                            readOnly={!isActiveCycle}
                           />
                         ))}
                       </div>

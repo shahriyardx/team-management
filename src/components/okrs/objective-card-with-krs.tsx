@@ -12,6 +12,7 @@ interface ObjectiveCardWithKRsProps {
   onDeleteObjective?: (id: string) => void
   onEditObjective?: (id: string, title: string) => void
   krRenderer?: (kr: KrRowItem) => ReactNode
+  readOnly?: boolean
 }
 
 export function ObjectiveCardWithKRs({
@@ -20,6 +21,7 @@ export function ObjectiveCardWithKRs({
   onDeleteObjective,
   onEditObjective,
   krRenderer,
+  readOnly,
 }: ObjectiveCardWithKRsProps) {
   return (
     <ObjectiveCard
@@ -27,7 +29,7 @@ export function ObjectiveCardWithKRs({
       onAddKr={onAddKr}
       onEdit={onEditObjective}
       onDelete={onDeleteObjective}
-      krRenderer={krRenderer as any ?? ((kr) => <KrRow kr={kr as KrRowItem} />)}
+      krRenderer={krRenderer as any ?? ((kr) => <KrRow kr={kr as KrRowItem} readOnly={readOnly} />)}
       sortable={!krRenderer}
     />
   )

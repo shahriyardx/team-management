@@ -148,9 +148,14 @@ export const keyResultRouter = router({
 
       const objective = await prisma.objective.findUnique({
         where: { id: input.objectiveId },
+        include: { cycle: true },
       })
       if (!objective || objective.organizationId !== orgId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Objective not found" })
+      }
+
+      if (!isAdmin && objective.cycle?.locked) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
       }
 
       if (!isAdmin) {
@@ -230,9 +235,14 @@ export const keyResultRouter = router({
 
       const objective = await prisma.objective.findUnique({
         where: { id: input.objectiveId },
+        include: { cycle: true },
       })
       if (!objective || objective.organizationId !== orgId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Objective not found" })
+      }
+
+      if (!isAdmin && objective.cycle?.locked) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
       }
 
       if (!isAdmin) {
@@ -301,7 +311,11 @@ export const keyResultRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await prisma.keyResult.findUnique({
         where: { id: input.id },
-        include: { objective: true },
+        include: {
+          objective: {
+            include: { cycle: true },
+          },
+        },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -334,6 +348,11 @@ export const keyResultRouter = router({
 
       if (!isAdmin && !isOwner && !isTeamLeader) {
         throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      // Block non-admin updates when cycle is locked
+      if (!isAdmin && existing.objective.cycle?.locked) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
       }
 
       const restricted = !isAdmin && !isTeamLeader
@@ -380,7 +399,11 @@ export const keyResultRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await prisma.keyResult.findUnique({
         where: { id: input.id },
-        include: { objective: true },
+        include: {
+          objective: {
+            include: { cycle: true },
+          },
+        },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -399,6 +422,11 @@ export const keyResultRouter = router({
       const isAdmin = member.role === "admin" || member.role === "owner"
 
       if (!isAdmin) {
+        // Block non-admin deletes when cycle is locked
+        if (existing.objective.cycle?.locked) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+        }
+
         const isTeamLeader = await prisma.team.findFirst({
           where: { leaderId: member.id, organizationId: orgId },
         })
@@ -442,9 +470,17 @@ export const keyResultRouter = router({
 
         const kr = await prisma.keyResult.findUnique({
           where: { id: firstKr.id },
-          include: { objective: true },
+          include: {
+            objective: {
+              include: { cycle: true },
+            },
+          },
         })
         if (!kr) throw new TRPCError({ code: "NOT_FOUND" })
+
+        if (kr.objective.cycle?.locked) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+        }
 
         if (kr.objective.teamId) {
           const isTeamLeader = await prisma.team.findFirst({
@@ -522,6 +558,13 @@ export const keyResultRouter = router({
           }),
         ])
         if (!sourceObj || !targetObj) throw new TRPCError({ code: "NOT_FOUND" })
+
+        // Check if source cycle is locked
+        const sourceCycle = await prisma.objective.findUnique({
+          where: { id: kr.objectiveId },
+          select: { cycle: { select: { locked: true } } },
+        })
+        if (sourceCycle?.cycle?.locked) throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
 
         const teamIds = new Set<string>()
         if (sourceObj.teamId) teamIds.add(sourceObj.teamId)

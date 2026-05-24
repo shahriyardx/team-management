@@ -85,7 +85,7 @@ export const checkInRouter = router({
         }
       }
 
-      if (kr.objective.cycle.locked) {
+      if (!isAdmin && kr.objective.cycle.locked) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked. No new check-ins allowed." })
       }
 

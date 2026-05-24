@@ -39,6 +39,7 @@ export type KrRowItem = {
 
 interface KrRowProps {
   kr: KrRowItem
+  readOnly?: boolean
 }
 
 const statusCardStyle: Record<string, string> = {
@@ -50,7 +51,7 @@ const statusCardStyle: Record<string, string> = {
   completed: "border-l-emerald-500/30 bg-emerald-500/[0.03]",
 }
 
-export function KrRow({ kr }: KrRowProps) {
+export function KrRow({ kr, readOnly }: KrRowProps) {
   const { organization } = useOrganization()
   const utils = api.useUtils()
   const [expanded, setExpanded] = useState(false)
@@ -137,20 +138,24 @@ export function KrRow({ kr }: KrRowProps) {
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={() => setEditOpen(true)}
-            >
-              <PencilSimple className="size-3.5" />
-            </Button>
-            <Button
-              variant="destructive"
-              size="icon-sm"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash className="size-3.5" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setEditOpen(true)}
+              >
+                <PencilSimple className="size-3.5" />
+              </Button>
+            )}
+            {!readOnly && (
+              <Button
+                variant="destructive"
+                size="icon-sm"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash className="size-3.5" />
+              </Button>
+            )}
           </div>
         </div>
         {expanded && (

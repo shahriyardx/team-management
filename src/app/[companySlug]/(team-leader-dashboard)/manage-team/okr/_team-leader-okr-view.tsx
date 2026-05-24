@@ -78,6 +78,11 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   }, [filteredCycles, selectedCycleId])
 
   const cycleId = selectedCycleId ?? ""
+  const selectedCycle = useMemo(
+    () => filteredCycles.find((c) => c.id === selectedCycleId) ?? null,
+    [filteredCycles, selectedCycleId],
+  )
+  const locked = !!selectedCycle?.locked
 
   const { data: objectivesData, isLoading } = api.objective.listTeamLevel.useQuery(
     { cycleId },
@@ -194,7 +199,7 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
                 key={obj.id}
                 objective={obj}
                 krRenderer={(kr) => (
-                  <CheckInKrRow kr={kr as any} cycleId={cycleId} />
+                  <CheckInKrRow kr={kr as any} cycleId={cycleId} locked={locked} />
                 )}
               />
             ))}

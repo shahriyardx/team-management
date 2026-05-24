@@ -93,8 +93,8 @@ export const objectiveRouter = router({
             },
           })
           if (!canAccess) throw new TRPCError({ code: "FORBIDDEN" })
+          where.teamId = activeTeamId
         }
-        where.teamId = activeTeamId
       } else if (!isAdmin) {
         const ledTeamIds = (
           await prisma.team.findMany({
@@ -383,6 +383,10 @@ export const objectiveRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Cycle not found" })
       }
 
+      if (cycle.locked) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+      }
+
       const targetOwner = await prisma.member.findUnique({
         where: { id: input.ownerId },
       })
@@ -439,6 +443,7 @@ export const objectiveRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await prisma.objective.findUnique({
         where: { id: input.id },
+        include: { cycle: true },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -454,6 +459,10 @@ export const objectiveRouter = router({
 
       const isAdmin = member.role === "admin" || member.role === "owner"
       const isMemberLevel = !!existing.ownerId
+
+      if (!isAdmin && existing.cycle?.locked) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+      }
 
       if (isAdmin) {
         if (isMemberLevel) {
@@ -527,6 +536,7 @@ export const objectiveRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await prisma.objective.findUnique({
         where: { id: input.id },
+        include: { cycle: true },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -541,6 +551,10 @@ export const objectiveRouter = router({
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"
+
+      if (!isAdmin && existing.cycle?.locked) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+      }
 
       if (!isAdmin) {
         const isTeamLeader = await prisma.team.findFirst({
