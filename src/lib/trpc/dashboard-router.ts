@@ -70,7 +70,7 @@ export const dashboardRouter = router({
       let okrProgress = 0
       if (activeCycle) {
         const objectives = await prisma.objective.findMany({
-          where: { cycleId: activeCycle.id, ownerId: { in: memberIds } },
+          where: { cycleId: activeCycle.id, teamId: input.teamId, ownerId: null },
           select: { progress: true },
         })
         okrProgress = objectives.length > 0
