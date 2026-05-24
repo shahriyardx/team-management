@@ -254,7 +254,7 @@ export const keyResultRouter = router({
         const teamMember = await prisma.teamMember.findFirst({
           where: {
             userId: objOwner.userId,
-            team: { leaderId: member.id, organizationId: orgId },
+            teamId: objective.teamId!,
           },
         })
         if (!teamMember) {
@@ -333,13 +333,13 @@ export const keyResultRouter = router({
       const isOwner = existing.ownerId === member.id
 
       let isTeamLeader = false
-      if (!isAdmin && !isOwner && existing.ownerId) {
+      if (!isAdmin && !isOwner && existing.ownerId && existing.objective.teamId) {
         const ownerMember = await prisma.member.findUnique({ where: { id: existing.ownerId } })
         if (ownerMember) {
           const tm = await prisma.teamMember.findFirst({
             where: {
               userId: ownerMember.userId,
-              team: { leaderId: member.id, organizationId: existing.organizationId },
+              teamId: existing.objective.teamId,
             },
           })
           isTeamLeader = !!tm
@@ -427,8 +427,10 @@ export const keyResultRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
         }
 
+        if (!existing.objective.teamId) throw new TRPCError({ code: "FORBIDDEN" })
+
         const isTeamLeader = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: orgId },
+          where: { id: existing.objective.teamId, leaderId: member.id, organizationId: orgId },
         })
         if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
       }

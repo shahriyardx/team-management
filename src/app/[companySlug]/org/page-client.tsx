@@ -22,25 +22,16 @@ export default function OrgWelcomePage() {
       const { data: sessionData } = await authClient.getSession()
       const activeTeamId = sessionData?.session?.activeTeamId
       const orgId = sessionData?.session?.activeOrganizationId
-      const userId = sessionData?.user?.id
       if (!orgId) { setChecking(false); return }
 
-      // Fetch teams user actually belongs to
-      let rawTeams: Array<{ id: string; members?: Array<{ userId: string; status: string }> }> = []
+      // Fetch teams user actually belongs to (already filtered for inactive)
+      let myTeams: Array<{ id: string }> = []
       try {
         const data = await utils.team.getMyTeams.fetch({ organizationId: orgId })
-        rawTeams = (data as { teams: typeof rawTeams }).teams ?? []
+        myTeams = (data.teams ?? []) as Array<{ id: string }>
       } catch {}
 
       if (cancelled) return
-
-      // Filter out teams where user's membership is inactive
-      const myTeams = userId
-        ? rawTeams.filter((t) => {
-            const m = t.members?.find((tm) => tm.userId === userId)
-            return m && m.status !== "inactive"
-          })
-        : rawTeams
 
       // Validate active team is still valid
       if (activeTeamId && myTeams.some((t) => t.id === activeTeamId)) {

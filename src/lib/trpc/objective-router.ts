@@ -78,10 +78,13 @@ export const objectiveRouter = router({
         cycleId: input.cycleId,
         organizationId: orgId,
         teamId: { not: null },
+        ownerId: null,
       }
 
       if (activeTeamId) {
-        if (!isAdmin) {
+        if (isAdmin) {
+          where.teamId = activeTeamId
+        } else {
           const canAccess = await prisma.team.findFirst({
             where: {
               id: activeTeamId,
@@ -204,8 +207,10 @@ export const objectiveRouter = router({
           where.ownerId = {
             in: [...memberRecords.map((m) => m.id), member.id],
           }
+          where.teamId = activeTeamId
         } else {
           where.ownerId = member.id
+          where.teamId = activeTeamId
         }
       } else {
         where.ownerId = member.id
@@ -479,13 +484,21 @@ export const objectiveRouter = router({
           })
         }
 
+        if (!existing.teamId) throw new TRPCError({ code: "FORBIDDEN" })
+
         const isTeamLeader = await prisma.team.findFirst({
           where: {
+            id: existing.teamId,
             leaderId: member.id,
             organizationId: existing.organizationId,
           },
         })
-        if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+        if (!isTeamLeader) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Can only edit objectives in your own team.",
+          })
+        }
 
         const owner = await prisma.member.findUnique({
           where: { id: existing.ownerId! },
@@ -497,10 +510,7 @@ export const objectiveRouter = router({
         const teamMember = await prisma.teamMember.findFirst({
           where: {
             userId: owner.userId,
-            team: {
-              leaderId: member.id,
-              organizationId: existing.organizationId,
-            },
+            teamId: existing.teamId,
           },
         })
         if (!teamMember) {
@@ -557,13 +567,21 @@ export const objectiveRouter = router({
       }
 
       if (!isAdmin) {
+        if (!existing.teamId) throw new TRPCError({ code: "FORBIDDEN" })
+
         const isTeamLeader = await prisma.team.findFirst({
           where: {
+            id: existing.teamId,
             leaderId: member.id,
             organizationId: existing.organizationId,
           },
         })
-        if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+        if (!isTeamLeader) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Can only delete objectives in your own team.",
+          })
+        }
       }
 
       await prisma.objective.delete({ where: { id: input.id } })

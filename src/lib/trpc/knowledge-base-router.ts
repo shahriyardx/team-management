@@ -456,10 +456,12 @@ export const knowledgeBaseRouter = router({
 
       let isTeamLeader = false
       if (!isPrivileged) {
-        const ledTeam = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: existing.organizationId },
-        })
-        isTeamLeader = !!ledTeam
+        if (existing.teamId) {
+          const ledTeam = await prisma.team.findFirst({
+            where: { id: existing.teamId, leaderId: member.id, organizationId: existing.organizationId },
+          })
+          isTeamLeader = !!ledTeam
+        }
       }
 
       if (!isPrivileged && !isTeamLeader && existing.authorId !== ctx.session.user.id) {
@@ -529,7 +531,7 @@ export const knowledgeBaseRouter = router({
     .mutation(async ({ ctx, input }) => {
       const comment = await prisma.kbComment.findUnique({
         where: { id: input.id },
-        include: { kbItem: { select: { organizationId: true } } },
+        include: { kbItem: { select: { organizationId: true, teamId: true } } },
       })
       if (!comment) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -541,10 +543,12 @@ export const knowledgeBaseRouter = router({
       const isPrivileged = member.role === "owner" || member.role === "admin"
       let isTeamLeader = false
       if (!isPrivileged) {
-        const ledTeam = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: comment.kbItem.organizationId },
-        })
-        isTeamLeader = !!ledTeam
+        if (comment.kbItem.teamId) {
+          const ledTeam = await prisma.team.findFirst({
+            where: { id: comment.kbItem.teamId, leaderId: member.id, organizationId: comment.kbItem.organizationId },
+          })
+          isTeamLeader = !!ledTeam
+        }
       }
 
       if (comment.authorId !== ctx.session.user.id && !isPrivileged && !isTeamLeader) {
@@ -591,7 +595,7 @@ export const knowledgeBaseRouter = router({
       let isTeamLeader = false
       if (!isPrivileged) {
         const ledTeam = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: input.organizationId },
+          where: { id: input.teamId, leaderId: member.id, organizationId: input.organizationId },
         })
         isTeamLeader = !!ledTeam
       }
@@ -625,10 +629,12 @@ export const knowledgeBaseRouter = router({
       const isPrivileged = member.role === "owner" || member.role === "admin"
       let isTeamLeader = false
       if (!isPrivileged) {
-        const ledTeam = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: existing.organizationId },
-        })
-        isTeamLeader = !!ledTeam
+        if (existing.teamId) {
+          const ledTeam = await prisma.team.findFirst({
+            where: { id: existing.teamId, leaderId: member.id, organizationId: existing.organizationId },
+          })
+          isTeamLeader = !!ledTeam
+        }
       }
       if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -653,10 +659,12 @@ export const knowledgeBaseRouter = router({
       const isPrivileged = member.role === "owner" || member.role === "admin"
       let isTeamLeader = false
       if (!isPrivileged) {
-        const ledTeam = await prisma.team.findFirst({
-          where: { leaderId: member.id, organizationId: existing.organizationId },
-        })
-        isTeamLeader = !!ledTeam
+        if (existing.teamId) {
+          const ledTeam = await prisma.team.findFirst({
+            where: { id: existing.teamId, leaderId: member.id, organizationId: existing.organizationId },
+          })
+          isTeamLeader = !!ledTeam
+        }
       }
       if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
 

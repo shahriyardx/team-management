@@ -223,34 +223,49 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     },
   })
 
-  // Group objectives by member (exclude leader)
+  // Filter teamObjectives to only include this team's members
+  const teamMemberIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const m of team?.members ?? []) {
+      const memberId = memberByUserId.get(m.userId)
+      if (memberId) ids.add(memberId)
+    }
+    return ids
+  }, [team, memberByUserId])
+
+  const teamObjectives = useMemo(
+    () => objectives.filter((obj) => teamMemberIds.has(obj.ownerId)),
+    [objectives, teamMemberIds],
+  )
+
+  // Group teamObjectives by member (exclude leader)
   const teamMembers = (team?.members ?? []).filter(
     (m) => m.userId !== team?.leader?.user?.id,
   )
   const memberObjectives = useMemo(() => {
     const map = new Map<string, OkrObjective[]>()
-    for (const obj of objectives) {
+    for (const obj of teamObjectives) {
       const existing = map.get(obj.ownerId) ?? []
       existing.push(obj)
       map.set(obj.ownerId, existing)
     }
     return map
-  }, [objectives])
+  }, [teamObjectives])
 
   // Analytics
   const analytics = useMemo(() => {
-    if (objectives.length === 0)
+    if (teamObjectives.length === 0)
       return { avgProgress: 0, onTrack: 0, atRisk: 0, behind: 0, completed: 0 }
-    const totalP = objectives.reduce((s, o) => s + o.progress, 0)
-    const sf = (s: string) => objectives.filter((o) => o.status === s).length
+    const totalP = teamObjectives.reduce((s, o) => s + o.progress, 0)
+    const sf = (s: string) => teamObjectives.filter((o) => o.status === s).length
     return {
-      avgProgress: Math.round(totalP / objectives.length),
+      avgProgress: Math.round(totalP / teamObjectives.length),
       onTrack: sf("on_track"),
       atRisk: sf("at_risk"),
       behind: sf("behind"),
       completed: sf("completed"),
     }
-  }, [objectives])
+  }, [teamObjectives])
 
   const handleCreateObjective = objectiveForm.handleSubmit((data) => {
     if (!organization || !cycleId) return
@@ -284,8 +299,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-medium">{team.name} Members</h2>
               <Badge variant="outline" className="text-[10px]">
-                {objectives.length} objective
-                {objectives.length !== 1 ? "s" : ""}
+                {teamObjectives.length} objective
+                {teamObjectives.length !== 1 ? "s" : ""}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground sm:hidden">
@@ -356,14 +371,14 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
-      ) : objectives.length === 0 && teamMembers.length === 0 ? (
+      ) : teamObjectives.length === 0 && teamMembers.length === 0 ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
           No members in this team yet.
         </div>
       ) : (
         <>
           {/* Analytics */}
-          {objectives.length > 0 && (
+          {teamObjectives.length > 0 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div className="border border-border p-3">
                 <p className="text-xs text-muted-foreground">Avg Progress</p>
@@ -502,7 +517,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                   <div className="border-t border-border">
                     {memberObjs.length === 0 ? (
                       <p className="text-xs text-muted-foreground text-center py-2">
-                        No objectives assigned yet.
+                        No teamObjectives assigned yet.
                       </p>
                     ) : (
                       <div>
@@ -705,7 +720,7 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   return isActiveCycle ? (
     <OkrDndProvider
-      objectives={objectives.map((o) => ({
+      objectives={teamObjectives.map((o) => ({
         id: o.id,
         krIds: o.keyResults.map((kr) => kr.id),
         krTitles: Object.fromEntries(

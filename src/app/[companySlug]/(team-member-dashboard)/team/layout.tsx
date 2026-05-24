@@ -40,22 +40,18 @@ export default async function TeamLayout({
   if (!member) redirect("/onboard")
 
   if (member.role === "owner" || member.role === "admin") {
-    const activeTeamId = session.session.activeTeamId
-    if (!activeTeamId) redirect(`/${companySlug}`)
-    const ledTeam = await prisma.team.findFirst({
-      where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
-    })
-    if (ledTeam) redirect(`/${companySlug}/manage-team`)
-  } else {
-    const ledTeam = await prisma.team.findFirst({
-      where: { organizationId: orgId, leaderId: member.id },
-    })
+    if (!session.session.activeTeamId) redirect(`/${companySlug}`)
+    return <>{children}</>
+  }
 
-    if (ledTeam) {
-      const activeTeamId = session.session.activeTeamId
-      if (!activeTeamId || activeTeamId === ledTeam.id) {
-        redirect(`/${companySlug}/manage-team`)
-      }
+  const ledTeam = await prisma.team.findFirst({
+    where: { organizationId: orgId, leaderId: member.id },
+  })
+
+  if (ledTeam) {
+    const activeTeamId = session.session.activeTeamId
+    if (!activeTeamId || activeTeamId === ledTeam.id) {
+      redirect(`/${companySlug}/manage-team`)
     }
   }
 

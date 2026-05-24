@@ -106,7 +106,13 @@ export const teamRouter = router({
         orderBy: { createdAt: "asc" },
       })
 
-      return { teams }
+      // Filter out teams where user's membership is inactive
+      const filteredTeams = teams.filter((t) => {
+        const myMembership = t.members.find((m) => m.userId === ctx.session.user.id)
+        return !myMembership || myMembership.status !== "inactive"
+      })
+
+      return { teams: filteredTeams }
     }),
 
   setActiveTeam: protectedProcedure
