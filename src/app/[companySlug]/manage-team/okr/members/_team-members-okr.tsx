@@ -162,13 +162,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   // Member-level objectives for this team's members
   const { data: objectivesData, isLoading: objectivesLoading } =
-    api.objective.list.useQuery(
-      {
-        cycleId: cycleId ?? "",
-        organizationId: organization?.id ?? "",
-        teamId,
-        scope: "member",
-      },
+    api.objective.listMemberLevel.useQuery(
+      { cycleId: cycleId ?? "" },
       { enabled: !!cycleId && !!organization },
     )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]
@@ -182,9 +177,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   const createObjectiveMutation = api.objective.createMemberLevel.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listMemberLevel.invalidate({
         cycleId: cycleId ?? "",
-        scope: "member",
       })
       setObjFormOpen(false)
       objectiveForm.reset()
@@ -197,9 +191,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   const createKrMutation = api.keyResult.create.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listMemberLevel.invalidate({
         cycleId: cycleId ?? "",
-        scope: "member",
       })
       setKrFormOpen(false)
     },
@@ -214,9 +207,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   const [deleteObj, setDeleteObj] = useState<string | null>(null)
   const deleteObjectiveMutation = api.objective.delete.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listMemberLevel.invalidate({
         cycleId: cycleId ?? "",
-        scope: "member",
       })
       setDeleteObj(null)
     },
@@ -225,9 +217,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
   // Update objective
   const updateObjectiveMutation = api.objective.update.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listMemberLevel.invalidate({
         cycleId: cycleId ?? "",
-        scope: "member",
       })
     },
   })
@@ -494,10 +485,9 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
                                     })
                                   }
                                 }
-                                utils.objective.list.invalidate({
+                                utils.objective.listMemberLevel.invalidate({
                                   cycleId,
-                                  scope: "member",
-                                })
+                                                          })
                               } catch (e) {
                                 console.error("Import failed:", e)
                               }

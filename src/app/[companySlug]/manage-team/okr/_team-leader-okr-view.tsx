@@ -79,8 +79,8 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
 
   const cycleId = selectedCycleId ?? ""
 
-  const { data: objectivesData, isLoading } = api.objective.list.useQuery(
-    { cycleId, organizationId: organization?.id ?? "", teamId, scope: "team" },
+  const { data: objectivesData, isLoading } = api.objective.listTeamLevel.useQuery(
+    { cycleId },
     { enabled: !!cycleId && !!organization },
   )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]

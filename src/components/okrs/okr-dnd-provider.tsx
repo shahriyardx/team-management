@@ -43,13 +43,17 @@ export function OkrDndProvider({
 
   const reorderMutation = api.keyResult.reorder.useMutation({
     onSettled: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listOrgLevel.invalidate()
+      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listMemberLevel.invalidate()
     },
   })
 
   const moveMutation = api.keyResult.move.useMutation({
     onSettled: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listOrgLevel.invalidate()
+      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listMemberLevel.invalidate()
     },
   })
 

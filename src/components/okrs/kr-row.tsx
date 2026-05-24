@@ -81,7 +81,9 @@ export function KrRow({ kr }: KrRowProps) {
   const [editOpen, setEditOpen] = useState(false)
   const updateMutation = api.keyResult.update.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listOrgLevel.invalidate()
+      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listMemberLevel.invalidate()
       setEditOpen(false)
     },
   })
@@ -98,7 +100,9 @@ export function KrRow({ kr }: KrRowProps) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const deleteMutation = api.keyResult.delete.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listOrgLevel.invalidate()
+      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listMemberLevel.invalidate()
       setDeleteOpen(false)
     },
   })

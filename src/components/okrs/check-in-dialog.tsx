@@ -64,7 +64,9 @@ export function CheckInDialog({
 
   const checkInMutation = api.checkIn.create.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({ cycleId })
+      utils.objective.listOrgLevel.invalidate({ cycleId })
+      utils.objective.listTeamLevel.invalidate({ cycleId })
+      utils.objective.listMemberLevel.invalidate({ cycleId })
       onOpenChange(false)
       form.reset()
     },

@@ -121,8 +121,8 @@ export default function TeamOkrAssignment() {
   }, [filteredCycles, selectedCycleId])
 
   // Objectives for selected cycle (all teams)
-  const { data: objectivesData, isLoading } = api.objective.list.useQuery(
-    { cycleId: selectedCycleId ?? "", organizationId: organization?.id ?? "" },
+  const { data: objectivesData, isLoading } = api.objective.listTeamLevel.useQuery(
+    { cycleId: selectedCycleId ?? "" },
     { enabled: !!selectedCycleId && !!organization },
   )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]
@@ -135,7 +135,7 @@ export default function TeamOkrAssignment() {
   })
   const createObjectiveMutation = api.objective.createTeamLevel.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listTeamLevel.invalidate()
       setObjFormOpen(false)
       objectiveForm.reset()
     },
@@ -146,7 +146,7 @@ export default function TeamOkrAssignment() {
   const [krObjectiveId, setKrObjectiveId] = useState("")
   const createKrMutation = api.keyResult.create.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listTeamLevel.invalidate()
       setKrFormOpen(false)
     },
   })
@@ -160,7 +160,7 @@ export default function TeamOkrAssignment() {
   const [deleteObj, setDeleteObj] = useState<string | null>(null)
   const deleteObjectiveMutation = api.objective.delete.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listTeamLevel.invalidate()
       setDeleteObj(null)
     },
   })
@@ -168,7 +168,7 @@ export default function TeamOkrAssignment() {
   // Update objective
   const updateObjectiveMutation = api.objective.update.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate()
+      utils.objective.listTeamLevel.invalidate()
     },
   })
 
@@ -361,7 +361,7 @@ export default function TeamOkrAssignment() {
                                   })
                                 }
                               }
-                              utils.objective.list.invalidate()
+                              utils.objective.listTeamLevel.invalidate()
                             } catch (e) {
                               console.error("Import failed:", e)
                             }

@@ -108,12 +108,8 @@ export function OrgOkrDashboard() {
 
   // Objectives — org-level only (scope: "org")
   const { data: objectivesData, isLoading: objectivesLoading } =
-    api.objective.list.useQuery(
-      {
-        cycleId: selectedCycleId ?? "",
-        organizationId: organization?.id ?? "",
-        scope: "org",
-      },
+    api.objective.listOrgLevel.useQuery(
+      { cycleId: selectedCycleId ?? "" },
       { enabled: !!selectedCycleId && !!organization },
     )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]
@@ -127,9 +123,8 @@ export function OrgOkrDashboard() {
 
   const createObjectiveMutation = api.objective.createOrgLevel.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listOrgLevel.invalidate({
         cycleId: selectedCycleId ?? "",
-        scope: "org",
       })
       setObjFormOpen(false)
       objectiveForm.reset()
@@ -142,9 +137,8 @@ export function OrgOkrDashboard() {
 
   const createKrMutation = api.keyResult.create.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listOrgLevel.invalidate({
         cycleId: selectedCycleId ?? "",
-        scope: "org",
       })
       setKrFormOpen(false)
     },
@@ -159,9 +153,8 @@ export function OrgOkrDashboard() {
   const [deleteObj, setDeleteObj] = useState<string | null>(null)
   const deleteObjectiveMutation = api.objective.delete.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listOrgLevel.invalidate({
         cycleId: selectedCycleId ?? "",
-        scope: "org",
       })
       setDeleteObj(null)
     },
@@ -170,9 +163,8 @@ export function OrgOkrDashboard() {
   // Update objective
   const updateObjectiveMutation = api.objective.update.useMutation({
     onSuccess: () => {
-      utils.objective.list.invalidate({
+      utils.objective.listOrgLevel.invalidate({
         cycleId: selectedCycleId ?? "",
-        scope: "org",
       })
     },
   })

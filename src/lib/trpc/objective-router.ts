@@ -4,21 +4,68 @@ import { prisma } from "@/lib/prisma"
 import { router, protectedProcedure } from "./server"
 
 export const objectiveRouter = router({
-  list: protectedProcedure
-    .input(
-      z.object({
-        cycleId: z.string(),
-        organizationId: z.string(),
-        teamId: z.string().optional(),
-        ownerId: z.string().optional(),
-        scope: z.enum(["org", "team", "member"]).optional(),
-      }),
-    )
+  listOrgLevel: protectedProcedure
+    .input(z.object({ cycleId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const orgId = ctx.session.session.activeOrganizationId
+      if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
+
       const member = await prisma.member.findUnique({
         where: {
           organizationId_userId: {
-            organizationId: input.organizationId,
+            organizationId: orgId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const objectives = await prisma.objective.findMany({
+        where: {
+          cycleId: input.cycleId,
+          organizationId: orgId,
+          teamId: null,
+          ownerId: null,
+        },
+        include: {
+          owner: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
+            },
+          },
+          keyResults: {
+            include: {
+              owner: {
+                include: {
+                  user: {
+                    select: { id: true, name: true, email: true, image: true },
+                  },
+                },
+              },
+              checkIns: { orderBy: { createdAt: "desc" }, take: 5 },
+            },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      })
+
+      return { objectives }
+    }),
+
+  listTeamLevel: protectedProcedure
+    .input(z.object({ cycleId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const orgId = ctx.session.session.activeOrganizationId
+      const activeTeamId = ctx.session.session.activeTeamId
+      if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: orgId,
             userId: ctx.session.user.id,
           },
         },
@@ -27,84 +74,141 @@ export const objectiveRouter = router({
 
       const isAdmin = member.role === "admin" || member.role === "owner"
 
-      const where: Record<string, unknown> = { cycleId: input.cycleId }
-
-      // Apply scope filter
-      if (input.scope === "org") {
-        where.teamId = null
-        where.ownerId = null
-      } else if (input.scope === "team") {
-        where.teamId = { not: null }
-      } else if (input.scope === "member") {
-        where.ownerId = member.id
+      const where: Record<string, unknown> = {
+        cycleId: input.cycleId,
+        organizationId: orgId,
+        teamId: { not: null },
       }
 
-      // Optional explicit filters override scope
-      // Member-level objectives don't have teamId set, so filter by owner's team membership instead
-      if (input.teamId !== undefined && input.scope !== "member")
-        where.teamId = input.teamId
-      if (input.ownerId !== undefined) where.ownerId = input.ownerId
+      if (activeTeamId) {
+        if (!isAdmin) {
+          const canAccess = await prisma.team.findFirst({
+            where: {
+              id: activeTeamId,
+              organizationId: orgId,
+              OR: [
+                { leaderId: member.id },
+                { members: { some: { userId: ctx.session.user.id } } },
+              ],
+            },
+          })
+          if (!canAccess) throw new TRPCError({ code: "FORBIDDEN" })
+        }
+        where.teamId = activeTeamId
+      } else if (!isAdmin) {
+        const ledTeamIds = (
+          await prisma.team.findMany({
+            where: { leaderId: member.id, organizationId: orgId },
+            select: { id: true },
+          })
+        ).map((t) => t.id)
 
-      // Non-admin permission filter
-      if (!isAdmin) {
-        const ledTeams = await prisma.team.findMany({
-          where: { leaderId: member.id, organizationId: input.organizationId },
-          select: { id: true },
+        const memberTeamIds = (
+          await prisma.teamMember.findMany({
+            where: {
+              userId: ctx.session.user.id,
+              team: { organizationId: orgId },
+            },
+            select: { teamId: true },
+          })
+        ).map((t) => t.teamId)
+
+        const accessibleTeamIds = [
+          ...new Set([...ledTeamIds, ...memberTeamIds]),
+        ]
+        if (accessibleTeamIds.length > 0) {
+          where.teamId = { in: accessibleTeamIds }
+        } else {
+          where.id = "none"
+        }
+      }
+
+      const objectives = await prisma.objective.findMany({
+        where,
+        include: {
+          owner: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
+            },
+          },
+          keyResults: {
+            include: {
+              owner: {
+                include: {
+                  user: {
+                    select: { id: true, name: true, email: true, image: true },
+                  },
+                },
+              },
+              checkIns: { orderBy: { createdAt: "desc" }, take: 5 },
+            },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      })
+
+      return { objectives }
+    }),
+
+  listMemberLevel: protectedProcedure
+    .input(z.object({ cycleId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const orgId = ctx.session.session.activeOrganizationId
+      const activeTeamId = ctx.session.session.activeTeamId
+      if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: orgId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isAdmin = member.role === "admin" || member.role === "owner"
+
+      const where: Record<string, unknown> = {
+        cycleId: input.cycleId,
+        organizationId: orgId,
+      }
+
+      if (activeTeamId) {
+        const isTeamLeader = await prisma.team.findFirst({
+          where: {
+            id: activeTeamId,
+            leaderId: member.id,
+            organizationId: orgId,
+          },
         })
 
-        if (ledTeams.length > 0) {
-          const teamIds = ledTeams.map((t) => t.id)
-          if (input.scope === "team") {
-            // Team leader seeing team-level OKRs: only their teams
-            where.teamId = { in: teamIds }
-          } else if (input.scope === "member" && input.teamId) {
-            // Member-level OKRs scoped to a specific team
-            const teamMembers = await prisma.teamMember.findMany({
-              where: { teamId: input.teamId },
-              select: { userId: true },
-            })
-            const teamUserIds = [...new Set(teamMembers.map((tm) => tm.userId))]
-            const memberRecords = await prisma.member.findMany({
-              where: {
-                userId: { in: teamUserIds },
-                organizationId: input.organizationId,
-              },
-              select: { id: true },
-            })
-            where.ownerId = {
-              in: [...memberRecords.map((m) => m.id), member.id],
-            }
-          } else {
-            // General: team leader can see their team's objectives + their own
-            const teamMembers = await prisma.teamMember.findMany({
-              where: { teamId: { in: teamIds } },
-              select: { userId: true },
-            })
-            const teamUserIds = [...new Set(teamMembers.map((tm) => tm.userId))]
-            const memberRecords = await prisma.member.findMany({
-              where: {
-                userId: { in: teamUserIds },
-                organizationId: input.organizationId,
-              },
-              select: { id: true },
-            })
-            const memberIds = memberRecords.map((m) => m.id)
-            memberIds.push(member.id)
-
-            where.OR = [
-              { ownerId: { in: memberIds } },
-              { teamId: { in: teamIds } },
-            ]
+        if (isAdmin || isTeamLeader) {
+          const teamMembers = await prisma.teamMember.findMany({
+            where: { teamId: activeTeamId },
+            select: { userId: true },
+          })
+          const userIds = [
+            ...new Set(teamMembers.map((tm) => tm.userId)),
+          ]
+          const memberRecords = await prisma.member.findMany({
+            where: {
+              userId: { in: userIds },
+              organizationId: orgId,
+            },
+            select: { id: true },
+          })
+          where.ownerId = {
+            in: [...memberRecords.map((m) => m.id), member.id],
           }
         } else {
-          // Regular member: only their own objectives
-          if (input.teamId) {
-            // Team member seeing their team's OKR (for team-level objectives)
-            // Keep the teamId filter
-          } else {
-            where.ownerId = member.id
-          }
+          where.ownerId = member.id
         }
+      } else {
+        where.ownerId = member.id
       }
 
       const objectives = await prisma.objective.findMany({
@@ -150,13 +254,20 @@ export const objectiveRouter = router({
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: orgId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: orgId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const cycle = await prisma.okrCycle.findUnique({ where: { id: input.cycleId } })
+      const cycle = await prisma.okrCycle.findUnique({
+        where: { id: input.cycleId },
+      })
       if (!cycle || cycle.organizationId !== orgId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Cycle not found" })
       }
@@ -169,7 +280,13 @@ export const objectiveRouter = router({
           organizationId: orgId,
         },
         include: {
-          owner: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
+          owner: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
+            },
+          },
           team: { select: { id: true, name: true } },
         },
       })
@@ -190,13 +307,20 @@ export const objectiveRouter = router({
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: orgId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: orgId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const cycle = await prisma.okrCycle.findUnique({ where: { id: input.cycleId } })
+      const cycle = await prisma.okrCycle.findUnique({
+        where: { id: input.cycleId },
+      })
       if (!cycle || cycle.organizationId !== orgId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Cycle not found" })
       }
@@ -215,7 +339,13 @@ export const objectiveRouter = router({
           organizationId: orgId,
         },
         include: {
-          owner: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
+          owner: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
+            },
+          },
           team: { select: { id: true, name: true } },
         },
       })
@@ -237,16 +367,25 @@ export const objectiveRouter = router({
       if (!orgId || !activeTeamId) throw new TRPCError({ code: "FORBIDDEN" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: orgId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: orgId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const cycle = await prisma.okrCycle.findUnique({ where: { id: input.cycleId } })
+      const cycle = await prisma.okrCycle.findUnique({
+        where: { id: input.cycleId },
+      })
       if (!cycle || cycle.organizationId !== orgId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Cycle not found" })
       }
 
-      const targetOwner = await prisma.member.findUnique({ where: { id: input.ownerId } })
+      const targetOwner = await prisma.member.findUnique({
+        where: { id: input.ownerId },
+      })
       if (!targetOwner || targetOwner.organizationId !== orgId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid owner" })
       }
@@ -260,7 +399,10 @@ export const objectiveRouter = router({
         },
       })
       if (!team) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only team leaders can assign OKRs to members." })
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only team leaders can assign OKRs to members.",
+        })
       }
 
       const objective = await prisma.objective.create({
@@ -273,7 +415,13 @@ export const objectiveRouter = router({
           organizationId: orgId,
         },
         include: {
-          owner: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
+          owner: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
+            },
+          },
           team: { select: { id: true, name: true } },
         },
       })
@@ -308,7 +456,6 @@ export const objectiveRouter = router({
       const isMemberLevel = !!existing.ownerId
 
       if (isAdmin) {
-        // Admin: can edit org-level and team-level only
         if (isMemberLevel) {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -316,7 +463,6 @@ export const objectiveRouter = router({
           })
         }
       } else {
-        // Non-admin: must be team leader editing their team's member-level OKRs
         if (!isMemberLevel) {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -397,7 +543,6 @@ export const objectiveRouter = router({
       const isAdmin = member.role === "admin" || member.role === "owner"
 
       if (!isAdmin) {
-        // Check if team leader deleting their team's objectives
         const isTeamLeader = await prisma.team.findFirst({
           where: {
             leaderId: member.id,
