@@ -23,6 +23,9 @@ export function VerifyEmail({
       <Tailwind>
         <Body className="bg-[#fafafa] font-sans mx-auto my-auto py-8 px-4">
           <Container className="bg-white border border-[#e5e7eb] rounded-lg mx-auto p-8 max-w-[480px]">
+            <Text className="text-xs font-bold text-[#888] tracking-widest uppercase m-0 mb-6">
+              WeirdTeams
+            </Text>
             <Heading className="text-lg font-semibold text-[#111] m-0 mb-1">
               Verify your email
             </Heading>
