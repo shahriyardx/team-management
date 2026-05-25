@@ -69,14 +69,19 @@ export function SidebarNavItems({ items }: { items: NavItem[] }) {
               open={hasSubItems ? isOpen : undefined}
               onOpenChange={
                 hasSubItems
-                  ? (open) => setOpenItems((prev) => ({ ...prev, [item.title]: open }))
+                  ? (open) =>
+                      setOpenItems((prev) => ({ ...prev, [item.title]: open }))
                   : undefined
               }
               className="group/collapsible"
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.title} isActive={isItemActive(item)} onClick={() => handleNav(item)}>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    isActive={isItemActive(item)}
+                    onClick={() => handleNav(item)}
+                  >
                     <item.icon />
                     <span>{item.title}</span>
                     {hasSubItems && (
@@ -87,9 +92,12 @@ export function SidebarNavItems({ items }: { items: NavItem[] }) {
                 {hasSubItems && (
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {item.items!.map((subItem) => (
+                      {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === subItem.url}
+                          >
                             <Link href={subItem.url}>
                               {subItem.title}
                               {subItem.badge ? (

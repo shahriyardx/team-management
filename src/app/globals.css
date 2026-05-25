@@ -138,11 +138,13 @@
 
 /* nprogress bar color matches theme */
 #nprogress .bar {
-  background: var(--primary) !important;
-  height: 2px !important;
+  background: var(--primary);
+  height: 2px;
 }
 #nprogress .peg {
-  box-shadow: 0 0 10px var(--primary), 0 0 5px var(--primary) !important;
+  box-shadow:
+    0 0 10px var(--primary),
+    0 0 5px var(--primary);
 }
 
 .contains-task-list {
@@ -157,8 +159,8 @@
 }
 
 .prose ul.contains-task-list > li::before {
-  display: none !important;
-  content: none !important;
+  display: none;
+  content: none;
 }
 
 .task-list-item-checkbox {

@@ -1,7 +1,11 @@
 "use client"
 
 import { Pie, PieChart } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 function formatBytes(bytes: number) {
@@ -40,14 +44,26 @@ export function StorageChart({ storageUsed, storageLimit }: Props) {
   return (
     <Card size="sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground">Storage</CardTitle>
+        <CardTitle className="text-xs font-medium text-muted-foreground">
+          Storage
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[180px]">
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square max-h-[180px]"
+        >
           <PieChart>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent indicator="dot" />}
+            />
             <Pie
-              data={empty ? [{ name: "remaining", value: 1, fill: "hsl(var(--muted))" }] : data}
+              data={
+                empty
+                  ? [{ name: "remaining", value: 1, fill: "hsl(var(--muted))" }]
+                  : data
+              }
               dataKey="value"
               nameKey="name"
               innerRadius={55}

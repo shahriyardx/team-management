@@ -5,10 +5,12 @@ import { router, protectedProcedure } from "./server"
 
 export const memberRouter = router({
   listByUserIds: protectedProcedure
-    .input(z.object({
-      organizationId: z.string(),
-      userIds: z.array(z.string()),
-    }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        userIds: z.array(z.string()),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const members = await prisma.member.findMany({
         where: {
@@ -40,11 +42,13 @@ export const memberRouter = router({
     }),
 
   updateOrgMemberStatus: protectedProcedure
-    .input(z.object({
-      organizationId: z.string(),
-      userId: z.string(),
-      status: z.enum(["active", "inactive"]),
-    }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        userId: z.string(),
+        status: z.enum(["active", "inactive"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const caller = await prisma.member.findUnique({
         where: {
@@ -66,9 +70,16 @@ export const memberRouter = router({
           },
         },
       })
-      if (!target) throw new TRPCError({ code: "BAD_REQUEST", message: "Member not found" })
+      if (!target)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Member not found",
+        })
       if (target.role === "owner" || target.role === "admin") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change status of org owners/admins" })
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot change status of org owners/admins",
+        })
       }
 
       await prisma.member.update({
@@ -107,17 +118,24 @@ export const memberRouter = router({
       return { members }
     }),
 
-  listActiveOrganizations: protectedProcedure
-    .query(async ({ ctx }) => {
-      const memberships = await prisma.member.findMany({
-        where: { userId: ctx.session.user.id, status: "active" },
-        include: {
-          organization: {
-            select: { id: true, name: true, slug: true, logo: true, websiteUrl: true, department: true, teamSize: true },
+  listActiveOrganizations: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await prisma.member.findMany({
+      where: { userId: ctx.session.user.id, status: "active" },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+            websiteUrl: true,
+            department: true,
+            teamSize: true,
           },
         },
-      })
-      const organizations = memberships.map((m) => m.organization)
-      return { organizations }
-    }),
+      },
+    })
+    const organizations = memberships.map((m) => m.organization)
+    return { organizations }
+  }),
 })

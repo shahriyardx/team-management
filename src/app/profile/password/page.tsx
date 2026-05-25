@@ -44,7 +44,10 @@ export default function PasswordPage() {
     setError(null)
     setSuccess(false)
     setSubmitting(true)
-    const res = await authClient.changePassword({ currentPassword, newPassword })
+    const res = await authClient.changePassword({
+      currentPassword,
+      newPassword,
+    })
     if (res.error) {
       setError(res.error.message || "Failed to change password.")
       setSubmitting(false)
@@ -130,7 +133,10 @@ export default function PasswordPage() {
           <p className="text-xs text-muted-foreground">
             You signed in using{" "}
             {oauthProviders
-              .map((a) => a.providerId.charAt(0).toUpperCase() + a.providerId.slice(1))
+              .map(
+                (a) =>
+                  a.providerId.charAt(0).toUpperCase() + a.providerId.slice(1),
+              )
               .join(" and ")}
             . There is no password to change.
           </p>

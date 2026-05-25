@@ -115,16 +115,20 @@ export default function TeamOkrAssignment() {
         const e = new Date(c.endDate)
         return s <= now && now <= e
       })
-      if (current) { setSelectedCycleId(current.id); return }
+      if (current) {
+        setSelectedCycleId(current.id)
+        return
+      }
       setSelectedCycleId(filteredCycles[0].id)
     }
   }, [filteredCycles, selectedCycleId])
 
   // Objectives for selected cycle (all teams)
-  const { data: objectivesData, isLoading } = api.objective.listTeamLevel.useQuery(
-    { cycleId: selectedCycleId ?? "" },
-    { enabled: !!selectedCycleId && !!organization },
-  )
+  const { data: objectivesData, isLoading } =
+    api.objective.listTeamLevel.useQuery(
+      { cycleId: selectedCycleId ?? "" },
+      { enabled: !!selectedCycleId && !!organization },
+    )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]
 
   // Create objective
@@ -340,22 +344,26 @@ export default function TeamOkrAssignment() {
                               if (!organization || !selectedCycleId) return
                               for (const item of data) {
                                 const obj =
-                                  await utils.client.objective.createTeamLevel.mutate({
-                                    title: item.objective.title,
-                                    description:
-                                      item.objective.description ?? null,
-                                    teamId: team.id,
-                                    cycleId: selectedCycleId,
-                                  })
+                                  await utils.client.objective.createTeamLevel.mutate(
+                                    {
+                                      title: item.objective.title,
+                                      description:
+                                        item.objective.description ?? null,
+                                      teamId: team.id,
+                                      cycleId: selectedCycleId,
+                                    },
+                                  )
                                 for (const kr of item.keyResults ?? []) {
-                                  await utils.client.keyResult.createTeamLevel.mutate({
-                                    title: kr.title,
-                                    description: kr.description ?? null,
-                                    targetValue: kr.targetValue,
-                                    unit: kr.unit ?? "number",
-                                    weight: kr.weight ?? 1,
-                                    objectiveId: obj.objective.id,
-                                  })
+                                  await utils.client.keyResult.createTeamLevel.mutate(
+                                    {
+                                      title: kr.title,
+                                      description: kr.description ?? null,
+                                      targetValue: kr.targetValue,
+                                      unit: kr.unit ?? "number",
+                                      weight: kr.weight ?? 1,
+                                      objectiveId: obj.objective.id,
+                                    },
+                                  )
                                 }
                               }
                               utils.objective.listTeamLevel.invalidate()

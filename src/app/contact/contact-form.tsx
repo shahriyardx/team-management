@@ -13,7 +13,10 @@ import { api } from "@/lib/trpc/client"
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required."),
-  email: z.string().min(1, "Email is required.").email("Invalid email address."),
+  email: z
+    .string()
+    .min(1, "Email is required.")
+    .email("Invalid email address."),
   subject: z.string().min(1, "Subject is required."),
   message: z.string().min(1, "Message is required."),
 })

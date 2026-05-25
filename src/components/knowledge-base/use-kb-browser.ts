@@ -12,16 +12,20 @@ export function useKbBrowser({
   teamId?: string
   enabled: boolean
 }) {
-  const { data: catData, isLoading: isCategoryLoading } = api.knowledgeBase.categoryList.useQuery(
-    { organizationId, ...(teamId !== undefined ? { teamId } : {}) },
-    { enabled },
-  )
+  const { data: catData, isLoading: isCategoryLoading } =
+    api.knowledgeBase.categoryList.useQuery(
+      { organizationId, ...(teamId !== undefined ? { teamId } : {}) },
+      { enabled },
+    )
   const categories = catData?.categories ?? []
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("__all__")
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState<string>("__all__")
 
   const showAll = selectedCategoryId === "__all__"
 
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
+    new Set(),
+  )
 
   useEffect(() => {
     setCollapsedCategories(new Set(categories.map((c) => c.id)))
@@ -58,17 +62,19 @@ export function useKbBrowser({
 
   const searchSkip = searchPage * PAGE
 
-  const { data: searchData, isLoading: searchLoading } = api.knowledgeBase.searchItems.useQuery(
-    {
-      organizationId,
-      query: debouncedQuery,
-      ...(teamId !== undefined ? { teamId } : {}),
-      categoryId: selectedCategoryId === "__all__" ? undefined : selectedCategoryId,
-      skip: searchSkip,
-      take: PAGE,
-    },
-    { enabled: enabled && debouncedQuery.length > 0 },
-  )
+  const { data: searchData, isLoading: searchLoading } =
+    api.knowledgeBase.searchItems.useQuery(
+      {
+        organizationId,
+        query: debouncedQuery,
+        ...(teamId !== undefined ? { teamId } : {}),
+        categoryId:
+          selectedCategoryId === "__all__" ? undefined : selectedCategoryId,
+        skip: searchSkip,
+        take: PAGE,
+      },
+      { enabled: enabled && debouncedQuery.length > 0 },
+    )
 
   const searchResults = searchData?.items ?? []
   const totalResults = searchData?.total ?? 0

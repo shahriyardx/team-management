@@ -49,16 +49,22 @@ export default function AddKnowledgePage() {
   const { organization } = useOrganization()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: catData, isLoading: catLoading } = api.knowledgeBase.categoryList.useQuery(
-    { organizationId: organization?.id ?? "" },
-    { enabled: !!organization },
-  )
+  const { data: catData, isLoading: catLoading } =
+    api.knowledgeBase.categoryList.useQuery(
+      { organizationId: organization?.id ?? "" },
+      { enabled: !!organization },
+    )
 
   const createItem = api.knowledgeBase.itemCreate.useMutation()
 
   const form = useForm<ItemForm>({
     resolver: zodResolver(itemSchema),
-    defaultValues: { title: "", description: "", categoryId: "", subcategoryId: "" },
+    defaultValues: {
+      title: "",
+      description: "",
+      categoryId: "",
+      subcategoryId: "",
+    },
   })
 
   const [files, setFiles] = useState<SelectedFile[]>([])
@@ -66,12 +72,19 @@ export default function AddKnowledgePage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files ?? [])
-    const newFiles: SelectedFile[] = selected.map((f) => ({ file: f, name: f.name, uploading: false }))
-    setFiles((prev) => [...prev, ...newFiles])
-    if (fileInputRef.current) fileInputRef.current.value = ""
-  }, [])
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selected = Array.from(e.target.files ?? [])
+      const newFiles: SelectedFile[] = selected.map((f) => ({
+        file: f,
+        name: f.name,
+        uploading: false,
+      }))
+      setFiles((prev) => [...prev, ...newFiles])
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    },
+    [],
+  )
 
   function removeFile(index: number) {
     setFiles((prev) => prev.filter((_, i) => i !== index))
@@ -82,7 +95,9 @@ export default function AddKnowledgePage() {
   }
 
   function updateLink(index: number, field: keyof LinkEntry, value: string) {
-    setLinks((prev) => prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)))
+    setLinks((prev) =>
+      prev.map((l, i) => (i === index ? { ...l, [field]: value } : l)),
+    )
   }
 
   function removeLink(index: number) {
@@ -102,9 +117,14 @@ export default function AddKnowledgePage() {
           const body = new FormData()
           body.set("file", f.file)
           body.set("type", "knowledgebase")
-          const res = await fetch("/api/knowledge/upload", { method: "POST", body })
+          const res = await fetch("/api/knowledge/upload", {
+            method: "POST",
+            body,
+          })
           if (!res.ok) {
-            const err = await res.json().catch(() => ({ error: "Upload failed" }))
+            const err = await res
+              .json()
+              .catch(() => ({ error: "Upload failed" }))
             return { ...f, uploading: false, error: err.error, url: undefined }
           }
           const { url } = await res.json()
@@ -141,7 +161,9 @@ export default function AddKnowledgePage() {
 
       router.push(`/${companySlug}/knowledge-base`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create knowledge item.")
+      setError(
+        err instanceof Error ? err.message : "Failed to create knowledge item.",
+      )
       setSubmitting(false)
     }
   }
@@ -161,14 +183,22 @@ export default function AddKnowledgePage() {
       <div className="max-w-xl">
         <div className="mb-6">
           <h1 className="text-lg font-semibold">Add Knowledge</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Add a new knowledge base entry with description, files, and links.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Add a new knowledge base entry with description, files, and links.
+          </p>
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <Field>
             <FieldLabel>Title</FieldLabel>
-            <Input {...form.register("title")} maxLength={200} placeholder="Enter title" />
-            {form.formState.errors.title && <FieldError>{form.formState.errors.title.message}</FieldError>}
+            <Input
+              {...form.register("title")}
+              maxLength={200}
+              placeholder="Enter title"
+            />
+            {form.formState.errors.title && (
+              <FieldError>{form.formState.errors.title.message}</FieldError>
+            )}
           </Field>
 
           <Field>
@@ -185,56 +215,97 @@ export default function AddKnowledgePage() {
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {form.formState.errors.categoryId && <FieldError>{form.formState.errors.categoryId.message}</FieldError>}
+            {form.formState.errors.categoryId && (
+              <FieldError>
+                {form.formState.errors.categoryId.message}
+              </FieldError>
+            )}
           </Field>
 
           <Field>
             <FieldLabel>Subcategory</FieldLabel>
             <Select
               value={form.watch("subcategoryId")}
-              onValueChange={(v) => form.setValue("subcategoryId", v, { shouldValidate: true })}
+              onValueChange={(v) =>
+                form.setValue("subcategoryId", v, { shouldValidate: true })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a category first" />
               </SelectTrigger>
               <SelectContent>
-                {categories.find((c) => c.id === form.watch("categoryId"))?.subcategories.map((sub) => (
-                  <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
-                ))}
+                {categories
+                  .find((c) => c.id === form.watch("categoryId"))
+                  ?.subcategories.map((sub) => (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
-            {form.formState.errors.subcategoryId && <FieldError>{form.formState.errors.subcategoryId.message}</FieldError>}
+            {form.formState.errors.subcategoryId && (
+              <FieldError>
+                {form.formState.errors.subcategoryId.message}
+              </FieldError>
+            )}
           </Field>
 
           <Field>
             <FieldLabel>Description</FieldLabel>
-            <Textarea {...form.register("description")} rows={6} placeholder="Enter description (optional)" />
+            <Textarea
+              {...form.register("description")}
+              rows={6}
+              placeholder="Enter description (optional)"
+            />
           </Field>
 
           <Field>
             <FieldLabel>Attachments</FieldLabel>
             <div className="space-y-2">
-              <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.docx,.xlsx,.xls,.csv,.txt" className="hidden" onChange={handleFileSelect} />
-              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.docx,.xlsx,.xls,.csv,.txt"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <Paperclip className="mr-1.5 size-3.5" />
                 Choose Files
               </Button>
               {files.length > 0 && (
                 <div className="space-y-1">
                   {files.map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded-none border border-border px-3 py-1.5 text-xs">
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-none border border-border px-3 py-1.5 text-xs"
+                    >
                       {f.uploading ? (
                         <span className="size-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
                       ) : (
                         <Paperclip className="size-3 shrink-0 text-muted-foreground" />
                       )}
                       <span className="flex-1 truncate">{f.name}</span>
-                      {f.error && <span className="text-destructive">{f.error}</span>}
-                      <button type="button" onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
+                      {f.error && (
+                        <span className="text-destructive">{f.error}</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
                         <X className="size-3" />
                       </button>
                     </div>
@@ -250,10 +321,25 @@ export default function AddKnowledgePage() {
               {links.map((link, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <div className="flex-1 space-y-1">
-                    <Input placeholder="URL" value={link.url} onChange={(e) => updateLink(i, "url", e.target.value)} className="text-xs" />
-                    <Input placeholder="Title (optional)" value={link.title} onChange={(e) => updateLink(i, "title", e.target.value)} className="text-xs" />
+                    <Input
+                      placeholder="URL"
+                      value={link.url}
+                      onChange={(e) => updateLink(i, "url", e.target.value)}
+                      className="text-xs"
+                    />
+                    <Input
+                      placeholder="Title (optional)"
+                      value={link.title}
+                      onChange={(e) => updateLink(i, "title", e.target.value)}
+                      className="text-xs"
+                    />
                   </div>
-                  <button type="button" onClick={() => removeLink(i)} className="mt-1 text-muted-foreground hover:text-foreground" disabled={links.length === 1}>
+                  <button
+                    type="button"
+                    onClick={() => removeLink(i)}
+                    className="mt-1 text-muted-foreground hover:text-foreground"
+                    disabled={links.length === 1}
+                  >
                     <X className="size-3.5" />
                   </button>
                 </div>
@@ -272,7 +358,14 @@ export default function AddKnowledgePage() {
               <Upload className="mr-1.5 size-3.5" />
               Submit
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>Cancel</Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
           </div>
         </form>
       </div>

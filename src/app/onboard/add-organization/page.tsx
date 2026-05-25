@@ -71,7 +71,9 @@ export default function AddOrganizationPage() {
             </div>
           </div>
 
-          <p className="relative text-xs text-zinc-600">&copy; 2026 WeirdTeams</p>
+          <p className="relative text-xs text-zinc-600">
+            &copy; 2026 WeirdTeams
+          </p>
         </>
       }
       right={<AddOrganizationForm onNameChange={setNameValue} />}

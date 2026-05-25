@@ -10,7 +10,9 @@ export async function generateMetadata({
   params: Promise<{ companySlug: string }>
 }): Promise<Metadata> {
   const { companySlug } = await params
-  const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
+  const org = await prisma.organization.findUnique({
+    where: { slug: companySlug },
+  })
   const name = org?.name ?? "WeirdTeams"
   return {
     title: `Dashboard — ${name} — WeirdTeams`,
@@ -34,7 +36,9 @@ export default async function OwnerLayout({
   if (!orgId) redirect("/onboard")
 
   const member = await prisma.member.findUnique({
-    where: { organizationId_userId: { organizationId: orgId, userId: session.user.id } },
+    where: {
+      organizationId_userId: { organizationId: orgId, userId: session.user.id },
+    },
   })
 
   if (!member) redirect("/onboard")

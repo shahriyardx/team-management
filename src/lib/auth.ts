@@ -5,7 +5,11 @@ import { twoFactor } from "better-auth/plugins"
 import { passkey } from "@better-auth/passkey"
 import { haveIBeenPwned } from "better-auth/plugins/haveibeenpwned"
 import { prisma } from "./prisma"
-import { sendInvitationEmail, sendVerificationEmail as sendVerificationEmailFn, sendResetPasswordEmail } from "./email"
+import {
+  sendInvitationEmail,
+  sendVerificationEmail as sendVerificationEmailFn,
+  sendResetPasswordEmail,
+} from "./email"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -37,7 +41,8 @@ export const auth = betterAuth({
         beforeCreateOrganization: async ({ user }) => {
           if (!user.emailVerified) {
             throw new APIError("BAD_REQUEST", {
-              message: "You must verify your email before creating an organization.",
+              message:
+                "You must verify your email before creating an organization.",
             })
           }
         },

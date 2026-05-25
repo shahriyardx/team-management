@@ -10,7 +10,11 @@ export default function MyOkrPage() {
   const { loading } = useMemberRole()
 
   if (loading || !organization) {
-    return <div className="p-6"><Skeleton className="h-48" /></div>
+    return (
+      <div className="p-6">
+        <Skeleton className="h-48" />
+      </div>
+    )
   }
 
   return (

@@ -2,7 +2,16 @@
 
 import { useMemo } from "react"
 import { useParams } from "next/navigation"
-import { BookBookmark, Gear, House, ListChecks, Megaphone, Target, Users, UsersThree } from "@phosphor-icons/react"
+import {
+  BookBookmark,
+  Gear,
+  House,
+  ListChecks,
+  Megaphone,
+  Target,
+  Users,
+  UsersThree,
+} from "@phosphor-icons/react"
 import {
   Sidebar,
   SidebarContent,
@@ -78,7 +87,10 @@ export function OwnerSidebar({
   )
   const todoCount = todoCountData?.count ?? 0
 
-  const items = useMemo(() => (slug ? ownerItems(slug, todoCount) : []), [slug, todoCount])
+  const items = useMemo(
+    () => (slug ? ownerItems(slug, todoCount) : []),
+    [slug, todoCount],
+  )
 
   return (
     <Sidebar collapsible="icon" {...props}>

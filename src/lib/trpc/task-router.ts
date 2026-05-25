@@ -58,10 +58,19 @@ export const taskRouter = router({
       // Team-scoped: verify user belongs to team
       if (input.teamId !== undefined && input.teamId !== null) {
         const teamMember = await prisma.teamMember.findUnique({
-          where: { teamId_userId: { teamId: input.teamId, userId: ctx.session.user.id } },
+          where: {
+            teamId_userId: {
+              teamId: input.teamId,
+              userId: ctx.session.user.id,
+            },
+          },
         })
         if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
-      } else if (input.teamId === null && member.role !== "admin" && member.role !== "owner") {
+      } else if (
+        input.teamId === null &&
+        member.role !== "admin" &&
+        member.role !== "owner"
+      ) {
         // Org-level tasks: only owner/admin can see
         throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -70,16 +79,26 @@ export const taskRouter = router({
 
       const [tasks, total] = await prisma.$transaction(async (tx) => {
         const items = await tx.task.findMany({
-          where: { organizationId: input.organizationId, ...(whereTeamId !== undefined ? { teamId: whereTeamId } : {}) },
+          where: {
+            organizationId: input.organizationId,
+            ...(whereTeamId !== undefined ? { teamId: whereTeamId } : {}),
+          },
           include: {
             assignees: assigneesInclude,
-            createdBy: { select: { id: true, name: true, email: true, image: true } },
+            createdBy: {
+              select: { id: true, name: true, email: true, image: true },
+            },
           },
           orderBy: { createdAt: "desc" },
           skip: input.skip,
           take: input.take,
         })
-        const count = await tx.task.count({ where: { organizationId: input.organizationId, ...(whereTeamId !== undefined ? { teamId: whereTeamId } : {}) } })
+        const count = await tx.task.count({
+          where: {
+            organizationId: input.organizationId,
+            ...(whereTeamId !== undefined ? { teamId: whereTeamId } : {}),
+          },
+        })
         return [items, count] as const
       })
 
@@ -142,7 +161,12 @@ export const taskRouter = router({
       // If team task, verify user belongs to team; if org-level, only owner/admin
       if (input.teamId) {
         const teamMember = await prisma.teamMember.findUnique({
-          where: { teamId_userId: { teamId: input.teamId, userId: ctx.session.user.id } },
+          where: {
+            teamId_userId: {
+              teamId: input.teamId,
+              userId: ctx.session.user.id,
+            },
+          },
         })
         if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
       } else if (member.role !== "admin" && member.role !== "owner") {
@@ -152,10 +176,16 @@ export const taskRouter = router({
       // Validate all assignees belong to this org
       if (input.assigneeIds?.length) {
         const assigneeCount = await prisma.member.count({
-          where: { id: { in: input.assigneeIds }, organizationId: input.organizationId },
+          where: {
+            id: { in: input.assigneeIds },
+            organizationId: input.organizationId,
+          },
         })
         if (assigneeCount !== input.assigneeIds.length) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid assignee" })
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid assignee",
+          })
         }
       }
 
@@ -170,12 +200,18 @@ export const taskRouter = router({
           organizationId: input.organizationId,
           teamId: input.teamId ?? null,
           ...(input.assigneeIds?.length
-            ? { assignees: { create: input.assigneeIds.map((memberId) => ({ memberId })) } }
+            ? {
+                assignees: {
+                  create: input.assigneeIds.map((memberId) => ({ memberId })),
+                },
+              }
             : {}),
         },
         include: {
           assignees: assigneesInclude,
-          createdBy: { select: { id: true, name: true, email: true, image: true } },
+          createdBy: {
+            select: { id: true, name: true, email: true, image: true },
+          },
         },
       })
 
@@ -191,8 +227,8 @@ export const taskRouter = router({
         await createNotifications(
           notifyUserIds,
           "task_assigned",
-          "New task: " + task.title,
-          "Assigned by " + ctx.session.user.name,
+          `New task: ${task.title}`,
+          `Assigned by ${ctx.session.user.name}`,
           input.organizationId,
           task.id,
         )
@@ -234,14 +270,22 @@ export const taskRouter = router({
       if (existing.teamId) {
         // Team task: team leader or creator can edit
         const isLeader = await prisma.team.findFirst({
-          where: { id: existing.teamId, organizationId: existing.organizationId, leaderId: member.id },
+          where: {
+            id: existing.teamId,
+            organizationId: existing.organizationId,
+            leaderId: member.id,
+          },
         })
         if (!isLeader && existing.createdById !== ctx.session.user.id) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       } else {
         // Org-level task: owner/admin or creator can edit
-        if (member.role !== "admin" && member.role !== "owner" && existing.createdById !== ctx.session.user.id) {
+        if (
+          member.role !== "admin" &&
+          member.role !== "owner" &&
+          existing.createdById !== ctx.session.user.id
+        ) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       }
@@ -250,17 +294,26 @@ export const taskRouter = router({
       if (input.assigneeIds !== undefined) {
         if (input.assigneeIds.length > 0) {
           const assigneeCount = await prisma.member.count({
-            where: { id: { in: input.assigneeIds }, organizationId: existing.organizationId },
+            where: {
+              id: { in: input.assigneeIds },
+              organizationId: existing.organizationId,
+            },
           })
           if (assigneeCount !== input.assigneeIds.length) {
-            throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid assignee" })
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Invalid assignee",
+            })
           }
         }
 
         await prisma.taskAssignee.deleteMany({ where: { taskId: input.id } })
         if (input.assigneeIds.length > 0) {
           await prisma.taskAssignee.createMany({
-            data: input.assigneeIds.map((memberId) => ({ taskId: input.id, memberId })),
+            data: input.assigneeIds.map((memberId) => ({
+              taskId: input.id,
+              memberId,
+            })),
           })
         }
       }
@@ -269,35 +322,47 @@ export const taskRouter = router({
         where: { id: input.id },
         data: {
           ...(input.title !== undefined && { title: input.title }),
-          ...(input.description !== undefined && { description: input.description }),
+          ...(input.description !== undefined && {
+            description: input.description,
+          }),
           ...(input.status !== undefined && { status: input.status }),
           ...(input.priority !== undefined && { priority: input.priority }),
-          ...(input.dueDate !== undefined && { dueDate: input.dueDate ? new Date(input.dueDate) : null }),
+          ...(input.dueDate !== undefined && {
+            dueDate: input.dueDate ? new Date(input.dueDate) : null,
+          }),
         },
         include: {
           assignees: assigneesInclude,
-          createdBy: { select: { id: true, name: true, email: true, image: true } },
+          createdBy: {
+            select: { id: true, name: true, email: true, image: true },
+          },
         },
       })
 
       // Notify only relevant parties on status change
       if (input.status !== undefined && task.assignees.length > 0) {
         const assigneeUserIds = task.assignees.map((a) => a.member.user.id)
-        const isActingUserAssignee = assigneeUserIds.includes(ctx.session.user.id)
+        const isActingUserAssignee = assigneeUserIds.includes(
+          ctx.session.user.id,
+        )
         const isActingUserCreator = task.createdById === ctx.session.user.id
 
         let notifyUserIds: string[]
         if (isActingUserCreator) {
           // Creator changed status → notify assignees
-          notifyUserIds = assigneeUserIds.filter((id) => id !== ctx.session.user.id)
-        } else if (isActingUserAssignee) {
-          // Assignee changed status → notify creator
-          notifyUserIds = [task.createdById].filter((id) => id !== ctx.session.user.id)
-        } else {
-          // Someone else (team leader) → notify creator + assignees
-          notifyUserIds = [...new Set([...assigneeUserIds, task.createdById])].filter(
+          notifyUserIds = assigneeUserIds.filter(
             (id) => id !== ctx.session.user.id,
           )
+        } else if (isActingUserAssignee) {
+          // Assignee changed status → notify creator
+          notifyUserIds = [task.createdById].filter(
+            (id) => id !== ctx.session.user.id,
+          )
+        } else {
+          // Someone else (team leader) → notify creator + assignees
+          notifyUserIds = [
+            ...new Set([...assigneeUserIds, task.createdById]),
+          ].filter((id) => id !== ctx.session.user.id)
         }
 
         if (notifyUserIds.length > 0) {
@@ -316,7 +381,12 @@ export const taskRouter = router({
     }),
 
   changeStatus: protectedProcedure
-    .input(z.object({ id: z.string(), status: z.enum(["todo", "in_progress", "done"]) }))
+    .input(
+      z.object({
+        id: z.string(),
+        status: z.enum(["todo", "in_progress", "done"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const existing = await prisma.task.findUnique({
         where: { id: input.id },
@@ -335,18 +405,33 @@ export const taskRouter = router({
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       // Allow creator, team leader, org admin/owner, or assignee to change status
-      const isAssignee = existing.assignees.some((a) => a.member.user.id === ctx.session.user.id)
+      const isAssignee = existing.assignees.some(
+        (a) => a.member.user.id === ctx.session.user.id,
+      )
       const isOwnerAdmin = member.role === "owner" || member.role === "admin"
 
       if (existing.teamId) {
         const isLeader = await prisma.team.findFirst({
-          where: { id: existing.teamId, organizationId: existing.organizationId, leaderId: member.id },
+          where: {
+            id: existing.teamId,
+            organizationId: existing.organizationId,
+            leaderId: member.id,
+          },
         })
-        if (!isLeader && !isOwnerAdmin && existing.createdById !== ctx.session.user.id && !isAssignee) {
+        if (
+          !isLeader &&
+          !isOwnerAdmin &&
+          existing.createdById !== ctx.session.user.id &&
+          !isAssignee
+        ) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       } else {
-        if (!isOwnerAdmin && existing.createdById !== ctx.session.user.id && !isAssignee) {
+        if (
+          !isOwnerAdmin &&
+          existing.createdById !== ctx.session.user.id &&
+          !isAssignee
+        ) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       }
@@ -356,25 +441,33 @@ export const taskRouter = router({
         data: { status: input.status },
         include: {
           assignees: assigneesInclude,
-          createdBy: { select: { id: true, name: true, email: true, image: true } },
+          createdBy: {
+            select: { id: true, name: true, email: true, image: true },
+          },
         },
       })
 
       // Notify
       if (task.assignees.length > 0) {
         const assigneeUserIds = task.assignees.map((a) => a.member.user.id)
-        const isActingUserAssignee = assigneeUserIds.includes(ctx.session.user.id)
+        const isActingUserAssignee = assigneeUserIds.includes(
+          ctx.session.user.id,
+        )
         const isActingUserCreator = task.createdById === ctx.session.user.id
 
         let notifyUserIds: string[]
         if (isActingUserCreator) {
-          notifyUserIds = assigneeUserIds.filter((id) => id !== ctx.session.user.id)
-        } else if (isActingUserAssignee) {
-          notifyUserIds = [task.createdById].filter((id) => id !== ctx.session.user.id)
-        } else {
-          notifyUserIds = [...new Set([...assigneeUserIds, task.createdById])].filter(
+          notifyUserIds = assigneeUserIds.filter(
             (id) => id !== ctx.session.user.id,
           )
+        } else if (isActingUserAssignee) {
+          notifyUserIds = [task.createdById].filter(
+            (id) => id !== ctx.session.user.id,
+          )
+        } else {
+          notifyUserIds = [
+            ...new Set([...assigneeUserIds, task.createdById]),
+          ].filter((id) => id !== ctx.session.user.id)
         }
 
         if (notifyUserIds.length > 0) {
@@ -411,13 +504,21 @@ export const taskRouter = router({
       // Scope permission check
       if (existing.teamId) {
         const isLeader = await prisma.team.findFirst({
-          where: { id: existing.teamId, organizationId: existing.organizationId, leaderId: member.id },
+          where: {
+            id: existing.teamId,
+            organizationId: existing.organizationId,
+            leaderId: member.id,
+          },
         })
         if (!isLeader && existing.createdById !== ctx.session.user.id) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       } else {
-        if (member.role !== "admin" && member.role !== "owner" && existing.createdById !== ctx.session.user.id) {
+        if (
+          member.role !== "admin" &&
+          member.role !== "owner" &&
+          existing.createdById !== ctx.session.user.id
+        ) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       }

@@ -64,8 +64,17 @@ export function TeamSwitcher() {
     { enabled: !!organization },
   )
   const teams =
-    (myTeamsData as { teams?: Array<{ id: string; name: string; leader: { user: { id: string } } | null }> } | undefined)
-      ?.teams ?? []
+    (
+      myTeamsData as
+        | {
+            teams?: Array<{
+              id: string
+              name: string
+              leader: { user: { id: string } } | null
+            }>
+          }
+        | undefined
+    )?.teams ?? []
 
   const activeTeam = teams.find((t) => t.id === activeTeamId)
 

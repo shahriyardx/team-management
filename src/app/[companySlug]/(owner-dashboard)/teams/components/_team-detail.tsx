@@ -35,7 +35,12 @@ type OrgMember = {
   id: string
   userId: string
   role: string
-  user: { id: string; name: string; email: string; image: string | null | undefined }
+  user: {
+    id: string
+    name: string
+    email: string
+    image: string | null | undefined
+  }
 }
 
 interface TeamMember {
@@ -43,7 +48,12 @@ interface TeamMember {
   role: string
   status: string
   userId: string
-  user: { id: string; name: string; email: string; image: string | null | undefined }
+  user: {
+    id: string
+    name: string
+    email: string
+    image: string | null | undefined
+  }
 }
 
 interface Team {
@@ -68,7 +78,11 @@ export function TeamDetail({ teamId }: { teamId: string }) {
   const [newMemberUserId, setNewMemberUserId] = useState("")
   const [removing, setRemoving] = useState<string | null>(null)
 
-  const { data: teamsData, isLoading, refetch } = api.team.list.useQuery(
+  const {
+    data: teamsData,
+    isLoading,
+    refetch,
+  } = api.team.list.useQuery(
     { organizationId: organization?.id ?? "" },
     { enabled: !!organization },
   )
@@ -76,7 +90,11 @@ export function TeamDetail({ teamId }: { teamId: string }) {
   const team = teams.find((t) => t.id === teamId) ?? null
 
   const setLeader = api.team.setLeader.useMutation({
-    onSuccess: () => { setSwitchLeaderOpen(false); setNewLeaderMemberId(""); refetch() },
+    onSuccess: () => {
+      setSwitchLeaderOpen(false)
+      setNewLeaderMemberId("")
+      refetch()
+    },
   })
 
   const deleteTeam = api.team.delete.useMutation({
@@ -119,11 +137,16 @@ export function TeamDetail({ teamId }: { teamId: string }) {
   const handleAddMember = async () => {
     if (!newMemberUserId) return
     try {
-      await authClient.organization.addTeamMember({ teamId, userId: newMemberUserId })
+      await authClient.organization.addTeamMember({
+        teamId,
+        userId: newMemberUserId,
+      })
       setAddMemberOpen(false)
       setNewMemberUserId("")
       refetch()
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }
 
   const handleRemoveMember = (userId: string) => {
@@ -159,9 +182,18 @@ export function TeamDetail({ teamId }: { teamId: string }) {
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
         <UsersIcon className="size-10 text-muted-foreground/40" />
         <div className="text-center">
-          <h2 className="text-sm font-medium text-foreground">Team not found</h2>
-          <p className="mt-1 text-xs text-muted-foreground">This team doesn't exist or has been deleted.</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => router.push(`/${companySlug}/teams`)}>
+          <h2 className="text-sm font-medium text-foreground">
+            Team not found
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This team doesn't exist or has been deleted.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => router.push(`/${companySlug}/teams`)}
+          >
             Back to teams
           </Button>
         </div>
@@ -180,11 +212,18 @@ export function TeamDetail({ teamId }: { teamId: string }) {
         </button>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">{team.name}</h1>
+            <h1 className="text-lg font-semibold text-foreground">
+              {team.name}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             {canManage && (
-              <Button variant="destructive" size="sm" onClick={handleDeleteTeam} disabled={deleteTeam.isPending}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteTeam}
+                disabled={deleteTeam.isPending}
+              >
                 <Trash className="size-3.5" />
                 {deleteTeam.isPending ? "Deleting..." : "Delete"}
               </Button>
@@ -194,11 +233,21 @@ export function TeamDetail({ teamId }: { teamId: string }) {
         {team.leader && (
           <div className="mt-2 flex items-center gap-2">
             <Avatar size="sm">
-              {team.leader.user.image ? <AvatarImage src={team.leader.user.image} alt={team.leader.user.name} /> : null}
-              <AvatarFallback>{team.leader.user.name?.charAt(0)?.toUpperCase() ?? "?"}</AvatarFallback>
+              {team.leader.user.image ? (
+                <AvatarImage
+                  src={team.leader.user.image}
+                  alt={team.leader.user.name}
+                />
+              ) : null}
+              <AvatarFallback>
+                {team.leader.user.name?.charAt(0)?.toUpperCase() ?? "?"}
+              </AvatarFallback>
             </Avatar>
             <span className="text-xs text-muted-foreground">
-              Led by <span className="font-medium text-foreground">{team.leader.user.name}</span>
+              Led by{" "}
+              <span className="font-medium text-foreground">
+                {team.leader.user.name}
+              </span>
             </span>
           </div>
         )}
@@ -211,9 +260,14 @@ export function TeamDetail({ teamId }: { teamId: string }) {
           </h2>
           <div className="flex items-center gap-2">
             {canManage && (
-              <Dialog open={switchLeaderOpen} onOpenChange={setSwitchLeaderOpen}>
+              <Dialog
+                open={switchLeaderOpen}
+                onOpenChange={setSwitchLeaderOpen}
+              >
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">Switch leader</Button>
+                  <Button size="sm" variant="outline">
+                    Switch leader
+                  </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -225,22 +279,34 @@ export function TeamDetail({ teamId }: { teamId: string }) {
                   <div className="space-y-4">
                     <Field>
                       <FieldLabel>New leader</FieldLabel>
-                      <Select value={newLeaderMemberId} onValueChange={setNewLeaderMemberId}>
+                      <Select
+                        value={newLeaderMemberId}
+                        onValueChange={setNewLeaderMemberId}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a member..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {team.members.filter((tm) => team.leader?.user?.id !== tm.user.id).length === 0 ? (
+                          {team.members.filter(
+                            (tm) => team.leader?.user?.id !== tm.user.id,
+                          ).length === 0 ? (
                             <div className="px-2 py-4 text-center text-xs text-muted-foreground">
                               No other members to assign.
                             </div>
                           ) : (
                             team.members
-                              .filter((tm) => team.leader?.user?.id !== tm.user.id)
+                              .filter(
+                                (tm) => team.leader?.user?.id !== tm.user.id,
+                              )
                               .map((tm) => {
-                                const orgMember = orgMembers.find((m) => m.userId === tm.userId)
+                                const orgMember = orgMembers.find(
+                                  (m) => m.userId === tm.userId,
+                                )
                                 return (
-                                  <SelectItem key={tm.id} value={orgMember?.id ?? ""}>
+                                  <SelectItem
+                                    key={tm.id}
+                                    value={orgMember?.id ?? ""}
+                                  >
                                     {tm.user.name}
                                   </SelectItem>
                                 )
@@ -251,11 +317,19 @@ export function TeamDetail({ teamId }: { teamId: string }) {
                     </Field>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setSwitchLeaderOpen(false)}>Cancel</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSwitchLeaderOpen(false)}
+                    >
+                      Cancel
+                    </Button>
                     <Button
                       onClick={() => {
                         if (newLeaderMemberId) {
-                          setLeader.mutate({ teamId: team.id, leaderMemberId: newLeaderMemberId })
+                          setLeader.mutate({
+                            teamId: team.id,
+                            leaderMemberId: newLeaderMemberId,
+                          })
                         }
                       }}
                       disabled={!newLeaderMemberId || setLeader.isPending}
@@ -276,12 +350,17 @@ export function TeamDetail({ teamId }: { teamId: string }) {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add member to {team.name}</DialogTitle>
-                  <DialogDescription>Select an org member to add.</DialogDescription>
+                  <DialogDescription>
+                    Select an org member to add.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <Field>
                     <FieldLabel>Member</FieldLabel>
-                    <Select value={newMemberUserId} onValueChange={setNewMemberUserId}>
+                    <Select
+                      value={newMemberUserId}
+                      onValueChange={setNewMemberUserId}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a member..." />
                       </SelectTrigger>
@@ -302,8 +381,18 @@ export function TeamDetail({ teamId }: { teamId: string }) {
                   </Field>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => { setAddMemberOpen(false); setNewMemberUserId("") }}>Cancel</Button>
-                  <Button onClick={handleAddMember} disabled={!newMemberUserId}>Add</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAddMemberOpen(false)
+                      setNewMemberUserId("")
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddMember} disabled={!newMemberUserId}>
+                    Add
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -323,18 +412,30 @@ export function TeamDetail({ teamId }: { teamId: string }) {
                   className={`flex items-center gap-3 px-4 py-3 ${idx < team.members.length - 1 ? "border-b border-border" : ""}`}
                 >
                   <Avatar size="sm">
-                    {tm.user.image ? <AvatarImage src={tm.user.image} alt={tm.user.name} /> : null}
-                    <AvatarFallback>{tm.user.name?.charAt(0)?.toUpperCase() ?? "?"}</AvatarFallback>
+                    {tm.user.image ? (
+                      <AvatarImage src={tm.user.image} alt={tm.user.name} />
+                    ) : null}
+                    <AvatarFallback>
+                      {tm.user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-foreground truncate">
                       {tm.user.name}
-                      {isLeader && <span className="ml-1.5 text-xs text-muted-foreground font-normal">(leader)</span>}
+                      {isLeader && (
+                        <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                          (leader)
+                        </span>
+                      )}
                       {tm.status === "inactive" && (
-                        <span className="ml-1.5 text-xs text-destructive font-normal">inactive</span>
+                        <span className="ml-1.5 text-xs text-destructive font-normal">
+                          inactive
+                        </span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{tm.user.email}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {tm.user.email}
+                    </p>
                   </div>
                   {canManageTeam() && (canManage || !isLeader) && (
                     <div className="flex items-center gap-1">
@@ -343,12 +444,17 @@ export function TeamDetail({ teamId }: { teamId: string }) {
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                          onClick={() => setMemberStatus.mutate({
-                            teamId,
-                            organizationId: organization?.id ?? "",
-                            userId: tm.userId,
-                            status: tm.status === "inactive" ? "active" : "inactive",
-                          })}
+                          onClick={() =>
+                            setMemberStatus.mutate({
+                              teamId,
+                              organizationId: organization?.id ?? "",
+                              userId: tm.userId,
+                              status:
+                                tm.status === "inactive"
+                                  ? "active"
+                                  : "inactive",
+                            })
+                          }
                           disabled={setMemberStatus.isPending}
                         >
                           <Prohibit className="size-3 mr-1" />

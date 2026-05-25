@@ -30,7 +30,9 @@ export const checkInRouter = router({
           include: {
             author: {
               include: {
-                user: { select: { id: true, name: true, email: true, image: true } },
+                user: {
+                  select: { id: true, name: true, email: true, image: true },
+                },
               },
             },
           },
@@ -38,7 +40,9 @@ export const checkInRouter = router({
           skip: input.skip,
           take: input.take,
         })
-        const count = await tx.checkIn.count({ where: { keyResultId: input.keyResultId } })
+        const count = await tx.checkIn.count({
+          where: { keyResultId: input.keyResultId },
+        })
         return [items, count] as const
       })
       return { checkIns, total }
@@ -86,7 +90,10 @@ export const checkInRouter = router({
       }
 
       if (!isAdmin && kr.objective.cycle.locked) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked. No new check-ins allowed." })
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cycle is locked. No new check-ins allowed.",
+        })
       }
 
       const checkIn = await prisma.$transaction(async (tx) => {
@@ -103,25 +110,40 @@ export const checkInRouter = router({
           include: {
             author: {
               include: {
-                user: { select: { id: true, name: true, email: true, image: true } },
+                user: {
+                  select: { id: true, name: true, email: true, image: true },
+                },
               },
             },
           },
         })
 
         // Update KR values
-        const krProgress = kr.targetValue > 0
-          ? Math.min(100, Math.round((input.newValue / kr.targetValue) * 1000) / 10)
-          : 0
-        const krStatus = krProgress >= 100 ? "achieved"
-          : krProgress >= 75 ? "on_track"
-          : krProgress >= 50 ? "at_risk"
-          : krProgress > 0 ? "behind"
-          : "not_started"
+        const krProgress =
+          kr.targetValue > 0
+            ? Math.min(
+                100,
+                Math.round((input.newValue / kr.targetValue) * 1000) / 10,
+              )
+            : 0
+        const krStatus =
+          krProgress >= 100
+            ? "achieved"
+            : krProgress >= 75
+              ? "on_track"
+              : krProgress >= 50
+                ? "at_risk"
+                : krProgress > 0
+                  ? "behind"
+                  : "not_started"
 
         await tx.keyResult.update({
           where: { id: input.keyResultId },
-          data: { currentValue: input.newValue, progress: krProgress, status: krStatus },
+          data: {
+            currentValue: input.newValue,
+            progress: krProgress,
+            status: krStatus,
+          },
         })
 
         // Recalculate objective progress
@@ -139,15 +161,22 @@ export const checkInRouter = router({
           const objectiveProgress =
             totalWeight > 0
               ? Math.round(
-                  (allKrs.reduce((sum, k) => sum + k.progress * k.weight, 0) / totalWeight) * 10,
+                  (allKrs.reduce((sum, k) => sum + k.progress * k.weight, 0) /
+                    totalWeight) *
+                    10,
                 ) / 10
               : 0
 
-          const objectiveStatus = objectiveProgress >= 100 ? "completed"
-            : objectiveProgress >= 75 ? "on_track"
-            : objectiveProgress >= 50 ? "at_risk"
-            : objectiveProgress > 0 ? "behind"
-            : "not_started"
+          const objectiveStatus =
+            objectiveProgress >= 100
+              ? "completed"
+              : objectiveProgress >= 75
+                ? "on_track"
+                : objectiveProgress >= 50
+                  ? "at_risk"
+                  : objectiveProgress > 0
+                    ? "behind"
+                    : "not_started"
 
           await tx.objective.update({
             where: { id: kr.objectiveId },

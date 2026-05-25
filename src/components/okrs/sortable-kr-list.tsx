@@ -2,7 +2,11 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import { DotsSixVertical } from "@phosphor-icons/react"
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useDroppable, useDndContext } from "@dnd-kit/core"
 
@@ -36,7 +40,15 @@ function SortableKRItem({ id, objectiveId, children }: SortableKRItemProps) {
   const dndContext = useDndContext()
   const activeId = dndContext?.active?.id ?? null
   const dragSourceObjectiveId = useDragSourceObjectiveId()
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({ id })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id })
   const isTarget =
     isOver &&
     activeId !== null &&
@@ -74,10 +86,17 @@ interface SortableKRContainerProps {
   renderItem: (id: string) => ReactNode
 }
 
-export function SortableKRContainer({ krIds, objectiveId, renderItem }: SortableKRContainerProps) {
+export function SortableKRContainer({
+  krIds,
+  objectiveId,
+  renderItem,
+}: SortableKRContainerProps) {
   const dragSourceObjectiveId = useDragSourceObjectiveId()
-  const isCrossDrag = dragSourceObjectiveId !== null && dragSourceObjectiveId !== objectiveId
-  const { setNodeRef: endRef, isOver: endOver } = useDroppable({ id: `end-${objectiveId}` })
+  const isCrossDrag =
+    dragSourceObjectiveId !== null && dragSourceObjectiveId !== objectiveId
+  const { setNodeRef: endRef, isOver: endOver } = useDroppable({
+    id: `end-${objectiveId}`,
+  })
   const showEnd = endOver && isCrossDrag
 
   return (
@@ -97,10 +116,17 @@ export function SortableKRContainer({ krIds, objectiveId, renderItem }: Sortable
   )
 }
 
-export function DropZone({ objectiveId, isEmpty }: { objectiveId: string; isEmpty?: boolean }) {
+export function DropZone({
+  objectiveId,
+  isEmpty,
+}: {
+  objectiveId: string
+  isEmpty?: boolean
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: `drop-${objectiveId}` })
   const dragSourceObjectiveId = useDragSourceObjectiveId()
-  const isCrossObjective = dragSourceObjectiveId !== null && dragSourceObjectiveId !== objectiveId
+  const isCrossObjective =
+    dragSourceObjectiveId !== null && dragSourceObjectiveId !== objectiveId
 
   return (
     <div

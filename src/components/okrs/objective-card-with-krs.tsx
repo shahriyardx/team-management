@@ -1,7 +1,10 @@
 "use client"
 
-import { type ReactNode } from "react"
-import { ObjectiveCard, type ObjectiveItem } from "@/components/okrs/objective-card"
+import type { ReactNode } from "react"
+import {
+  ObjectiveCard,
+  type ObjectiveItem,
+} from "@/components/okrs/objective-card"
 import { KrRow, type KrRowItem } from "@/components/okrs/kr-row"
 
 type ObjectiveWithKRs = ObjectiveItem & { keyResults: KrRowItem[] }
@@ -29,7 +32,10 @@ export function ObjectiveCardWithKRs({
       onAddKr={onAddKr}
       onEdit={onEditObjective}
       onDelete={onDeleteObjective}
-      krRenderer={krRenderer as any ?? ((kr) => <KrRow kr={kr as KrRowItem} readOnly={readOnly} />)}
+      krRenderer={
+        (krRenderer as any) ??
+        ((kr) => <KrRow kr={kr as KrRowItem} readOnly={readOnly} />)
+      }
       sortable={!krRenderer}
     />
   )

@@ -6,21 +6,25 @@ import { Footer } from "@/components/footer"
 
 export const metadata: Metadata = {
   title: "About — WeirdTeams",
-  description: "Learn about WeirdTeams and our mission to make team collaboration simple.",
+  description:
+    "Learn about WeirdTeams and our mission to make team collaboration simple.",
 }
 
 const values = [
   {
     title: "Simplicity",
-    description: "Every feature should make your life easier, not harder. We build with restraint.",
+    description:
+      "Every feature should make your life easier, not harder. We build with restraint.",
   },
   {
     title: "Clarity",
-    description: "Teams move faster when everyone sees the same picture. We make that picture clear.",
+    description:
+      "Teams move faster when everyone sees the same picture. We make that picture clear.",
   },
   {
     title: "Alignment",
-    description: "Tasks, knowledge, and objectives should connect, not live in separate silos.",
+    description:
+      "Tasks, knowledge, and objectives should connect, not live in separate silos.",
   },
   {
     title: "Velocity",
@@ -40,18 +44,20 @@ export default function AboutPage() {
           </h1>
           <div className="mt-8 space-y-5 text-sm leading-relaxed text-muted-foreground">
             <p>
-              WeirdTeams started with a simple observation: most team tools do too much and deliver too little.
-              Teams don't need another platform with a hundred features they'll never use. They need a focused
+              WeirdTeams started with a simple observation: most team tools do
+              too much and deliver too little. Teams don't need another platform
+              with a hundred features they'll never use. They need a focused
               workspace where tasks, knowledge, and objectives actually connect.
             </p>
             <p>
-              We built WeirdTeams to be that workspace. A single place to manage tasks, share knowledge,
-              track OKRs, and organize people — without the noise of tools built for enterprises with
-              teams of teams.
+              We built WeirdTeams to be that workspace. A single place to manage
+              tasks, share knowledge, track OKRs, and organize people — without
+              the noise of tools built for enterprises with teams of teams.
             </p>
             <p>
-              Today, WeirdTeams is used by small and growing teams who want to move faster without
-              switching between five different apps. We're independent, we're focused, and we're just getting started.
+              Today, WeirdTeams is used by small and growing teams who want to
+              move faster without switching between five different apps. We're
+              independent, we're focused, and we're just getting started.
             </p>
           </div>
         </div>
@@ -65,8 +71,12 @@ export default function AboutPage() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {values.map((v) => (
               <div key={v.title} className="border border-border p-6">
-                <h3 className="text-sm font-medium text-foreground">{v.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{v.description}</p>
+                <h3 className="text-sm font-medium text-foreground">
+                  {v.title}
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  {v.description}
+                </p>
               </div>
             ))}
           </div>

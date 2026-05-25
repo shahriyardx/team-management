@@ -1,14 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { type ReactNode } from "react"
-import { CaretDown, CaretRight, PencilSimple, Trash } from "@phosphor-icons/react"
+import type { ReactNode } from "react"
+import {
+  CaretDown,
+  CaretRight,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/okrs/progress-bar"
 import { EditObjectiveDialog } from "@/components/okrs/edit-objective-dialog"
 import { StatusBadge } from "@/components/okrs/status-badge"
 
-import { SortableKRContainer, DropZone } from "@/components/okrs/sortable-kr-list"
+import {
+  SortableKRContainer,
+  DropZone,
+} from "@/components/okrs/sortable-kr-list"
 
 export type KrItem = {
   id: string
@@ -54,30 +62,49 @@ export function ObjectiveCard({
             onClick={() => setOpen((p) => !p)}
             className="flex items-center gap-1 cursor-pointer"
           >
-            {open
-              ? <CaretDown className="size-3 text-muted-foreground" />
-              : <CaretRight className="size-3 text-muted-foreground" />}
+            {open ? (
+              <CaretDown className="size-3 text-muted-foreground" />
+            ) : (
+              <CaretRight className="size-3 text-muted-foreground" />
+            )}
             <span className="text-xs font-medium">{objective.title}</span>
           </button>
           <StatusBadge status={objective.status} />
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="sm:w-64">
-            <ProgressBar value={objective.progress} size="sm" status={objective.status} showLabel />
+            <ProgressBar
+              value={objective.progress}
+              size="sm"
+              status={objective.status}
+              showLabel
+            />
           </div>
           <div className="flex shrink-0 flex-wrap gap-1">
             {onEdit && (
-              <Button variant="ghost" size="icon-xs" onClick={() => setEditOpen(true)}>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setEditOpen(true)}
+              >
                 <PencilSimple className="size-3" />
               </Button>
             )}
             {onAddKr && (
-              <Button variant="outline" size="xs" onClick={() => onAddKr(objective.id)}>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => onAddKr(objective.id)}
+              >
                 + KR
               </Button>
             )}
             {onDelete && (
-              <Button variant="ghost" size="icon-xs" onClick={() => onDelete(objective.id)}>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => onDelete(objective.id)}
+              >
                 <Trash className="size-3" />
               </Button>
             )}
@@ -89,7 +116,9 @@ export function ObjectiveCard({
           <div className="mt-2 space-y-1 pl-2 border-l-2 border-border">
             {objective.keyResults.map((kr) => (
               <div key={kr.id} className="flex items-center gap-3">
-                <span className="text-[11px] text-muted-foreground truncate">{kr.title}</span>
+                <span className="text-[11px] text-muted-foreground truncate">
+                  {kr.title}
+                </span>
                 <span className="text-[10px] text-muted-foreground/60 shrink-0">
                   {kr.currentValue}/{kr.targetValue} {kr.unit}
                 </span>
@@ -109,9 +138,10 @@ export function ObjectiveCard({
             />
           </div>
         )}
-        {open && krRenderer && objective.keyResults.length === 0 && sortable && (
-          <DropZone objectiveId={objective.id} isEmpty />
-        )}
+        {open &&
+          krRenderer &&
+          objective.keyResults.length === 0 &&
+          sortable && <DropZone objectiveId={objective.id} isEmpty />}
         {open && krRenderer && objective.keyResults.length > 0 && !sortable && (
           <div className="mt-2 space-y-1">
             {objective.keyResults.map((kr) => krRenderer(kr))}

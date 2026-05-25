@@ -10,7 +10,9 @@ export const commentRouter = router({
       const comments = await prisma.comment.findMany({
         where: { taskId: input.taskId },
         include: {
-          author: { select: { id: true, name: true, email: true, image: true } },
+          author: {
+            select: { id: true, name: true, email: true, image: true },
+          },
         },
         orderBy: { createdAt: "asc" },
       })
@@ -32,7 +34,9 @@ export const commentRouter = router({
           authorId: ctx.session.user.id,
         },
         include: {
-          author: { select: { id: true, name: true, email: true, image: true } },
+          author: {
+            select: { id: true, name: true, email: true, image: true },
+          },
         },
       })
 
@@ -52,7 +56,7 @@ export const commentRouter = router({
             data: notifyUserIds.map((userId) => ({
               type: "comment_added",
               title: `New comment on "${task.title}"`,
-              body: ctx.session.user.name + ": " + input.content.slice(0, 100),
+              body: `${ctx.session.user.name}: ${input.content.slice(0, 100)}`,
               userId,
               organizationId: task.organizationId,
               taskId: task.id,
@@ -67,7 +71,9 @@ export const commentRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.comment.findUnique({ where: { id: input.id } })
+      const existing = await prisma.comment.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
       if (existing.authorId !== ctx.session.user.id) {
         throw new TRPCError({ code: "FORBIDDEN" })

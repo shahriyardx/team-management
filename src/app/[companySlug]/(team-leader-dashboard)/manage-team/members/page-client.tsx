@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Prohibit, UserCheck, UserMinus, UserPlus } from "@phosphor-icons/react"
+import { Prohibit, UserMinus, UserPlus } from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { useMemberRole } from "@/lib/use-member-role"
 import { authClient } from "@/lib/auth-client"

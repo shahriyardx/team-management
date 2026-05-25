@@ -115,7 +115,7 @@ export default function Page() {
   const cycleEndMonthVal = cycleForm.watch("endMonth")
 
   const cycleDates = useMemo(() => {
-    const year = Number.parseInt(cycleYearVal)
+    const year = Number.parseInt(cycleYearVal, 10)
     if (!year) return { startDate: "", endDate: "" }
     if (cycleTypeVal === "quarterly") {
       const qMap: Record<string, [number, number]> = {
@@ -131,15 +131,15 @@ export default function Page() {
       }
     }
     if (cycleTypeVal === "monthly") {
-      const m = Number.parseInt(cycleMonthVal ?? "1")
+      const m = Number.parseInt(cycleMonthVal ?? "1", 10)
       return {
         startDate: `${year}-${String(m).padStart(2, "0")}-01`,
         endDate: `${year}-${String(m).padStart(2, "0")}-${String(new Date(year, m, 0).getDate()).padStart(2, "0")}`,
       }
     }
     if (cycleTypeVal === "custom") {
-      const sm = Number.parseInt(cycleStartMonthVal ?? "1")
-      const em = Number.parseInt(cycleEndMonthVal ?? "12")
+      const sm = Number.parseInt(cycleStartMonthVal ?? "1", 10)
+      const em = Number.parseInt(cycleEndMonthVal ?? "12", 10)
       return {
         startDate: `${year}-${String(sm).padStart(2, "0")}-01`,
         endDate: `${year}-${String(em).padStart(2, "0")}-${String(new Date(year, em, 0).getDate()).padStart(2, "0")}`,
@@ -161,7 +161,7 @@ export default function Page() {
     } else if (cycleTypeVal === "monthly") {
       const monthName = new Date(
         0,
-        Number.parseInt(cycleMonthVal ?? "1") - 1,
+        Number.parseInt(cycleMonthVal ?? "1", 10) - 1,
       ).toLocaleString("default", { month: "long" })
       cycleForm.setValue("title", `${monthName} ${cycleYearVal}`)
     }
@@ -273,7 +273,9 @@ export default function Page() {
       ) : (
         <div className="border border-border">
           {(() => {
-            const filtered = cycles.filter((c) => c.startDate?.startsWith(selectedYear))
+            const filtered = cycles.filter((c) =>
+              c.startDate?.startsWith(selectedYear),
+            )
             if (filtered.length === 0) {
               return (
                 <div className="p-8 text-center text-xs text-muted-foreground">
@@ -507,7 +509,7 @@ export default function Page() {
                             {field.value
                               ? new Date(
                                   0,
-                                  Number.parseInt(field.value) - 1,
+                                  Number.parseInt(field.value, 10) - 1,
                                 ).toLocaleString("default", { month: "long" })
                               : ""}
                           </SelectTrigger>
@@ -539,7 +541,7 @@ export default function Page() {
                               {field.value
                                 ? new Date(
                                     0,
-                                    Number.parseInt(field.value) - 1,
+                                    Number.parseInt(field.value, 10) - 1,
                                   ).toLocaleString("default", { month: "long" })
                                 : ""}
                             </SelectTrigger>
@@ -568,7 +570,7 @@ export default function Page() {
                               {field.value
                                 ? new Date(
                                     0,
-                                    Number.parseInt(field.value) - 1,
+                                    Number.parseInt(field.value, 10) - 1,
                                   ).toLocaleString("default", { month: "long" })
                                 : ""}
                             </SelectTrigger>

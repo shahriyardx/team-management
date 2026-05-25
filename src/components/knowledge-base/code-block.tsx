@@ -8,24 +8,34 @@ function extractText(node: React.ReactNode): string {
   if (!node) return ""
   if (Array.isArray(node)) return node.map(extractText).join("")
   if (typeof node === "object" && "props" in node) {
-    return extractText((node as { props: { children: React.ReactNode } }).props.children)
+    return extractText(
+      (node as { props: { children: React.ReactNode } }).props.children,
+    )
   }
   return ""
 }
 
-function applyHighlights(children: React.ReactNode, highlights: number[]): React.ReactNode {
+function applyHighlights(
+  children: React.ReactNode,
+  highlights: number[],
+): React.ReactNode {
   const result = React.Children.map(children, (child) => {
     if (React.isValidElement(child) && child.type === "code") {
       const props = child.props as { children?: React.ReactNode }
       const codeChildren = React.Children.map(props.children, (line, index) => {
         if (React.isValidElement(line) && highlights.includes(index + 1)) {
           return React.cloneElement(line, {
-            className: `${(line.props as { className?: string }).className || ""} bg-muted/50`.trim(),
+            className:
+              `${(line.props as { className?: string }).className || ""} bg-muted/50`.trim(),
           } as Record<string, string>)
         }
         return line
       })
-      return React.cloneElement(child, {} as Record<string, string>, codeChildren)
+      return React.cloneElement(
+        child,
+        {} as Record<string, string>,
+        codeChildren,
+      )
     }
     return child
   })
@@ -54,7 +64,9 @@ export function CodeBlock({
     } catch {}
   }, [codeText])
 
-  const content = highlights.length ? applyHighlights(children, highlights) : children
+  const content = highlights.length
+    ? applyHighlights(children, highlights)
+    : children
 
   return (
     <div className="not-prose my-4 overflow-hidden border">

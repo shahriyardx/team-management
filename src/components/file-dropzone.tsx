@@ -8,7 +8,12 @@ import { cn } from "@/lib/utils"
 interface FileDropzoneProps {
   onDrop: (files: File[]) => void
   onRemove: (index: number) => void
-  files: Array<{ name: string; url?: string; uploading?: boolean; error?: string }>
+  files: Array<{
+    name: string
+    url?: string
+    uploading?: boolean
+    error?: string
+  }>
   accept?: Record<string, string[]>
   multiple?: boolean
   maxFiles?: number
@@ -106,20 +111,23 @@ export function FileDropzone({
           <input {...getInputProps()} />
           <Upload className="size-5 mx-auto text-muted-foreground" />
           <p className="text-xs text-muted-foreground mt-2">
-            {isDragActive ? "Drop files here" : "Drag & drop or click to browse"}
+            {isDragActive
+              ? "Drop files here"
+              : "Drag & drop or click to browse"}
           </p>
         </div>
       )}
 
-      {sizeError && (
-        <p className="text-xs text-red-500">{sizeError}</p>
-      )}
+      {sizeError && <p className="text-xs text-red-500">{sizeError}</p>}
 
       {/* Non-preview file list */}
       {!preview && files.length > 0 && (
         <div className="space-y-1">
           {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div
+              key={i}
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+            >
               {f.uploading ? (
                 <span className="text-muted-foreground/50">Uploading...</span>
               ) : f.error ? (

@@ -194,9 +194,7 @@ export const objectiveRouter = router({
             where: { teamId: activeTeamId },
             select: { userId: true },
           })
-          const userIds = [
-            ...new Set(teamMembers.map((tm) => tm.userId)),
-          ]
+          const userIds = [...new Set(teamMembers.map((tm) => tm.userId))]
           const memberRecords = await prisma.member.findMany({
             where: {
               userId: { in: userIds },

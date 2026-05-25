@@ -4,7 +4,13 @@ import { useState, useEffect } from "react"
 import { keepPreviousData } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useRouter, useParams, usePathname } from "next/navigation"
-import { ChatDots, Heart, Megaphone, PushPinSimple, MagnifyingGlass } from "@phosphor-icons/react"
+import {
+  ChatDots,
+  Heart,
+  Megaphone,
+  PushPinSimple,
+  MagnifyingGlass,
+} from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -40,31 +46,40 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
 
   const activeScope = scope ?? scopeFilter
 
-  const { data, isLoading, isFetching, fetchNextPage, isFetchingNextPage, hasNextPage } =
-    api.announcement.list.useInfiniteQuery(
-      {
-        organizationId: organization?.id ?? "",
-        scope: activeScope,
-        search: debouncedSearch || undefined,
-        take: PAGE_SIZE,
+  const {
+    data,
+    isLoading,
+    isFetching,
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
+  } = api.announcement.list.useInfiniteQuery(
+    {
+      organizationId: organization?.id ?? "",
+      scope: activeScope,
+      search: debouncedSearch || undefined,
+      take: PAGE_SIZE,
+    },
+    {
+      enabled: !!organization,
+      placeholderData: keepPreviousData,
+      getNextPageParam: (lastPage, allPages) => {
+        if (!lastPage.hasMore) return undefined
+        return allPages.length * PAGE_SIZE
       },
-      {
-        enabled: !!organization,
-        placeholderData: keepPreviousData,
-        getNextPageParam: (lastPage, allPages) => {
-          if (!lastPage.hasMore) return undefined
-          return allPages.length * PAGE_SIZE
-        },
-      },
-    )
+    },
+  )
 
-  const announcements = (data?.pages.flatMap((p) => p.announcements) ?? []) as AnnouncementItem[]
+  const announcements = (data?.pages.flatMap((p) => p.announcements) ??
+    []) as AnnouncementItem[]
 
   if (isLoading) {
     return (
       <div className="space-y-4 p-6">
         <Skeleton className="h-8 w-48" />
-        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
       </div>
     )
   }
@@ -74,7 +89,9 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-base font-semibold">Announcements</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Company and team updates.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Company and team updates.
+          </p>
         </div>
         {!isMemberView && (
           <Button size="sm" onClick={() => router.push(`${basePath}/create`)}>
@@ -127,7 +144,9 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
 
       {announcements.length === 0 ? (
         <div className="border border-border p-8 text-center text-xs text-muted-foreground">
-          {debouncedSearch ? "No announcements match your search." : "No announcements yet."}
+          {debouncedSearch
+            ? "No announcements match your search."
+            : "No announcements yet."}
         </div>
       ) : (
         <div className="space-y-3">
@@ -147,7 +166,9 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    {a.pinned && <PushPinSimple className="size-3 text-muted-foreground shrink-0" />}
+                    {a.pinned && (
+                      <PushPinSimple className="size-3 text-muted-foreground shrink-0" />
+                    )}
                     <h3 className="text-sm font-medium truncate">{a.title}</h3>
                     {a.team && (
                       <Badge variant="outline" className="text-[10px] shrink-0">
@@ -156,13 +177,16 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                    {a.content.replace(/[#*`>\[\]]/g, "").slice(0, 200)}
+                    {a.content.replace(/[#*`>[\]]/g, "").slice(0, 200)}
                   </p>
                   <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
                     <span>{a.author.name}</span>
                     <span>{format(new Date(a.createdAt), "MMM d, yyyy")}</span>
                     <span className="flex items-center gap-1">
-                      <Heart className="size-2.5" weight={a.liked ? "fill" : "regular"} />
+                      <Heart
+                        className="size-2.5"
+                        weight={a.liked ? "fill" : "regular"}
+                      />
                       {a._count.likes}
                     </span>
                     <span className="flex items-center gap-1">

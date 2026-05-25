@@ -32,22 +32,26 @@ export const okrCycleRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const [cycles, total, yearItems] = await prisma.$transaction(async (tx) => {
-        const items = await tx.okrCycle.findMany({
-          where: { organizationId: input.organizationId },
-          include: { _count: { select: { objectives: true } } },
-          orderBy: { startDate: "desc" },
-          skip: input.skip,
-          take: input.take,
-        })
-        const count = await tx.okrCycle.count({ where: { organizationId: input.organizationId } })
-        const allYears = await tx.okrCycle.findMany({
-          where: { organizationId: input.organizationId },
-          select: { startDate: true },
-          orderBy: { startDate: "desc" },
-        })
-        return [items, count, allYears] as const
-      })
+      const [cycles, total, yearItems] = await prisma.$transaction(
+        async (tx) => {
+          const items = await tx.okrCycle.findMany({
+            where: { organizationId: input.organizationId },
+            include: { _count: { select: { objectives: true } } },
+            orderBy: { startDate: "desc" },
+            skip: input.skip,
+            take: input.take,
+          })
+          const count = await tx.okrCycle.count({
+            where: { organizationId: input.organizationId },
+          })
+          const allYears = await tx.okrCycle.findMany({
+            where: { organizationId: input.organizationId },
+            select: { startDate: true },
+            orderBy: { startDate: "desc" },
+          })
+          return [items, count, allYears] as const
+        },
+      )
 
       return { cycles, total, years: deriveYears(yearItems) }
     }),
@@ -71,24 +75,26 @@ export const okrCycleRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const [cycles, total, yearItems] = await prisma.$transaction(async (tx) => {
-        const items = await tx.okrCycle.findMany({
-          where: { organizationId: input.organizationId, status: "active" },
-          include: { _count: { select: { objectives: true } } },
-          orderBy: { startDate: "desc" },
-          skip: input.skip,
-          take: input.take,
-        })
-        const count = await tx.okrCycle.count({
-          where: { organizationId: input.organizationId, status: "active" },
-        })
-        const allYears = await tx.okrCycle.findMany({
-          where: { organizationId: input.organizationId, status: "active" },
-          select: { startDate: true },
-          orderBy: { startDate: "desc" },
-        })
-        return [items, count, allYears] as const
-      })
+      const [cycles, total, yearItems] = await prisma.$transaction(
+        async (tx) => {
+          const items = await tx.okrCycle.findMany({
+            where: { organizationId: input.organizationId, status: "active" },
+            include: { _count: { select: { objectives: true } } },
+            orderBy: { startDate: "desc" },
+            skip: input.skip,
+            take: input.take,
+          })
+          const count = await tx.okrCycle.count({
+            where: { organizationId: input.organizationId, status: "active" },
+          })
+          const allYears = await tx.okrCycle.findMany({
+            where: { organizationId: input.organizationId, status: "active" },
+            select: { startDate: true },
+            orderBy: { startDate: "desc" },
+          })
+          return [items, count, allYears] as const
+        },
+      )
 
       return { cycles, total, years: deriveYears(yearItems) }
     }),
@@ -163,7 +169,9 @@ export const okrCycleRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.okrCycle.findUnique({ where: { id: input.id } })
+      const existing = await prisma.okrCycle.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
@@ -182,10 +190,16 @@ export const okrCycleRouter = router({
         where: { id: input.id },
         data: {
           ...(input.title !== undefined && { title: input.title }),
-          ...(input.description !== undefined && { description: input.description }),
+          ...(input.description !== undefined && {
+            description: input.description,
+          }),
           ...(input.cycleType !== undefined && { cycleType: input.cycleType }),
-          ...(input.startDate !== undefined && { startDate: new Date(input.startDate) }),
-          ...(input.endDate !== undefined && { endDate: new Date(input.endDate) }),
+          ...(input.startDate !== undefined && {
+            startDate: new Date(input.startDate),
+          }),
+          ...(input.endDate !== undefined && {
+            endDate: new Date(input.endDate),
+          }),
           ...(input.status !== undefined && { status: input.status }),
           ...(input.locked !== undefined && { locked: input.locked }),
         },
@@ -196,7 +210,9 @@ export const okrCycleRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.okrCycle.findUnique({ where: { id: input.id } })
+      const existing = await prisma.okrCycle.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({

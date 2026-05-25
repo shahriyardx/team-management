@@ -16,11 +16,15 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { DotsThreeOutlineIcon, FolderIcon, ShareFatIcon, TrashIcon, House } from "@phosphor-icons/react"
+import {
+  DotsThreeOutlineIcon,
+  FolderIcon,
+  ShareFatIcon,
+  TrashIcon,
+  House,
+} from "@phosphor-icons/react"
 
-const projects = [
-  { name: "Q2 Tasks", icon: <House /> },
-]
+const projects = [{ name: "Q2 Tasks", icon: <House /> }]
 
 export function NavProjects() {
   const { isMobile } = useSidebar()
@@ -37,7 +41,10 @@ export function NavProjects() {
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover className="aria-expanded:bg-muted">
+                <SidebarMenuAction
+                  showOnHover
+                  className="aria-expanded:bg-muted"
+                >
                   <DotsThreeOutlineIcon />
                   <span className="sr-only">More</span>
                 </SidebarMenuAction>

@@ -11,7 +11,9 @@ export async function generateMetadata({
   params: Promise<{ companySlug: string }>
 }): Promise<Metadata> {
   const { companySlug } = await params
-  const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
+  const org = await prisma.organization.findUnique({
+    where: { slug: companySlug },
+  })
   const name = org?.name ?? "WeirdTeams"
   return {
     title: `${name} — WeirdTeams`,
@@ -32,12 +34,19 @@ export default async function CompanyLayout({
   if (!session) redirect("/auth/login")
 
   // Look up org by slug
-  const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
+  const org = await prisma.organization.findUnique({
+    where: { slug: companySlug },
+  })
 
   // Verify user is member of this org
   const member = org
     ? await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: org.id, userId: session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: org.id,
+            userId: session.user.id,
+          },
+        },
       })
     : null
 
@@ -55,10 +64,12 @@ export default async function CompanyLayout({
   if (member.status === "inactive") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6">
-        <h1 className="text-lg font-semibold text-foreground">Account Deactivated</h1>
+        <h1 className="text-lg font-semibold text-foreground">
+          Account Deactivated
+        </h1>
         <p className="text-sm text-muted-foreground text-center max-w-md">
-          Your access to this organization has been deactivated. Contact your organization owner
-          for more information.
+          Your access to this organization has been deactivated. Contact your
+          organization owner for more information.
         </p>
       </div>
     )

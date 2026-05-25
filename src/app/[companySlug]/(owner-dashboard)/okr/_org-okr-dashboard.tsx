@@ -101,7 +101,10 @@ export function OrgOkrDashboard() {
         const e = new Date(c.endDate)
         return s <= now && now <= e
       })
-      if (current) { setSelectedCycleId(current.id); return }
+      if (current) {
+        setSelectedCycleId(current.id)
+        return
+      }
       setSelectedCycleId(filteredCycles[0].id)
     }
   }, [filteredCycles, selectedCycleId])

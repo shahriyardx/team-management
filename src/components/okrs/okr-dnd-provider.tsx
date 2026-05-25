@@ -30,14 +30,13 @@ interface OkrDndProviderProps {
   objectives: ObjectiveData[]
 }
 
-export function OkrDndProvider({
-  children,
-  objectives,
-}: OkrDndProviderProps) {
+export function OkrDndProvider({ children, objectives }: OkrDndProviderProps) {
   const utils = api.useUtils()
   const queryClient = useQueryClient()
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [dragSourceObjectiveId, setDragSourceObjectiveId] = useState<string | null>(null)
+  const [dragSourceObjectiveId, setDragSourceObjectiveId] = useState<
+    string | null
+  >(null)
 
   const reorderMutation = api.keyResult.reorder.useMutation({
     onSettled: () => {
@@ -80,10 +79,15 @@ export function OkrDndProvider({
     useSensor(KeyboardSensor),
   )
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveId(event.active.id as string)
-    setDragSourceObjectiveId(krObjectiveMap[event.active.id as string] ?? null)
-  }, [krObjectiveMap])
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      setActiveId(event.active.id as string)
+      setDragSourceObjectiveId(
+        krObjectiveMap[event.active.id as string] ?? null,
+      )
+    },
+    [krObjectiveMap],
+  )
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -110,12 +114,27 @@ export function OkrDndProvider({
             if (!oldData?.objectives) return oldData
             return {
               ...oldData,
-              objectives: moveKrInCache(oldData.objectives, krId, srcObjId, dstObjId, targetIdx),
+              objectives: moveKrInCache(
+                oldData.objectives,
+                krId,
+                srcObjId,
+                dstObjId,
+                targetIdx,
+              ),
             }
           }
-          queryClient.setQueriesData({ queryKey: [["objective", "listOrgLevel"]] }, updater)
-          queryClient.setQueriesData({ queryKey: [["objective", "listTeamLevel"]] }, updater)
-          queryClient.setQueriesData({ queryKey: [["objective", "listMemberLevel"]] }, updater)
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listOrgLevel"]] },
+            updater,
+          )
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listTeamLevel"]] },
+            updater,
+          )
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listMemberLevel"]] },
+            updater,
+          )
         })
 
         moveMutation.mutate({
@@ -152,9 +171,18 @@ export function OkrDndProvider({
               }),
             }
           }
-          queryClient.setQueriesData({ queryKey: [["objective", "listOrgLevel"]] }, updater)
-          queryClient.setQueriesData({ queryKey: [["objective", "listTeamLevel"]] }, updater)
-          queryClient.setQueriesData({ queryKey: [["objective", "listMemberLevel"]] }, updater)
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listOrgLevel"]] },
+            updater,
+          )
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listTeamLevel"]] },
+            updater,
+          )
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listMemberLevel"]] },
+            updater,
+          )
         })
 
         reorderMutation.mutate({
@@ -171,12 +199,27 @@ export function OkrDndProvider({
             if (!oldData?.objectives) return oldData
             return {
               ...oldData,
-              objectives: moveKrInCache(oldData.objectives, krId, srcObjId, dstObjId, targetIdx),
+              objectives: moveKrInCache(
+                oldData.objectives,
+                krId,
+                srcObjId,
+                dstObjId,
+                targetIdx,
+              ),
             }
           }
-          queryClient.setQueriesData({ queryKey: [["objective", "listOrgLevel"]] }, updater)
-          queryClient.setQueriesData({ queryKey: [["objective", "listTeamLevel"]] }, updater)
-          queryClient.setQueriesData({ queryKey: [["objective", "listMemberLevel"]] }, updater)
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listOrgLevel"]] },
+            updater,
+          )
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listTeamLevel"]] },
+            updater,
+          )
+          queryClient.setQueriesData(
+            { queryKey: [["objective", "listMemberLevel"]] },
+            updater,
+          )
         })
 
         moveMutation.mutate({

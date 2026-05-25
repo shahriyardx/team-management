@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 
@@ -38,9 +38,12 @@ export function ForgotPasswordForm({ callbackURL }: { callbackURL?: string }) {
   if (sent) {
     return (
       <div className="w-full max-w-sm mx-auto">
-        <h2 className="text-lg font-semibold text-foreground">Check your inbox</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          Check your inbox
+        </h2>
         <p className="mb-8 mt-1 text-sm text-muted-foreground">
-          If an account exists for <strong>{email}</strong>, you&apos;ll receive a password reset link shortly.
+          If an account exists for <strong>{email}</strong>, you&apos;ll receive
+          a password reset link shortly.
         </p>
         <p className="text-xs text-muted-foreground">
           <Link

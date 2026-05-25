@@ -36,7 +36,11 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       setLoading(true)
       const res = await authClient.signIn.email(data)
       if (res.error) {
-        setError(res.error.message || res.error.statusText || "Invalid email or password.")
+        setError(
+          res.error.message ||
+            res.error.statusText ||
+            "Invalid email or password.",
+        )
         setLoading(false)
         return
       }
@@ -51,7 +55,10 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true)
-    await authClient.signIn.social({ provider: "google", callbackURL: callbackURL || "/onboard" })
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: callbackURL || "/onboard",
+    })
   }, [callbackURL])
 
   const handlePasskeySignIn = useCallback(async () => {
@@ -73,16 +80,35 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
         Sign in to your account to continue.
       </p>
 
-      <form onSubmit={form.handleSubmit(handleEmailSignIn)} className="space-y-4">
+      <form
+        onSubmit={form.handleSubmit(handleEmailSignIn)}
+        className="space-y-4"
+      >
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="you@example.com" {...form.register("email")} disabled={loading} />
-          {form.formState.errors.email && <FieldError errors={[form.formState.errors.email]} />}
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            {...form.register("email")}
+            disabled={loading}
+          />
+          {form.formState.errors.email && (
+            <FieldError errors={[form.formState.errors.email]} />
+          )}
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <Input id="password" type="password" placeholder="Enter your password" {...form.register("password")} disabled={loading} />
-          {form.formState.errors.password && <FieldError errors={[form.formState.errors.password]} />}
+          <Input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            {...form.register("password")}
+            disabled={loading}
+          />
+          {form.formState.errors.password && (
+            <FieldError errors={[form.formState.errors.password]} />
+          )}
           <Link
             href={`/auth/forgot-password${callbackURL ? `?callbackURL=${encodeURIComponent(callbackURL)}` : ""}`}
             className="mt-1 block text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
@@ -106,11 +132,21 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       </div>
 
       <div className="space-y-3">
-        <Button variant="outline" className="w-full gap-3" onClick={handleGoogleSignIn} disabled={loading}>
+        <Button
+          variant="outline"
+          className="w-full gap-3"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+        >
           <GoogleIcon />
           Sign in with Google
         </Button>
-        <Button variant="outline" className="w-full gap-3" onClick={handlePasskeySignIn} disabled={loading}>
+        <Button
+          variant="outline"
+          className="w-full gap-3"
+          onClick={handlePasskeySignIn}
+          disabled={loading}
+        >
           <PasskeyIcon />
           Sign in with passkey
         </Button>
@@ -131,7 +167,12 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
 
 function GoogleIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4" fill="currentColor">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="currentColor"
+    >
       <title>Google Icon</title>
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -143,7 +184,16 @@ function GoogleIcon() {
 
 function PasskeyIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <title>Lock Icon</title>
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />

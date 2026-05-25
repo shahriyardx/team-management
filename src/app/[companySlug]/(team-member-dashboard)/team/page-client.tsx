@@ -6,7 +6,12 @@ import { api } from "@/lib/trpc/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ListChecks, Target } from "@phosphor-icons/react"
 
-function StatCard({ icon: Icon, label, value, color }: {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  color,
+}: {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: string | number
@@ -33,24 +38,41 @@ export default function MemberDashboardPage() {
   )
 
   if (loading || !organization) {
-    return <div className="flex flex-1 flex-col gap-6 p-6">
-      <Skeleton className="h-6 w-48" />
-      <div className="grid grid-cols-2 gap-3">{[1, 2].map((i) => <Skeleton key={i} className="h-24" />)}</div>
-    </div>
+    return (
+      <div className="flex flex-1 flex-col gap-6 p-6">
+        <Skeleton className="h-6 w-48" />
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
         <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Your personal overview.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Your personal overview.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <StatCard icon={Target} label="My OKR Progress" value={stats ? `${stats.okrProgress}%` : "—"} color="text-amber-500" />
-        <StatCard icon={ListChecks} label="My Tasks" value={stats?.taskCount ?? "—"} color="text-violet-500" />
+        <StatCard
+          icon={Target}
+          label="My OKR Progress"
+          value={stats ? `${stats.okrProgress}%` : "—"}
+          color="text-amber-500"
+        />
+        <StatCard
+          icon={ListChecks}
+          label="My Tasks"
+          value={stats?.taskCount ?? "—"}
+          color="text-violet-500"
+        />
       </div>
-
     </div>
   )
 }

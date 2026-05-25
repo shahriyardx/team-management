@@ -1,12 +1,10 @@
 import type { Metadata } from "next"
-import { prisma } from "@/lib/prisma"
 import MyOkrPage from "./page-client"
 
 export const metadata: Metadata = {
   title: "My OKRs",
   description: "My OKRs.",
 }
-
 
 export default function Page() {
   return <MyOkrPage />

@@ -63,19 +63,24 @@ export default function TwoFaPage() {
       .finally(() => setAccountsLoading(false))
   }, [sessionLoading])
 
-  const enable2fa = useCallback(async (password?: string) => {
-    setEnabling(true)
-    const body = hasPassword ? { password: password! } : {}
-    const res = await authClient.twoFactor.enable(body as { password: string })
-    if (res.error) {
-      setError(res.error.message || "Failed to enable two-factor.")
+  const enable2fa = useCallback(
+    async (password?: string) => {
+      setEnabling(true)
+      const body = hasPassword ? { password: password! } : {}
+      const res = await authClient.twoFactor.enable(
+        body as { password: string },
+      )
+      if (res.error) {
+        setError(res.error.message || "Failed to enable two-factor.")
+        setEnabling(false)
+        return
+      }
+      setTotpUri(res.data?.totpURI ?? "")
+      setBackupCodes(res.data?.backupCodes ?? [])
       setEnabling(false)
-      return
-    }
-    setTotpUri(res.data?.totpURI ?? "")
-    setBackupCodes(res.data?.backupCodes ?? [])
-    setEnabling(false)
-  }, [hasPassword])
+    },
+    [hasPassword],
+  )
 
   // Generate QR when totpUri changes
   useEffect(() => {
@@ -97,18 +102,21 @@ export default function TwoFaPage() {
     refetch()
   }, [verifyCode, refetch])
 
-  const handleDisable = useCallback(async (password?: string) => {
-    setDisabling(true)
-    const body = hasPassword ? { password: password! } : {}
-    await authClient.twoFactor.disable(body as { password: string })
-    setDisabling(false)
-    setDisableConfirm(false)
-    setVerified(false)
-    setTotpUri("")
-    setBackupCodes([])
-    setVerifyCode("")
-    refetch()
-  }, [refetch, hasPassword])
+  const handleDisable = useCallback(
+    async (password?: string) => {
+      setDisabling(true)
+      const body = hasPassword ? { password: password! } : {}
+      await authClient.twoFactor.disable(body as { password: string })
+      setDisabling(false)
+      setDisableConfirm(false)
+      setVerified(false)
+      setTotpUri("")
+      setBackupCodes([])
+      setVerifyCode("")
+      refetch()
+    },
+    [refetch, hasPassword],
+  )
 
   const copyBackupCodes = useCallback(() => {
     navigator.clipboard.writeText(backupCodes.join("\n"))
@@ -116,13 +124,18 @@ export default function TwoFaPage() {
     setTimeout(() => setSavingCodes(false), 2000)
   }, [backupCodes])
 
-  const handleGenerateCodes = useCallback(async (password?: string) => {
-    setGeneratingCodes(true)
-    const body = hasPassword ? { password: password! } : {}
-    const res = await authClient.twoFactor.generateBackupCodes(body as { password: string })
-    if (!res.error) setBackupCodes(res.data?.backupCodes ?? [])
-    setGeneratingCodes(false)
-  }, [hasPassword])
+  const handleGenerateCodes = useCallback(
+    async (password?: string) => {
+      setGeneratingCodes(true)
+      const body = hasPassword ? { password: password! } : {}
+      const res = await authClient.twoFactor.generateBackupCodes(
+        body as { password: string },
+      )
+      if (!res.error) setBackupCodes(res.data?.backupCodes ?? [])
+      setGeneratingCodes(false)
+    },
+    [hasPassword],
+  )
 
   if (sessionLoading || accountsLoading) return <Skeleton className="h-48" />
 
@@ -295,7 +308,10 @@ export default function TwoFaPage() {
             {error && <p className="text-xs text-destructive mt-1">{error}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmingPassword(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmingPassword(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -385,10 +401,7 @@ export default function TwoFaPage() {
             <Button variant="outline" onClick={copyBackupCodes}>
               {savingCodes ? "Copied!" : "Copy codes"}
             </Button>
-            <Button
-              variant="default"
-              onClick={() => setShowBackupCodes(false)}
-            >
+            <Button variant="default" onClick={() => setShowBackupCodes(false)}>
               Done
             </Button>
           </DialogFooter>

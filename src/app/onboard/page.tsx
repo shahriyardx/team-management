@@ -7,7 +7,15 @@ import { useOrgRedirect } from "@/hooks/use-org-redirect"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthPageLayout } from "@/components/auth/auth-page-layout"
-import { ArrowRight, BarChart3, BookOpen, Building, ListChecks, UserPlus, Users } from "lucide-react"
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Building,
+  ListChecks,
+  UserPlus,
+  Users,
+} from "lucide-react"
 
 type Org = { id: string; name: string; slug: string; logo?: string | null }
 
@@ -15,12 +23,14 @@ const features = [
   {
     icon: ListChecks,
     title: "Team Tasks",
-    description: "Create, assign, and track tasks across your team in real time.",
+    description:
+      "Create, assign, and track tasks across your team in real time.",
   },
   {
     icon: BookOpen,
     title: "Knowledge Base",
-    description: "Centralized docs, guides, and resources for your entire team.",
+    description:
+      "Centralized docs, guides, and resources for your entire team.",
   },
   {
     icon: Users,
@@ -38,7 +48,9 @@ function LeftPanel() {
   return (
     <>
       <div>
-        <h1 className="text-4xl font-bold tracking-[0.15em] text-white sm:text-5xl">WEIRDTEAMS</h1>
+        <h1 className="text-4xl font-bold tracking-[0.15em] text-white sm:text-5xl">
+          WEIRDTEAMS
+        </h1>
         <p className="mt-2 text-sm text-zinc-400">Your team, in sync.</p>
       </div>
       <div className="my-16 space-y-10 lg:my-0">
@@ -49,7 +61,9 @@ function LeftPanel() {
             </div>
             <div>
               <h3 className="text-sm font-medium text-white">{f.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-400">{f.description}</p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                {f.description}
+              </p>
             </div>
           </div>
         ))}
@@ -70,7 +84,10 @@ export default function OnboardPage() {
 
   useEffect(() => {
     if (isPending) return
-    if (!session) { router.replace("/auth/login"); return }
+    if (!session) {
+      router.replace("/auth/login")
+      return
+    }
 
     authClient.organization.list().then((res) => {
       setOrgs(res.data ?? [])
@@ -82,7 +99,10 @@ export default function OnboardPage() {
     setJoining(true)
     setInviteError("")
     try {
-      const { error: acceptError } = await authClient.organization.acceptInvitation({ invitationId: inviteCode.trim() })
+      const { error: acceptError } =
+        await authClient.organization.acceptInvitation({
+          invitationId: inviteCode.trim(),
+        })
       if (acceptError) {
         setInviteError(acceptError.message || "Failed to accept invitation.")
         setJoining(false)
@@ -91,7 +111,9 @@ export default function OnboardPage() {
 
       await redirectToFirstOrg("/onboard")
     } catch (err) {
-      setInviteError(err instanceof Error ? err.message : "Something went wrong.")
+      setInviteError(
+        err instanceof Error ? err.message : "Something went wrong.",
+      )
       setJoining(false)
     }
   }, [inviteCode, router])
@@ -110,7 +132,9 @@ export default function OnboardPage() {
       right={
         <div className="w-full max-w-xl mx-auto px-8 py-24">
           <div className="space-y-2 text-center lg:text-left">
-            <h2 className="text-xl font-bold text-foreground">Get started with WeirdTeams</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              Get started with WeirdTeams
+            </h2>
             <p className="text-sm text-muted-foreground">
               Set up your workspace or join an existing team.
             </p>
@@ -123,8 +147,12 @@ export default function OnboardPage() {
                 </div>
                 <div className="w-px self-stretch bg-border" />
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground">Create an organization</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">Set up a new workspace for your team.</p>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Create an organization
+                  </h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    Set up a new workspace for your team.
+                  </p>
                 </div>
               </div>
               <div className="mt-6">
@@ -144,8 +172,12 @@ export default function OnboardPage() {
                 </div>
                 <div className="w-px self-stretch bg-border" />
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground">Join an organization</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">Enter your invitation code to join a team.</p>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Join an organization
+                  </h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    Enter your invitation code to join a team.
+                  </p>
                 </div>
               </div>
               <div className="mt-6 space-y-3">
@@ -155,7 +187,9 @@ export default function OnboardPage() {
                   onChange={(e) => setInviteCode(e.target.value)}
                   className="h-10"
                 />
-                {inviteError && <p className="text-xs text-destructive">{inviteError}</p>}
+                {inviteError && (
+                  <p className="text-xs text-destructive">{inviteError}</p>
+                )}
                 <Button
                   onClick={handleJoin}
                   disabled={joining}

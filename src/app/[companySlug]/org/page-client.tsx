@@ -22,12 +22,17 @@ export default function OrgWelcomePage() {
       const { data: sessionData } = await authClient.getSession()
       const activeTeamId = sessionData?.session?.activeTeamId
       const orgId = sessionData?.session?.activeOrganizationId
-      if (!orgId) { setChecking(false); return }
+      if (!orgId) {
+        setChecking(false)
+        return
+      }
 
       // Fetch teams user actually belongs to (already filtered for inactive)
       let myTeams: Array<{ id: string }> = []
       try {
-        const data = await utils.team.getMyTeams.fetch({ organizationId: orgId })
+        const data = await utils.team.getMyTeams.fetch({
+          organizationId: orgId,
+        })
         myTeams = (data.teams ?? []) as Array<{ id: string }>
       } catch {}
 
@@ -49,7 +54,9 @@ export default function OrgWelcomePage() {
       setChecking(false)
     })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [slug, router])
 
   if (checking) {
@@ -64,8 +71,8 @@ export default function OrgWelcomePage() {
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
       <h1 className="text-lg font-semibold text-foreground">Welcome!</h1>
       <p className="text-sm text-muted-foreground text-center max-w-sm">
-        You're part of this organization but haven't been assigned to a team yet.
-        Reach out to your admin to get added to a team.
+        You're part of this organization but haven't been assigned to a team
+        yet. Reach out to your admin to get added to a team.
       </p>
     </div>
   )

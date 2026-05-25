@@ -28,7 +28,12 @@ type EditCycleForm = z.infer<typeof editCycleSchema>
 interface EditCycleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  defaultValues: { title: string; description: string | null; startDate: string; endDate: string }
+  defaultValues: {
+    title: string
+    description: string | null
+    startDate: string
+    endDate: string
+  }
   onSubmit: (data: EditCycleForm) => void
   isPending: boolean
 }
@@ -36,7 +41,7 @@ interface EditCycleDialogProps {
 function toDateInputValue(dateStr: string) {
   if (!dateStr) return ""
   const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return dateStr
+  if (Number.isNaN(d.getTime())) return dateStr
   return d.toISOString().split("T")[0]
 }
 
@@ -81,7 +86,9 @@ export function EditCycleDialog({
               <Controller
                 control={form.control}
                 name="title"
-                render={({ field }) => <Input {...field} placeholder="Q1 2026" autoFocus />}
+                render={({ field }) => (
+                  <Input {...field} placeholder="Q1 2026" autoFocus />
+                )}
               />
               <FieldError>{form.formState.errors.title?.message}</FieldError>
             </Field>
@@ -101,7 +108,9 @@ export function EditCycleDialog({
                   name="startDate"
                   render={({ field }) => <Input {...field} type="date" />}
                 />
-                <FieldError>{form.formState.errors.startDate?.message}</FieldError>
+                <FieldError>
+                  {form.formState.errors.startDate?.message}
+                </FieldError>
               </Field>
               <Field>
                 <FieldLabel>End date</FieldLabel>
@@ -110,12 +119,18 @@ export function EditCycleDialog({
                   name="endDate"
                   render={({ field }) => <Input {...field} type="date" />}
                 />
-                <FieldError>{form.formState.errors.endDate?.message}</FieldError>
+                <FieldError>
+                  {form.formState.errors.endDate?.message}
+                </FieldError>
               </Field>
             </div>
           </div>
           <DialogFooter className="mt-4">
-            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>

@@ -24,21 +24,23 @@ export function PublicHeader() {
         <div className="flex items-center gap-8">
           <SiteLogo />
           <nav className="hidden md:flex items-center gap-5">
-          {links.map((link) => {
-            const isActive = pathname === link.href
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-xs transition-colors ${
-                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
-        </nav>
+            {links.map((link) => {
+              const isActive = pathname === link.href
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-xs transition-colors ${
+                    isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
+          </nav>
         </div>
         <div className="flex items-center gap-3">
           <Button asChild className="hidden sm:inline-flex">

@@ -22,11 +22,14 @@ export function Footer() {
           <div className="lg:col-span-2">
             <SiteLogo />
             <p className="mt-3 max-w-sm text-xs leading-relaxed text-muted-foreground">
-              A simple workspace for teams that want to move faster. Tasks, knowledge, and people — together.
+              A simple workspace for teams that want to move faster. Tasks,
+              knowledge, and people — together.
             </p>
           </div>
           <div>
-            <h4 className="text-xs font-medium text-foreground mb-4">Product</h4>
+            <h4 className="text-xs font-medium text-foreground mb-4">
+              Product
+            </h4>
             <ul className="space-y-2.5">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
@@ -41,7 +44,9 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-xs font-medium text-foreground mb-4">Support</h4>
+            <h4 className="text-xs font-medium text-foreground mb-4">
+              Support
+            </h4>
             <ul className="space-y-2.5">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>

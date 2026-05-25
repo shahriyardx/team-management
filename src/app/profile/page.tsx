@@ -20,7 +20,11 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>
 
 export default function ProfilePage() {
-  const { data: session, isPending: sessionLoading, refetch: refreshSession } = authClient.useSession()
+  const {
+    data: session,
+    isPending: sessionLoading,
+    refetch: refreshSession,
+  } = authClient.useSession()
   const user = session?.user
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -30,7 +34,12 @@ export default function ProfilePage() {
   const [verifySending, setVerifySending] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
 
-  const { control, handleSubmit, reset, formState: { errors, isDirty, isSubmitting } } = useForm<ProfileForm>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isDirty, isSubmitting },
+  } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: { name: "" },
   })
@@ -44,23 +53,26 @@ export default function ProfilePage() {
     reset({ name: data.name })
   })
 
-  const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const body = new FormData()
-      body.set("file", file)
-      body.set("type", "profile-images")
-      const res = await fetch("/api/upload", { method: "POST", body })
-      if (!res.ok) return
-      const { url } = await res.json()
-      await authClient.updateUser({ image: url })
-      await authClient.$fetch("/me", { method: "GET" })
-    } finally {
-      setUploading(false)
-    }
-  }, [])
+  const handleAvatarUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      setUploading(true)
+      try {
+        const body = new FormData()
+        body.set("file", file)
+        body.set("type", "profile-images")
+        const res = await fetch("/api/upload", { method: "POST", body })
+        if (!res.ok) return
+        const { url } = await res.json()
+        await authClient.updateUser({ image: url })
+        await authClient.$fetch("/me", { method: "GET" })
+      } finally {
+        setUploading(false)
+      }
+    },
+    [],
+  )
 
   const handleSendVerification = useCallback(async () => {
     if (!user?.email) return
@@ -68,7 +80,7 @@ export default function ProfilePage() {
     setVerifyError(null)
     setVerifySending(true)
     try {
-      const res = await authClient.$fetch("/send-verification-email", {
+      const _res = await authClient.$fetch("/send-verification-email", {
         method: "POST",
         body: { email: user.email },
       })
@@ -88,7 +100,9 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold">Profile</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Your name, email, and avatar.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Your name, email, and avatar.
+        </p>
       </div>
 
       <div className="border border-border p-5">
@@ -96,10 +110,23 @@ export default function ProfilePage() {
         <div className="flex items-center gap-4">
           <Avatar className="size-16">
             <AvatarImage src={user?.image ?? undefined} />
-            <AvatarFallback className="text-lg">{user?.name?.charAt(0)?.toUpperCase() ?? "U"}</AvatarFallback>
+            <AvatarFallback className="text-lg">
+              {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+            </AvatarFallback>
           </Avatar>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
             {uploading ? "Uploading..." : "Change photo"}
           </Button>
         </div>
@@ -128,7 +155,10 @@ export default function ProfilePage() {
             <Envelope className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm truncate">{user?.email ?? ""}</span>
           </div>
-          <Badge variant={user?.emailVerified ? "default" : "outline"} className="text-[10px] shrink-0">
+          <Badge
+            variant={user?.emailVerified ? "default" : "outline"}
+            className="text-[10px] shrink-0"
+          >
             {user?.emailVerified ? "Verified" : "Not verified"}
           </Badge>
         </div>
@@ -141,10 +171,16 @@ export default function ProfilePage() {
               onClick={handleSendVerification}
               disabled={verifySending}
             >
-              {verifySending ? "Sending..." : verifySent ? "Sent" : "Send verification"}
+              {verifySending
+                ? "Sending..."
+                : verifySent
+                  ? "Sent"
+                  : "Send verification"}
             </Button>
             {verifySent && (
-              <span className="text-xs text-emerald-500">Check your inbox.</span>
+              <span className="text-xs text-emerald-500">
+                Check your inbox.
+              </span>
             )}
             {verifyError && (
               <span className="text-xs text-destructive">{verifyError}</span>

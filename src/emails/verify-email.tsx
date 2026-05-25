@@ -47,7 +47,9 @@ export function VerifyEmail({
 
             <Hr className="border-[#eee] my-6" />
 
-            <Text className="text-xs text-[#999] m-0">&copy; 2026 WeirdTeams</Text>
+            <Text className="text-xs text-[#999] m-0">
+              &copy; 2026 WeirdTeams
+            </Text>
           </Container>
         </Body>
       </Tailwind>

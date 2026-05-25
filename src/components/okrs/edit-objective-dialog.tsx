@@ -66,7 +66,11 @@ export function EditObjectiveDialog({
             </Field>
           </div>
           <DialogFooter className="mt-4">
-            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>

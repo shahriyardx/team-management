@@ -20,7 +20,9 @@ const commentSchema = z.object({
 type CommentForm = z.infer<typeof commentSchema>
 
 interface CommentAuthor {
-  id: string; name: string; image: string | null
+  id: string
+  name: string
+  image: string | null
 }
 
 interface ReplyItem {
@@ -55,7 +57,13 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
     .slice(0, 2)
 
   if (image) {
-    return <img src={image} alt="" className="size-6 rounded-full object-cover shrink-0" />
+    return (
+      <img
+        src={image}
+        alt=""
+        className="size-6 rounded-full object-cover shrink-0"
+      />
+    )
   }
   return (
     <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0">
@@ -64,7 +72,12 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
   )
 }
 
-export function AnnouncementComments({ announcementId, announcementAuthorId, comments, organizationId }: Props) {
+export function AnnouncementComments({
+  announcementId,
+  announcementAuthorId,
+  comments,
+  organizationId,
+}: Props) {
   const utils = api.useUtils()
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const { data: sessionData } = authClient.useSession()
@@ -125,10 +138,15 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
     <div className="space-y-5">
       <h3 className="text-sm font-medium">
         Comments{" "}
-        <span className="text-muted-foreground font-normal">({comments.length})</span>
+        <span className="text-muted-foreground font-normal">
+          ({comments.length})
+        </span>
       </h3>
 
-      <form onSubmit={commentForm.handleSubmit(onSubmitComment)} className="flex gap-2 items-start">
+      <form
+        onSubmit={commentForm.handleSubmit(onSubmitComment)}
+        className="flex gap-2 items-start"
+      >
         <div className="flex-1">
           <Controller
             control={commentForm.control}
@@ -164,10 +182,15 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
             <div key={comment.id} className="group">
               {/* Main comment */}
               <div className="flex gap-3">
-                <Avatar name={comment.author.name} image={comment.author.image} />
+                <Avatar
+                  name={comment.author.name}
+                  image={comment.author.image}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{comment.author.name}</span>
+                    <span className="text-sm font-medium">
+                      {comment.author.name}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(comment.createdAt), "MMM d, yyyy")}
                     </span>
@@ -175,7 +198,10 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
                       <button
                         type="button"
                         onClick={() =>
-                          deleteMutation.mutate({ id: comment.id, organizationId })
+                          deleteMutation.mutate({
+                            id: comment.id,
+                            organizationId,
+                          })
                         }
                         className="ml-auto text-muted-foreground/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                       >
@@ -183,10 +209,14 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
                       </button>
                     )}
                   </div>
-                  <p className="text-sm mt-0.5 text-foreground/90">{comment.content}</p>
+                  <p className="text-sm mt-0.5 text-foreground/90">
+                    {comment.content}
+                  </p>
                   <button
                     type="button"
-                    onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                    onClick={() =>
+                      setReplyTo(replyTo === comment.id ? null : comment.id)
+                    }
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
                   >
                     Reply
@@ -195,7 +225,9 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
                   {/* Inline reply form */}
                   {replyTo === comment.id && (
                     <form
-                      onSubmit={replyForm.handleSubmit(onSubmitReply(comment.id))}
+                      onSubmit={replyForm.handleSubmit(
+                        onSubmitReply(comment.id),
+                      )}
                       className="flex gap-2 mt-2 items-start"
                     >
                       <ArrowBendRightDown className="size-4 mt-2 shrink-0 text-muted-foreground/50" />
@@ -234,10 +266,15 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
                   {comment.replies.map((reply) => (
                     <div key={reply.id} className="group/reply">
                       <div className="flex gap-2">
-                        <Avatar name={reply.author.name} image={reply.author.image} />
+                        <Avatar
+                          name={reply.author.name}
+                          image={reply.author.image}
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{reply.author.name}</span>
+                            <span className="text-sm font-medium">
+                              {reply.author.name}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(reply.createdAt), "MMM d")}
                             </span>
@@ -245,7 +282,10 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
                               <button
                                 type="button"
                                 onClick={() =>
-                                  deleteMutation.mutate({ id: reply.id, organizationId })
+                                  deleteMutation.mutate({
+                                    id: reply.id,
+                                    organizationId,
+                                  })
                                 }
                                 className="ml-auto text-muted-foreground/50 hover:text-red-500 opacity-0 group-hover/reply:opacity-100 transition-all"
                               >
@@ -253,7 +293,9 @@ export function AnnouncementComments({ announcementId, announcementAuthorId, com
                               </button>
                             )}
                           </div>
-                          <p className="text-sm mt-0.5 text-foreground/90">{reply.content}</p>
+                          <p className="text-sm mt-0.5 text-foreground/90">
+                            {reply.content}
+                          </p>
                         </div>
                       </div>
                     </div>

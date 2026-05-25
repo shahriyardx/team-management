@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useMemberRole } from "@/lib/use-member-role"
 import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
@@ -18,7 +25,9 @@ export function KbCommentSection({ kbItemId }: { kbItemId: string }) {
   const utils = api.useUtils()
   const isPrivileged = role === "owner" || role === "admin"
 
-  const { data, isLoading } = api.knowledgeBase.commentList.useQuery({ kbItemId })
+  const { data, isLoading } = api.knowledgeBase.commentList.useQuery({
+    kbItemId,
+  })
   const createComment = api.knowledgeBase.commentCreate.useMutation()
   const deleteComment = api.knowledgeBase.commentDelete.useMutation()
 
@@ -49,7 +58,9 @@ export function KbCommentSection({ kbItemId }: { kbItemId: string }) {
 
   return (
     <div>
-      <h3 className="mb-3 text-sm font-semibold">Comments ({comments.length})</h3>
+      <h3 className="mb-3 text-sm font-semibold">
+        Comments ({comments.length})
+      </h3>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -59,7 +70,10 @@ export function KbCommentSection({ kbItemId }: { kbItemId: string }) {
       ) : comments.length > 0 ? (
         <div className="mb-4 max-h-96 space-y-3 overflow-y-auto">
           {comments.map((c) => (
-            <div key={c.id} className="flex gap-2.5 rounded-none border border-border px-3 py-2 text-xs">
+            <div
+              key={c.id}
+              className="flex gap-2.5 rounded-none border border-border px-3 py-2 text-xs"
+            >
               <Avatar className="mt-0.5 size-5 shrink-0 rounded-full">
                 <AvatarImage src={c.author.image ?? undefined} />
                 <AvatarFallback className="rounded-full text-[7px]">
@@ -68,7 +82,9 @@ export function KbCommentSection({ kbItemId }: { kbItemId: string }) {
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-foreground">{c.author.name}</span>
+                  <span className="font-medium text-foreground">
+                    {c.author.name}
+                  </span>
                   <span className="shrink-0 text-muted-foreground">
                     {formatRelativeTime(c.createdAt)}
                   </span>
@@ -111,10 +127,20 @@ export function KbCommentSection({ kbItemId }: { kbItemId: string }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Comment</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this comment? This action cannot be undone.</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to delete this comment? This action cannot
+              be undone.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancel
+            </Button>
             <Button
               type="button"
               size="sm"
@@ -142,5 +168,8 @@ function formatRelativeTime(date: Date | string): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days}d ago`
-  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })
 }

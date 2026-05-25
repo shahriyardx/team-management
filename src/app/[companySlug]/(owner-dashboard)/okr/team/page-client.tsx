@@ -11,14 +11,20 @@ export default function TeamOkrsPage() {
   const { role, loading } = useMemberRole()
 
   if (loading || !organization) {
-    return <div className="flex flex-1 items-center justify-center p-6"><Skeleton className="size-8 rounded-full" /></div>
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Skeleton className="size-8 rounded-full" />
+      </div>
+    )
   }
 
   if (role !== "owner" && role !== "admin") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
         <Target className="size-10 text-muted-foreground/40" />
-        <p className="text-xs text-muted-foreground">Team OKR assignments are managed by admins.</p>
+        <p className="text-xs text-muted-foreground">
+          Team OKR assignments are managed by admins.
+        </p>
       </div>
     )
   }

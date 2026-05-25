@@ -2,7 +2,15 @@
 
 import { useMemo } from "react"
 import { useParams } from "next/navigation"
-import { ArrowLeft, BookBookmark, House, ListChecks, Megaphone, Target, Users } from "@phosphor-icons/react"
+import {
+  ArrowLeft,
+  BookBookmark,
+  House,
+  ListChecks,
+  Megaphone,
+  Target,
+  Users,
+} from "@phosphor-icons/react"
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +31,11 @@ type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 function leaderItems(slug: string, todoCount: number): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}/manage-team`, icon: House },
-    { title: "Announcements", url: `/${slug}/manage-team/announcements`, icon: Megaphone },
+    {
+      title: "Announcements",
+      url: `/${slug}/manage-team/announcements`,
+      icon: Megaphone,
+    },
     {
       title: "OKRs",
       icon: Target,
@@ -37,8 +49,14 @@ function leaderItems(slug: string, todoCount: number): NavItem[] {
       icon: BookBookmark,
       items: [
         { title: "View", url: `/${slug}/manage-team/knowledge-base` },
-        { title: "Add Knowledge", url: `/${slug}/manage-team/knowledge-base/add` },
-        { title: "Categories", url: `/${slug}/manage-team/knowledge-base/categories` },
+        {
+          title: "Add Knowledge",
+          url: `/${slug}/manage-team/knowledge-base/add`,
+        },
+        {
+          title: "Categories",
+          url: `/${slug}/manage-team/knowledge-base/categories`,
+        },
         { title: "Trash", url: `/${slug}/manage-team/knowledge-base/trash` },
       ],
     },
@@ -46,7 +64,11 @@ function leaderItems(slug: string, todoCount: number): NavItem[] {
       title: "Tasks",
       icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/manage-team/tasks`, badge: todoCount },
+        {
+          title: "My tasks",
+          url: `/${slug}/manage-team/tasks`,
+          badge: todoCount,
+        },
         { title: "All Tasks", url: `/${slug}/manage-team/tasks/all` },
         { title: "Assigned", url: `/${slug}/manage-team/tasks/assigned` },
       ],

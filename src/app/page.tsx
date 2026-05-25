@@ -31,12 +31,14 @@ const features = [
   {
     icon: ListChecks,
     title: "Team Tasks",
-    description: "Create, assign, and track tasks across your team in real time.",
+    description:
+      "Create, assign, and track tasks across your team in real time.",
   },
   {
     icon: BookOpen,
     title: "Knowledge Base",
-    description: "Centralize docs, guides, and resources. Search across everything.",
+    description:
+      "Centralize docs, guides, and resources. Search across everything.",
   },
   {
     icon: Target,
@@ -56,7 +58,8 @@ const features = [
   {
     icon: MessageSquare,
     title: "Collaboration",
-    description: "Comment on tasks, share knowledge, keep conversations actionable.",
+    description:
+      "Comment on tasks, share knowledge, keep conversations actionable.",
   },
 ]
 
@@ -64,7 +67,8 @@ const steps = [
   {
     number: "01",
     title: "Set up your workspace",
-    description: "Create your organization, set up teams, and configure in minutes.",
+    description:
+      "Create your organization, set up teams, and configure in minutes.",
   },
   {
     number: "02",
@@ -170,8 +174,12 @@ export default function Home() {
                 <div className="flex size-10 items-center justify-center rounded-md bg-accent text-foreground">
                   <f.icon className="size-5" />
                 </div>
-                <h3 className="mt-5 text-sm font-bold text-foreground">{f.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{f.description}</p>
+                <h3 className="mt-5 text-sm font-bold text-foreground">
+                  {f.title}
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  {f.description}
+                </p>
               </div>
             ))}
           </div>
@@ -192,7 +200,9 @@ export default function Home() {
                 <span className="text-5xl font-black text-muted-foreground/20">
                   {step.number}
                 </span>
-                <h3 className="mt-1 text-sm font-bold text-foreground">{step.title}</h3>
+                <h3 className="mt-1 text-sm font-bold text-foreground">
+                  {step.title}
+                </h3>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground max-w-xs">
                   {step.description}
                 </p>
@@ -223,23 +233,38 @@ export default function Home() {
                     Most popular
                   </div>
                 )}
-                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">{plan.name}</h3>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                  {plan.name}
+                </h3>
                 <div className="mt-4 flex items-baseline gap-0.5">
-                  <span className="text-4xl font-black text-foreground">{plan.price}</span>
+                  <span className="text-4xl font-black text-foreground">
+                    {plan.price}
+                  </span>
                   {plan.period && (
-                    <span className="text-xs text-muted-foreground">{plan.period}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {plan.period}
+                    </span>
                   )}
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">{plan.description}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {plan.description}
+                </p>
                 <ul className="mt-8 flex-1 space-y-3">
                   {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <li
+                      key={feat}
+                      className="flex items-center gap-2 text-xs text-muted-foreground"
+                    >
                       <Check className="size-3.5 text-foreground shrink-0" />
                       {feat}
                     </li>
                   ))}
                 </ul>
-                <Button asChild variant={plan.highlighted ? "default" : "outline"} className="mt-8 h-10 px-5">
+                <Button
+                  asChild
+                  variant={plan.highlighted ? "default" : "outline"}
+                  className="mt-8 h-10 px-5"
+                >
                   <Link href={plan.href}>
                     {plan.cta}
                     <ArrowRight className="ml-1.5 size-3.5" />

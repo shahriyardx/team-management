@@ -19,11 +19,27 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-function OrgLogo({ src, name, className }: { src?: string | null; name: string; className?: string }) {
+function OrgLogo({
+  src,
+  name,
+  className,
+}: {
+  src?: string | null
+  name: string
+  className?: string
+}) {
   return (
-    <div className={`overflow-hidden flex items-center justify-center shrink-0 ${className ?? ""}`}>
+    <div
+      className={`overflow-hidden flex items-center justify-center shrink-0 ${className ?? ""}`}
+    >
       {src ? (
-        <Image src={src} alt={name} width={32} height={32} className="object-cover size-full" />
+        <Image
+          src={src}
+          alt={name}
+          width={32}
+          height={32}
+          className="object-cover size-full"
+        />
       ) : (
         <span className="flex size-full items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
           {name.charAt(0).toUpperCase()}
@@ -36,7 +52,11 @@ function OrgLogo({ src, name, className }: { src?: string | null; name: string; 
 export function OrgSwitcher() {
   const router = useRouter()
   const { isMobile } = useSidebar()
-  const { organizations, organization: activeOrg, onSwitchOrg } = useOrganization()
+  const {
+    organizations,
+    organization: activeOrg,
+    onSwitchOrg,
+  } = useOrganization()
 
   const org = activeOrg ?? organizations[0]
   if (!org) return null
@@ -52,7 +72,11 @@ export function OrgSwitcher() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <OrgLogo src={org.logo} name={org.name} className="size-8 rounded-lg" />
+              <OrgLogo
+                src={org.logo}
+                name={org.name}
+                className="size-8 rounded-lg"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{org.name}</span>
                 <span className="truncate text-xs">Organization</span>
@@ -72,10 +96,16 @@ export function OrgSwitcher() {
             {displayOrgs.map((o) => (
               <DropdownMenuItem
                 key={o.id}
-                onClick={() => onSwitchOrg(o.id).then(() => router.push(`/${o.slug}`))}
+                onClick={() =>
+                  onSwitchOrg(o.id).then(() => router.push(`/${o.slug}`))
+                }
                 className="gap-2 p-2"
               >
-                <OrgLogo src={o.logo} name={o.name} className="size-6 rounded-md" />
+                <OrgLogo
+                  src={o.logo}
+                  name={o.name}
+                  className="size-6 rounded-md"
+                />
                 {o.name}
               </DropdownMenuItem>
             ))}
@@ -87,7 +117,9 @@ export function OrgSwitcher() {
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <PlusIcon className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add organization</div>
+              <div className="font-medium text-muted-foreground">
+                Add organization
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -4,11 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import {
-  Plus,
-  Trash,
-  Users as UsersIcon,
-} from "@phosphor-icons/react"
+import { Plus, Trash, Users as UsersIcon } from "@phosphor-icons/react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,14 +36,24 @@ type OrgMember = {
   id: string
   userId: string
   role: string
-  user: { id: string; name: string; email: string; image: string | null | undefined }
+  user: {
+    id: string
+    name: string
+    email: string
+    image: string | null | undefined
+  }
 }
 
 interface TeamMember {
   id: string
   role: string
   userId: string
-  user: { id: string; name: string; email: string; image: string | null | undefined }
+  user: {
+    id: string
+    name: string
+    email: string
+    image: string | null | undefined
+  }
 }
 
 interface Team {
@@ -78,7 +84,11 @@ export function TeamManager() {
   const [creating, setCreating] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-  const { data: teamsData, isLoading, refetch } = api.team.list.useQuery(
+  const {
+    data: teamsData,
+    isLoading,
+    refetch,
+  } = api.team.list.useQuery(
     { organizationId: organization?.id ?? "" },
     { enabled: !!organization },
   )
@@ -109,7 +119,8 @@ export function TeamManager() {
   })
 
   useEffect(() => {
-    if (createOpen) createForm.reset({ name: "", description: "", leaderUserId: "" })
+    if (createOpen)
+      createForm.reset({ name: "", description: "", leaderUserId: "" })
   }, [createOpen, createForm])
 
   const handleCreateTeam = createForm.handleSubmit(async (data) => {
@@ -123,7 +134,9 @@ export function TeamManager() {
       const betterTeam = res.data
       if (!betterTeam) throw new Error("Failed to create team")
 
-      const leaderMember = orgMembers.find((m) => m.userId === data.leaderUserId)
+      const leaderMember = orgMembers.find(
+        (m) => m.userId === data.leaderUserId,
+      )
       if (!leaderMember) throw new Error("Leader not found in org")
 
       await setLeader.mutateAsync({
@@ -133,7 +146,8 @@ export function TeamManager() {
 
       setCreateOpen(false)
       refetch()
-    } catch {} finally {
+    } catch {
+    } finally {
       setCreating(false)
     }
   })
@@ -153,7 +167,8 @@ export function TeamManager() {
         <div className="text-center">
           <h2 className="text-sm font-medium text-foreground">Teams</h2>
           <p className="mt-1 text-xs text-muted-foreground max-w-xs">
-            You're not part of any team yet. Your team leader will add you when ready.
+            You're not part of any team yet. Your team leader will add you when
+            ready.
           </p>
         </div>
       </div>
@@ -179,7 +194,9 @@ export function TeamManager() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create team</DialogTitle>
-              <DialogDescription>Create a new team within this organization.</DialogDescription>
+              <DialogDescription>
+                Create a new team within this organization.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateTeam}>
               <div className="space-y-4">
@@ -188,9 +205,13 @@ export function TeamManager() {
                   <Controller
                     control={createForm.control}
                     name="name"
-                    render={({ field }) => <Input {...field} placeholder="Engineering" />}
+                    render={({ field }) => (
+                      <Input {...field} placeholder="Engineering" />
+                    )}
                   />
-                  <FieldError>{createForm.formState.errors.name?.message}</FieldError>
+                  <FieldError>
+                    {createForm.formState.errors.name?.message}
+                  </FieldError>
                 </Field>
                 <Field>
                   <FieldLabel>Team leader</FieldLabel>
@@ -198,7 +219,10 @@ export function TeamManager() {
                     control={createForm.control}
                     name="leaderUserId"
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a team leader..." />
                         </SelectTrigger>
@@ -212,11 +236,17 @@ export function TeamManager() {
                       </Select>
                     )}
                   />
-                  <FieldError>{createForm.formState.errors.leaderUserId?.message}</FieldError>
+                  <FieldError>
+                    {createForm.formState.errors.leaderUserId?.message}
+                  </FieldError>
                 </Field>
               </div>
               <DialogFooter className="mt-4">
-                <Button variant="outline" type="button" onClick={() => setCreateOpen(false)}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setCreateOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={creating}>
@@ -237,52 +267,71 @@ export function TeamManager() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team) => (
-              <div key={team.id} className="flex flex-col h-full border border-border p-4">
-                  <div className="flex-1 pb-3">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-medium text-foreground truncate">{team.name}</h3>
-                    </div>
-                    {team.leader && (
-                      <div className="mt-3 flex items-center gap-1.5">
-                        <Avatar size="sm">
-                          {team.leader.user.image ? (
-                            <AvatarImage src={team.leader.user.image} alt={team.leader.user.name} />
-                          ) : null}
-                          <AvatarFallback className="text-[10px]">
-                            {team.leader.user.name?.charAt(0)?.toUpperCase() ?? "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs text-muted-foreground truncate">{team.leader.user.name}</span>
-                      </div>
-                    )}
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        {team.members.length} {team.members.length === 1 ? "member" : "members"}
-                      </Badge>
-                    </div>
+              <div
+                key={team.id}
+                className="flex flex-col h-full border border-border p-4"
+              >
+                <div className="flex-1 pb-3">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-medium text-foreground truncate">
+                      {team.name}
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-2 border-t border-border pt-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs"
-                      onClick={() => router.push(`/${companySlug}/teams/${team.id}`)}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="text-xs"
-                      onClick={async () => {
-                        await setActiveTeamMutation.mutateAsync({ teamId: team.id, organizationId: organization?.id ?? "" })
-                        const isLeader = team.leader?.user?.id === session?.user?.id
-                        if (isLeader) window.location.href = `/${companySlug}/manage-team`
-                        else router.push(`/${companySlug}/team`)
-                      }}
-                    >
-                      Manage
-                    </Button>
+                  {team.leader && (
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <Avatar size="sm">
+                        {team.leader.user.image ? (
+                          <AvatarImage
+                            src={team.leader.user.image}
+                            alt={team.leader.user.name}
+                          />
+                        ) : null}
+                        <AvatarFallback className="text-[10px]">
+                          {team.leader.user.name?.charAt(0)?.toUpperCase() ??
+                            "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {team.leader.user.name}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <Badge variant="outline" className="text-[10px]">
+                      {team.members.length}{" "}
+                      {team.members.length === 1 ? "member" : "members"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 border-t border-border pt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() =>
+                      router.push(`/${companySlug}/teams/${team.id}`)
+                    }
+                  >
+                    View
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="text-xs"
+                    onClick={async () => {
+                      await setActiveTeamMutation.mutateAsync({
+                        teamId: team.id,
+                        organizationId: organization?.id ?? "",
+                      })
+                      const isLeader =
+                        team.leader?.user?.id === session?.user?.id
+                      if (isLeader)
+                        window.location.href = `/${companySlug}/manage-team`
+                      else router.push(`/${companySlug}/team`)
+                    }}
+                  >
+                    Manage
+                  </Button>
                   {canManage && (
                     <>
                       <Button
@@ -294,23 +343,44 @@ export function TeamManager() {
                         <Trash className="size-3" />
                         Delete
                       </Button>
-                      <Dialog open={deleteConfirmId === team.id} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null) }}>
+                      <Dialog
+                        open={deleteConfirmId === team.id}
+                        onOpenChange={(o) => {
+                          if (!o) setDeleteConfirmId(null)
+                        }}
+                      >
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Delete team</DialogTitle>
                             <DialogDescription>
-                              Are you sure you want to delete <span className="font-medium text-foreground">{team.name}</span>? This action cannot be undone.
+                              Are you sure you want to delete{" "}
+                              <span className="font-medium text-foreground">
+                                {team.name}
+                              </span>
+                              ? This action cannot be undone.
                             </DialogDescription>
                           </DialogHeader>
                           <DialogFooter>
-                            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
-                            <Button variant="destructive" onClick={async () => {
-                              try {
-                                await authClient.organization.removeTeam({ teamId: team.id })
-                                setDeleteConfirmId(null)
-                                refetch()
-                              } catch {}
-                            }}>Delete</Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setDeleteConfirmId(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={async () => {
+                                try {
+                                  await authClient.organization.removeTeam({
+                                    teamId: team.id,
+                                  })
+                                  setDeleteConfirmId(null)
+                                  refetch()
+                                } catch {}
+                              }}
+                            >
+                              Delete
+                            </Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>

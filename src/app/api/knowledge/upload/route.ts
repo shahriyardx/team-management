@@ -31,7 +31,10 @@ export async function POST(req: NextRequest) {
 
   const orgId = session.session.activeOrganizationId
   if (!orgId) {
-    return NextResponse.json({ error: "No active organization." }, { status: 400 })
+    return NextResponse.json(
+      { error: "No active organization." },
+      { status: 400 },
+    )
   }
 
   const formData = await req.formData()
@@ -43,16 +46,22 @@ export async function POST(req: NextRequest) {
   }
 
   if (!file.name.includes(".")) {
-    return NextResponse.json({ error: "File must have an extension." }, { status: 400 })
+    return NextResponse.json(
+      { error: "File must have an extension." },
+      { status: 400 },
+    )
   }
 
   // File size validation
-  const maxSize = fileType === "thumbnail" ? MAX_THUMBNAIL_SIZE : MAX_ATTACHMENT_SIZE
+  const maxSize =
+    fileType === "thumbnail" ? MAX_THUMBNAIL_SIZE : MAX_ATTACHMENT_SIZE
   if (file.size > maxSize) {
     return NextResponse.json({ error: "File size too big." }, { status: 413 })
   }
 
-  const allowed = ALLOWED_TYPES.some((t) => file.type.startsWith(t) || file.type === t)
+  const allowed = ALLOWED_TYPES.some(
+    (t) => file.type.startsWith(t) || file.type === t,
+  )
   if (!allowed) {
     return NextResponse.json({ error: "Invalid file type." }, { status: 400 })
   }
@@ -69,9 +78,13 @@ export async function POST(req: NextRequest) {
     }),
   ])
 
-  const currentUsed = Number(announcementBytes._sum.size ?? 0) + Number(kbBytes._sum.size ?? 0)
+  const currentUsed =
+    Number(announcementBytes._sum.size ?? 0) + Number(kbBytes._sum.size ?? 0)
   if (currentUsed + file.size > ONE_GB) {
-    return NextResponse.json({ error: "Storage limit reached (1GB)." }, { status: 413 })
+    return NextResponse.json(
+      { error: "Storage limit reached (1GB)." },
+      { status: 413 },
+    )
   }
 
   const url = await uploadToR2(file, { folder: fileType, orgId })

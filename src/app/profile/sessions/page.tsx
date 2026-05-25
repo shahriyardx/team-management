@@ -20,16 +20,19 @@ function deviceName(ua: string | null): string {
   if (!ua) return "Unknown device"
   const match = ua.match(/\(([^)]+)\)/)
   const os = match ? match[1].split(";")[0].trim() : ""
-  if (ua.includes("Chrome/") && !ua.includes("Edg/") && !ua.includes("OPR/")) return `Chrome${os ? ` — ${os}` : ""}`
+  if (ua.includes("Chrome/") && !ua.includes("Edg/") && !ua.includes("OPR/"))
+    return `Chrome${os ? ` — ${os}` : ""}`
   if (ua.includes("Firefox/")) return `Firefox${os ? ` — ${os}` : ""}`
-  if (ua.includes("Safari/") && !ua.includes("Chrome/")) return `Safari${os ? ` — ${os}` : ""}`
+  if (ua.includes("Safari/") && !ua.includes("Chrome/"))
+    return `Safari${os ? ` — ${os}` : ""}`
   if (ua.includes("Edg/")) return `Edge${os ? ` — ${os}` : ""}`
   return ua.split("/")[0] ?? ua.slice(0, 40)
 }
 
 function formatIp(ip: string | null): string {
   if (!ip) return "Unknown IP"
-  if (ip === "::1" || ip === "0000:0000:0000:0000:0000:0000:0000:0001") return "Local"
+  if (ip === "::1" || ip === "0000:0000:0000:0000:0000:0000:0000:0001")
+    return "Local"
   if (ip === "127.0.0.1") return "Local"
   return ip
 }
@@ -69,7 +72,9 @@ export default function SessionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-semibold">Sessions</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Manage your active sessions.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Manage your active sessions.
+        </p>
       </div>
 
       <div className="border border-border p-5">
@@ -80,21 +85,34 @@ export default function SessionsPage() {
             {sessions.map((s) => {
               const isCurrent = s.token === currentToken
               return (
-                <div key={s.id} className="flex items-center justify-between py-2.5">
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between py-2.5"
+                >
                   <div className="flex items-center gap-2">
                     <Devices className="size-4 text-muted-foreground shrink-0" />
                     <div>
                       <p className="text-xs font-medium">
                         {deviceName(s.userAgent)}
-                        {isCurrent && <span className="ml-1.5 text-[10px] text-muted-foreground">(current)</span>}
+                        {isCurrent && (
+                          <span className="ml-1.5 text-[10px] text-muted-foreground">
+                            (current)
+                          </span>
+                        )}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {formatIp(s.ipAddress)} &middot; {new Date(s.createdAt).toLocaleDateString()}
+                        {formatIp(s.ipAddress)} &middot;{" "}
+                        {new Date(s.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   {!isCurrent && (
-                    <Button variant="outline" size="sm" onClick={() => handleRevoke(s.token)} disabled={revoking === s.token}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRevoke(s.token)}
+                      disabled={revoking === s.token}
+                    >
                       {revoking === s.token ? "Revoking..." : "Revoke"}
                     </Button>
                   )}

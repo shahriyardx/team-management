@@ -28,7 +28,11 @@ interface MemberObjectiveCardProps {
   }
 }
 
-export function MemberObjectiveCard({ cycleId, locked, objective }: MemberObjectiveCardProps) {
+export function MemberObjectiveCard({
+  cycleId,
+  locked,
+  objective,
+}: MemberObjectiveCardProps) {
   return (
     <div className="border border-border p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -37,11 +41,18 @@ export function MemberObjectiveCard({ cycleId, locked, objective }: MemberObject
           <StatusBadge status={objective.status} />
         </div>
         <div className="sm:w-64 shrink-0">
-          <ProgressBar value={objective.progress} size="sm" status={objective.status} showLabel />
+          <ProgressBar
+            value={objective.progress}
+            size="sm"
+            status={objective.status}
+            showLabel
+          />
         </div>
       </div>
       {objective.description && (
-        <p className="mt-1 text-xs text-muted-foreground">{objective.description}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {objective.description}
+        </p>
       )}
       <div className="mt-3 space-y-1">
         {objective.keyResults.map((kr) => (

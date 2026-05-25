@@ -5,7 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { api } from "@/lib/trpc/client"
 
 export function KbEditHistorySection({ kbItemId }: { kbItemId: string }) {
-  const { data, isLoading } = api.knowledgeBase.editHistoryList.useQuery({ kbItemId })
+  const { data, isLoading } = api.knowledgeBase.editHistoryList.useQuery({
+    kbItemId,
+  })
   const history = data?.history ?? []
 
   if (isLoading) {
@@ -35,7 +37,9 @@ export function KbEditHistorySection({ kbItemId }: { kbItemId: string }) {
       <div className="space-y-3">
         {history.map((entry) => {
           let changes: Record<string, { old: unknown; new: unknown }> = {}
-          try { changes = JSON.parse(entry.changes) } catch {}
+          try {
+            changes = JSON.parse(entry.changes)
+          } catch {}
 
           const changeLabels = Object.keys(changes).map((key) => {
             if (key === "title") return "Title changed"
@@ -44,7 +48,10 @@ export function KbEditHistorySection({ kbItemId }: { kbItemId: string }) {
           })
 
           return (
-            <div key={entry.id} className="flex gap-2.5 rounded-none border border-border px-3 py-2 text-xs">
+            <div
+              key={entry.id}
+              className="flex gap-2.5 rounded-none border border-border px-3 py-2 text-xs"
+            >
               <Avatar className="mt-0.5 size-5 shrink-0 rounded-full">
                 <AvatarImage src={entry.editor.image ?? undefined} />
                 <AvatarFallback className="rounded-full text-[7px]">
@@ -52,12 +59,16 @@ export function KbEditHistorySection({ kbItemId }: { kbItemId: string }) {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <span className="font-medium text-foreground">{entry.editor.name}</span>
+                <span className="font-medium text-foreground">
+                  {entry.editor.name}
+                </span>
                 <span className="ml-1 text-muted-foreground">
                   edited {formatRelativeTime(entry.editedAt)}
                 </span>
                 {changeLabels.length > 0 && (
-                  <p className="mt-0.5 text-muted-foreground">{changeLabels.join(", ")}</p>
+                  <p className="mt-0.5 text-muted-foreground">
+                    {changeLabels.join(", ")}
+                  </p>
                 )}
               </div>
             </div>
@@ -79,5 +90,8 @@ function formatRelativeTime(date: Date | string): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days}d ago`
-  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })
 }

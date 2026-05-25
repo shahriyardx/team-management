@@ -1,5 +1,9 @@
 import { createAuthClient } from "better-auth/react"
-import { organizationClient, twoFactorClient, inferOrgAdditionalFields } from "better-auth/client/plugins"
+import {
+  organizationClient,
+  twoFactorClient,
+  inferOrgAdditionalFields,
+} from "better-auth/client/plugins"
 import { passkeyClient } from "@better-auth/passkey/client"
 import type { auth } from "./auth"
 

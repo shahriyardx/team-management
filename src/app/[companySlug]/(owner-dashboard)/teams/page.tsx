@@ -8,8 +8,10 @@ export async function generateMetadata({
   params: Promise<{ companySlug: string }>
 }): Promise<Metadata> {
   const { companySlug } = await params
-  const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
-  const name = org?.name ?? companySlug
+  const org = await prisma.organization.findUnique({
+    where: { slug: companySlug },
+  })
+  const _name = org?.name ?? companySlug
   return { title: "Teams", description: "Manage teams." }
 }
 

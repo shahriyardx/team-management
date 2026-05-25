@@ -62,7 +62,9 @@ export function KbAllCategoriesView({
                 >
                   <div className="space-y-5 px-4 py-3">
                     {cat.subcategories.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">No subcategories.</p>
+                      <p className="text-xs text-muted-foreground text-center py-4">
+                        No subcategories.
+                      </p>
                     ) : (
                       cat.subcategories.map((sub) => (
                         <LazySubcategorySection
@@ -120,7 +122,10 @@ function LazySubcategorySection({
   return (
     <div>
       <button
-        onClick={() => { setExpanded((v) => !v); if (!expanded) setTake(PAGE) }}
+        onClick={() => {
+          setExpanded((v) => !v)
+          if (!expanded) setTake(PAGE)
+        }}
         className="flex items-center gap-1.5 text-left mb-2 group"
       >
         <CaretDown
@@ -147,7 +152,12 @@ function LazySubcategorySection({
               ) : (
                 <>
                   {items.map((item: KbItem) => (
-                    <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={onItemSelect} />
+                    <KbItemRow
+                      key={item.id}
+                      item={item}
+                      baseHref={baseHref}
+                      onSelect={onItemSelect}
+                    />
                   ))}
                   {hasMore ? (
                     <button
@@ -158,7 +168,9 @@ function LazySubcategorySection({
                       {isLoading ? "Loading..." : "Load more"}
                     </button>
                   ) : items.length > PAGE ? (
-                    <p className="text-[10px] text-muted-foreground/50 text-center pt-1">All {total} items loaded.</p>
+                    <p className="text-[10px] text-muted-foreground/50 text-center pt-1">
+                      All {total} items loaded.
+                    </p>
                   ) : null}
                 </>
               )}

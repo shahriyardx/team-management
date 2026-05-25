@@ -47,10 +47,11 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   const { organization } = useOrganization()
 
   // All cycles for selector
-  const { data: cyclesData, isLoading: isCyclesLoading } = api.okrCycle.listActive.useQuery(
-    { organizationId: organization?.id ?? "", skip: 0, take: 25 },
-    { enabled: !!organization },
-  )
+  const { data: cyclesData, isLoading: isCyclesLoading } =
+    api.okrCycle.listActive.useQuery(
+      { organizationId: organization?.id ?? "", skip: 0, take: 25 },
+      { enabled: !!organization },
+    )
   const cycles = (cyclesData?.cycles ?? []) as OkrCycleItem[]
   const years = cyclesData?.years ?? [String(new Date().getFullYear())]
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
@@ -72,7 +73,10 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
         const e = new Date(c.endDate)
         return s <= now && now <= e
       })
-      if (current) { setSelectedCycleId(current.id); return }
+      if (current) {
+        setSelectedCycleId(current.id)
+        return
+      }
       setSelectedCycleId(filteredCycles[0].id)
     }
   }, [filteredCycles, selectedCycleId])
@@ -84,19 +88,24 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
   )
   const locked = !!selectedCycle?.locked
 
-  const { data: objectivesData, isLoading } = api.objective.listTeamLevel.useQuery(
-    { cycleId },
-    { enabled: !!cycleId && !!organization },
-  )
+  const { data: objectivesData, isLoading } =
+    api.objective.listTeamLevel.useQuery(
+      { cycleId },
+      { enabled: !!cycleId && !!organization },
+    )
   const objectives = (objectivesData?.objectives ?? []) as OkrObjective[]
 
   const analytics = useMemo(() => {
-    if (objectives.length === 0) return { avgProgress: 0, onTrack: 0, atRisk: 0, behind: 0, completed: 0 }
+    if (objectives.length === 0)
+      return { avgProgress: 0, onTrack: 0, atRisk: 0, behind: 0, completed: 0 }
     const totalP = objectives.reduce((s, o) => s + o.progress, 0)
     const sf = (s: string) => objectives.filter((o) => o.status === s).length
     return {
       avgProgress: Math.round(totalP / objectives.length),
-      onTrack: sf("on_track"), atRisk: sf("at_risk"), behind: sf("behind"), completed: sf("completed"),
+      onTrack: sf("on_track"),
+      atRisk: sf("at_risk"),
+      behind: sf("behind"),
+      completed: sf("completed"),
     }
   }, [objectives])
 
@@ -104,9 +113,13 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-5 gap-3">
-          {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-20" />)}
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
         </div>
-        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32" />)}
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
       </div>
     )
   }
@@ -125,26 +138,40 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Team OKR</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Team-level objectives for the active cycle.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Team-level objectives for the active cycle.
+          </p>
           <p className="text-xs text-muted-foreground sm:hidden">
             {filteredCycles.find((c) => c.id === selectedCycleId)?.title ?? ""}
           </p>
         </div>
         <div className="hidden sm:flex flex-wrap items-center gap-3 shrink-0">
-          <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setSelectedCycleId(null) }}>
+          <Select
+            value={selectedYear}
+            onValueChange={(v) => {
+              setSelectedYear(v)
+              setSelectedCycleId(null)
+            }}
+          >
             <SelectTrigger className="h-7 w-auto min-w-20 rounded-none text-xs">
               {selectedYear}
             </SelectTrigger>
             <SelectContent position="popper">
               {years.map((yr) => (
-                <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+                <SelectItem key={yr} value={yr}>
+                  {yr}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={selectedCycleId ?? ""} onValueChange={setSelectedCycleId}>
+          <Select
+            value={selectedCycleId ?? ""}
+            onValueChange={setSelectedCycleId}
+          >
             <SelectTrigger className="h-7 w-auto min-w-32 rounded-none text-xs">
               <span className="truncate">
-                {filteredCycles.find((c) => c.id === selectedCycleId)?.title ?? "Select cycle"}
+                {filteredCycles.find((c) => c.id === selectedCycleId)?.title ??
+                  "Select cycle"}
               </span>
             </SelectTrigger>
             <SelectContent position="popper">
@@ -172,23 +199,33 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Avg Progress</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums">{analytics.avgProgress}%</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">
+                {analytics.avgProgress}%
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">On Track</p>
-              <p className="mt-1 text-lg font-semibold text-emerald-500">{analytics.onTrack}</p>
+              <p className="mt-1 text-lg font-semibold text-emerald-500">
+                {analytics.onTrack}
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">At Risk</p>
-              <p className="mt-1 text-lg font-semibold text-amber-400">{analytics.atRisk}</p>
+              <p className="mt-1 text-lg font-semibold text-amber-400">
+                {analytics.atRisk}
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Behind</p>
-              <p className="mt-1 text-lg font-semibold text-red-400">{analytics.behind}</p>
+              <p className="mt-1 text-lg font-semibold text-red-400">
+                {analytics.behind}
+              </p>
             </div>
             <div className="border border-border p-3">
               <p className="text-xs text-muted-foreground">Completed</p>
-              <p className="mt-1 text-lg font-semibold text-emerald-500">{analytics.completed}</p>
+              <p className="mt-1 text-lg font-semibold text-emerald-500">
+                {analytics.completed}
+              </p>
             </div>
           </div>
 
@@ -199,7 +236,11 @@ export function TeamLeaderOkrView({ teamId }: { teamId: string }) {
                 key={obj.id}
                 objective={obj}
                 krRenderer={(kr) => (
-                  <CheckInKrRow kr={kr as any} cycleId={cycleId} locked={locked} />
+                  <CheckInKrRow
+                    kr={kr as any}
+                    cycleId={cycleId}
+                    locked={locked}
+                  />
                 )}
               />
             ))}

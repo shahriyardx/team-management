@@ -2,7 +2,12 @@
 
 import { useCallback, useState } from "react"
 import { format } from "date-fns"
-import { ArrowCircleUp, CaretDown, CaretRight, Lock } from "@phosphor-icons/react"
+import {
+  ArrowCircleUp,
+  CaretDown,
+  CaretRight,
+  Lock,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/okrs/progress-bar"
@@ -43,7 +48,12 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
   const toggle = useCallback(() => setExpanded((p) => !p), [])
 
   const { data: checkInsData } = api.checkIn.list.useQuery(
-    { keyResultId: kr.id, organizationId: organization?.id ?? "", skip: 0, take: 20 },
+    {
+      keyResultId: kr.id,
+      organizationId: organization?.id ?? "",
+      skip: 0,
+      take: 20,
+    },
     { enabled: expanded && !!organization },
   )
   const checkIns = (checkInsData?.checkIns ?? []) as Array<{
@@ -52,7 +62,9 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
     newValue: number
     note: string | null
     createdAt: string
-    author: { user: { id: string; name: string; email: string; image?: string | null } }
+    author: {
+      user: { id: string; name: string; email: string; image?: string | null }
+    }
   }>
 
   const [checkInKr, setCheckInKr] = useState<{
@@ -66,7 +78,12 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
 
   return (
     <>
-      <div className={"border border-muted-foreground/20 border-l-2 px-3 py-2 " + (statusCardStyle[kr.status] ?? "border-l-muted-foreground/20")}>
+      <div
+        className={
+          "border border-muted-foreground/20 border-l-2 px-3 py-2 " +
+          (statusCardStyle[kr.status] ?? "border-l-muted-foreground/20")
+        }
+      >
         <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2">
@@ -74,10 +91,14 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
                 onClick={toggle}
                 className="flex items-start gap-1 cursor-pointer"
               >
-                {expanded
-                  ? <CaretDown className="size-3 text-muted-foreground hidden sm:inline" />
-                  : <CaretRight className="size-3 text-muted-foreground hidden sm:inline" />}
-                <span className="text-xs font-medium wrap-break-words text-left">{kr.title}</span>
+                {expanded ? (
+                  <CaretDown className="size-3 text-muted-foreground hidden sm:inline" />
+                ) : (
+                  <CaretRight className="size-3 text-muted-foreground hidden sm:inline" />
+                )}
+                <span className="text-xs font-medium wrap-break-words text-left">
+                  {kr.title}
+                </span>
               </button>
             </div>
             <div className="mt-1 flex items-center gap-2">
@@ -90,7 +111,10 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
             </div>
           </div>
           {locked ? (
-            <Badge variant="outline" className="ml-3 shrink-0 text-[10px] text-amber-600 border-amber-300 bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:bg-amber-950/30">
+            <Badge
+              variant="outline"
+              className="ml-3 shrink-0 text-[10px] text-amber-600 border-amber-300 bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:bg-amber-950/30"
+            >
               <Lock className="size-2.5 mr-0.5" />
               Locked
             </Badge>
@@ -123,14 +147,23 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
             {checkInsData && checkIns.length > 0 && (
               <div className="space-y-1.5">
                 {checkIns.map((ci) => (
-                  <div key={ci.id} className="flex items-start gap-2 text-[11px]">
-                    <Badge variant="outline" className="shrink-0 text-[10px] whitespace-nowrap">
+                  <div
+                    key={ci.id}
+                    className="flex items-start gap-2 text-[11px]"
+                  >
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 text-[10px] whitespace-nowrap"
+                    >
                       {ci.previousValue} → {ci.newValue}
                     </Badge>
                     <div className="min-w-0 leading-tight">
-                      {ci.note && <span className="text-muted-foreground">{ci.note}</span>}
+                      {ci.note && (
+                        <span className="text-muted-foreground">{ci.note}</span>
+                      )}
                       <span className="text-muted-foreground/50">
-                        {" "}– {ci.author.user.name}
+                        {" "}
+                        – {ci.author.user.name}
                       </span>
                       <span className="text-muted-foreground/30 ml-1">
                         {format(new Date(ci.createdAt), "MMM d")}
@@ -141,7 +174,9 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
               </div>
             )}
             {checkInsData && checkIns.length === 0 && !kr.description && (
-              <p className="text-[11px] text-muted-foreground/50">No check-ins yet.</p>
+              <p className="text-[11px] text-muted-foreground/50">
+                No check-ins yet.
+              </p>
             )}
           </div>
         )}
@@ -149,7 +184,9 @@ export function CheckInKrRow({ kr, cycleId, locked }: CheckInKrRowProps) {
 
       <CheckInDialog
         open={!!checkInKr}
-        onOpenChange={(o) => { if (!o) setCheckInKr(null) }}
+        onOpenChange={(o) => {
+          if (!o) setCheckInKr(null)
+        }}
         cycleId={cycleId}
         kr={checkInKr}
       />

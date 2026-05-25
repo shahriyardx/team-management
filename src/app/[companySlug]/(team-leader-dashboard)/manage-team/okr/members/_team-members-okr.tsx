@@ -158,7 +158,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
   const cycleId = selectedCycleId ?? ""
   const selectedCycle = cycles.find((c) => c.id === cycleId)
-  const isActiveCycle = selectedCycle?.status === "active" && !selectedCycle?.locked
+  const isActiveCycle =
+    selectedCycle?.status === "active" && !selectedCycle?.locked
 
   // Member-level objectives for this team's members
   const { data: objectivesData, isLoading: objectivesLoading } =
@@ -257,7 +258,8 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
     if (teamObjectives.length === 0)
       return { avgProgress: 0, onTrack: 0, atRisk: 0, behind: 0, completed: 0 }
     const totalP = teamObjectives.reduce((s, o) => s + o.progress, 0)
-    const sf = (s: string) => teamObjectives.filter((o) => o.status === s).length
+    const sf = (s: string) =>
+      teamObjectives.filter((o) => o.status === s).length
     return {
       avgProgress: Math.round(totalP / teamObjectives.length),
       onTrack: sf("on_track"),
@@ -480,27 +482,31 @@ export function TeamMembersOkr({ teamId }: { teamId: string }) {
 
                                 for (const item of data) {
                                   const obj =
-                                    await utils.client.objective.createMemberLevel.mutate({
-                                      title: item.objective.title,
-                                      description:
-                                        item.objective.description ?? null,
-                                      ownerId: memberId,
-                                      cycleId,
-                                    })
+                                    await utils.client.objective.createMemberLevel.mutate(
+                                      {
+                                        title: item.objective.title,
+                                        description:
+                                          item.objective.description ?? null,
+                                        ownerId: memberId,
+                                        cycleId,
+                                      },
+                                    )
                                   for (const kr of item.keyResults ?? []) {
-                                    await utils.client.keyResult.createMemberLevel.mutate({
-                                      title: kr.title,
-                                      description: kr.description ?? null,
-                                      targetValue: kr.targetValue,
-                                      unit: kr.unit ?? "number",
-                                      weight: kr.weight ?? 1,
-                                      objectiveId: obj.objective.id,
-                                    })
+                                    await utils.client.keyResult.createMemberLevel.mutate(
+                                      {
+                                        title: kr.title,
+                                        description: kr.description ?? null,
+                                        targetValue: kr.targetValue,
+                                        unit: kr.unit ?? "number",
+                                        weight: kr.weight ?? 1,
+                                        objectiveId: obj.objective.id,
+                                      },
+                                    )
                                   }
                                 }
                                 utils.objective.listMemberLevel.invalidate({
                                   cycleId,
-                                                          })
+                                })
                               } catch (e) {
                                 console.error("Import failed:", e)
                               }

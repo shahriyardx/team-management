@@ -12,7 +12,7 @@ export async function generateMetadata({
     prisma.organization.findUnique({ where: { slug: companySlug } }),
     prisma.team.findUnique({ where: { id: teamId } }),
   ])
-  const orgName = org?.name ?? companySlug
+  const _orgName = org?.name ?? companySlug
   const teamName = team?.name ?? "Team"
   return { title: teamName, description: `View and manage ${teamName}.` }
 }

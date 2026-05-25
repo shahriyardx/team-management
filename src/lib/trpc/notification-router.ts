@@ -75,11 +75,16 @@ export const notificationRouter = router({
   markRead: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const notification = await prisma.notification.findUnique({ where: { id: input.id } })
+      const notification = await prisma.notification.findUnique({
+        where: { id: input.id },
+      })
       if (!notification || notification.userId !== ctx.session.user.id) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
-      await prisma.notification.update({ where: { id: input.id }, data: { read: true } })
+      await prisma.notification.update({
+        where: { id: input.id },
+        data: { read: true },
+      })
       return { success: true }
     }),
 
@@ -87,7 +92,11 @@ export const notificationRouter = router({
     .input(z.object({ organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await prisma.notification.updateMany({
-        where: { userId: ctx.session.user.id, organizationId: input.organizationId, read: false },
+        where: {
+          userId: ctx.session.user.id,
+          organizationId: input.organizationId,
+          read: false,
+        },
         data: { read: true },
       })
       return { success: true }

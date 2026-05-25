@@ -40,19 +40,25 @@ export function LandingNav() {
   async function handleOrgClick(org: Org) {
     await authClient.organization.setActive({ organizationId: org.id })
     const { data: member } = await authClient.organization.getActiveMember()
-    const role = member && typeof member === "object" && "role" in member
-      ? (member as { role: string }).role
-      : null
+    const role =
+      member && typeof member === "object" && "role" in member
+        ? (member as { role: string }).role
+        : null
     if (role === "owner" || role === "admin") router.push(`/${org.slug}`)
     else router.push(`/${org.slug}/team`)
   }
 
-  if (isPending) return <span className="size-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+  if (isPending)
+    return (
+      <span className="size-4 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+    )
 
   if (!user) {
     return (
       <Link href="/auth/login">
-        <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">Sign in</span>
+        <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          Sign in
+        </span>
       </Link>
     )
   }
@@ -63,14 +69,24 @@ export function LandingNav() {
         <button className="rounded-md p-0.5 hover:bg-accent transition-colors">
           <Avatar className="size-8">
             <AvatarImage src={user.image ?? ""} alt={user.name} />
-            <AvatarFallback>{user.name?.charAt(0).toUpperCase() ?? "U"}</AvatarFallback>
+            <AvatarFallback>
+              {user.name?.charAt(0).toUpperCase() ?? "U"}
+            </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 rounded-lg" align="end" sideOffset={8}>
+      <DropdownMenuContent
+        className="w-56 rounded-lg"
+        align="end"
+        sideOffset={8}
+      >
         <div className="px-2 py-1.5 text-left text-sm">
-          <div className="truncate font-medium text-foreground">{user.name}</div>
-          <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+          <div className="truncate font-medium text-foreground">
+            {user.name}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            {user.email}
+          </div>
         </div>
         <DropdownMenuSeparator />
         {orgs.length === 0 && (

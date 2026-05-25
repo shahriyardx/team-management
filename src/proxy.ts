@@ -9,23 +9,27 @@ export async function proxy(request: NextRequest) {
   })
   if (session) return NextResponse.next()
 
-  const callbackUrl = encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)
-  return NextResponse.redirect(new URL(`/auth/login?callbackURL=${callbackUrl}`, request.url))
+  const callbackUrl = encodeURIComponent(
+    request.nextUrl.pathname + request.nextUrl.search,
+  )
+  return NextResponse.redirect(
+    new URL(`/auth/login?callbackURL=${callbackUrl}`, request.url),
+  )
 }
 
 export const config = {
   matcher: [
-    '/onboard/:path*',
-    '/profile/:path*',
-    '/:companySlug/manage-team/:path*',
-    '/:companySlug/team/:path*',
-    '/:companySlug/org',
-    '/:companySlug/tasks/:path*',
-    '/:companySlug/members/:path*',
-    '/:companySlug/settings/:path*',
-    '/:companySlug/announcements/:path*',
-    '/:companySlug/knowledge-base/:path*',
-    '/:companySlug/okr/:path*',
-    '/:companySlug/teams/:path*',
+    "/onboard/:path*",
+    "/profile/:path*",
+    "/:companySlug/manage-team/:path*",
+    "/:companySlug/team/:path*",
+    "/:companySlug/org",
+    "/:companySlug/tasks/:path*",
+    "/:companySlug/members/:path*",
+    "/:companySlug/settings/:path*",
+    "/:companySlug/announcements/:path*",
+    "/:companySlug/knowledge-base/:path*",
+    "/:companySlug/okr/:path*",
+    "/:companySlug/teams/:path*",
   ],
 }

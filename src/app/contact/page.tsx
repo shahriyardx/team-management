@@ -29,7 +29,9 @@ export default function ContactPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="border border-border p-6">
                 <Mail className="size-5 text-foreground" />
-                <h3 className="mt-4 text-sm font-medium text-foreground">Email</h3>
+                <h3 className="mt-4 text-sm font-medium text-foreground">
+                  Email
+                </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Send us an email anytime.
                 </p>
@@ -42,7 +44,9 @@ export default function ContactPage() {
               </div>
               <div className="border border-border p-6">
                 <MessageSquare className="size-5 text-foreground" />
-                <h3 className="mt-4 text-sm font-medium text-foreground">Chat</h3>
+                <h3 className="mt-4 text-sm font-medium text-foreground">
+                  Chat
+                </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Have a quick question? Reach out.
                 </p>
@@ -53,7 +57,9 @@ export default function ContactPage() {
             </div>
 
             <div className="lg:col-span-3 border border-border p-6 sm:p-8">
-              <h2 className="text-sm font-medium text-foreground">Send us a message</h2>
+              <h2 className="text-sm font-medium text-foreground">
+                Send us a message
+              </h2>
               <ContactForm />
             </div>
           </div>

@@ -8,14 +8,23 @@ export const knowledgeBaseRouter = router({
   // ── Categories ──
 
   categoryList: protectedProcedure
-    .input(z.object({ organizationId: z.string(), teamId: z.string().optional() }))
+    .input(
+      z.object({ organizationId: z.string(), teamId: z.string().optional() }),
+    )
     .query(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const where: Record<string, unknown> = { organizationId: input.organizationId }
+      const where: Record<string, unknown> = {
+        organizationId: input.organizationId,
+      }
       if (input.teamId) {
         where.teamId = input.teamId
       } else {
@@ -35,10 +44,21 @@ export const knowledgeBaseRouter = router({
     }),
 
   categoryCreate: protectedProcedure
-    .input(z.object({ organizationId: z.string(), name: z.string().min(1).max(48), teamId: z.string().optional() }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        name: z.string().min(1).max(48),
+        teamId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -48,7 +68,10 @@ export const knowledgeBaseRouter = router({
           organizationId: input.organizationId,
           teamId: input.teamId ?? null,
           subcategories: {
-            create: { name: "Uncategorized", organizationId: input.organizationId },
+            create: {
+              name: "Uncategorized",
+              organizationId: input.organizationId,
+            },
           },
         },
         include: { subcategories: true },
@@ -59,11 +82,18 @@ export const knowledgeBaseRouter = router({
   categoryUpdate: protectedProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1).max(48) }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbCategory.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbCategory.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -77,11 +107,18 @@ export const knowledgeBaseRouter = router({
   categoryDelete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbCategory.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbCategory.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -92,13 +129,22 @@ export const knowledgeBaseRouter = router({
   // ── Subcategories ──
 
   subcategoryCreate: protectedProcedure
-    .input(z.object({ categoryId: z.string(), name: z.string().min(1).max(48) }))
+    .input(
+      z.object({ categoryId: z.string(), name: z.string().min(1).max(48) }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const category = await prisma.kbCategory.findUnique({ where: { id: input.categoryId } })
+      const category = await prisma.kbCategory.findUnique({
+        where: { id: input.categoryId },
+      })
       if (!category) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: category.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: category.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -115,11 +161,18 @@ export const knowledgeBaseRouter = router({
   subcategoryUpdate: protectedProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1).max(48) }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbSubcategory.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbSubcategory.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -133,11 +186,18 @@ export const knowledgeBaseRouter = router({
   subcategoryDelete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbSubcategory.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbSubcategory.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -160,11 +220,19 @@ export const knowledgeBaseRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const where: Record<string, unknown> = { organizationId: input.organizationId, deletedAt: null }
+      const where: Record<string, unknown> = {
+        organizationId: input.organizationId,
+        deletedAt: null,
+      }
       if (input.teamId) {
         where.teamId = input.teamId
       } else {
@@ -180,8 +248,17 @@ export const knowledgeBaseRouter = router({
           where,
           include: {
             author: { select: { id: true, name: true, image: true } },
-            subcategory: { select: { id: true, name: true, categoryId: true, category: { select: { id: true, name: true } } } },
-            attachments: { select: { id: true, name: true, url: true, type: true } },
+            subcategory: {
+              select: {
+                id: true,
+                name: true,
+                categoryId: true,
+                category: { select: { id: true, name: true } },
+              },
+            },
+            attachments: {
+              select: { id: true, name: true, url: true, type: true },
+            },
             links: { select: { id: true, url: true, title: true } },
             _count: { select: { attachments: true, links: true } },
           },
@@ -209,7 +286,12 @@ export const knowledgeBaseRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -243,7 +325,9 @@ export const knowledgeBaseRouter = router({
                 category: { select: { id: true, name: true } },
               },
             },
-            attachments: { select: { id: true, name: true, url: true, type: true } },
+            attachments: {
+              select: { id: true, name: true, url: true, type: true },
+            },
             links: { select: { id: true, url: true, title: true } },
             _count: { select: { attachments: true, links: true } },
           },
@@ -264,7 +348,9 @@ export const knowledgeBaseRouter = router({
       const item = await prisma.kbItem.findUnique({
         where: { id: input.id },
         include: {
-          author: { select: { id: true, name: true, email: true, image: true } },
+          author: {
+            select: { id: true, name: true, email: true, image: true },
+          },
           subcategory: {
             select: {
               id: true,
@@ -272,14 +358,21 @@ export const knowledgeBaseRouter = router({
               category: { select: { id: true, name: true } },
             },
           },
-          attachments: { select: { id: true, name: true, url: true, type: true, size: true } },
+          attachments: {
+            select: { id: true, name: true, url: true, type: true, size: true },
+          },
           links: { select: { id: true, url: true, title: true } },
         },
       })
       if (!item) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: item.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -336,7 +429,12 @@ export const knowledgeBaseRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -392,11 +490,18 @@ export const knowledgeBaseRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbItem.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbItem.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -404,8 +509,14 @@ export const knowledgeBaseRouter = router({
       if (input.title !== undefined && input.title !== existing.title) {
         changes.title = { old: existing.title, new: input.title }
       }
-      if (input.description !== undefined && input.description !== existing.description) {
-        changes.description = { old: existing.description, new: input.description }
+      if (
+        input.description !== undefined &&
+        input.description !== existing.description
+      ) {
+        changes.description = {
+          old: existing.description,
+          new: input.description,
+        }
       }
 
       if (Object.keys(changes).length > 0) {
@@ -420,7 +531,8 @@ export const knowledgeBaseRouter = router({
 
       const updateData: Record<string, unknown> = {}
       if (input.title !== undefined) updateData.title = input.title
-      if (input.description !== undefined) updateData.description = input.description
+      if (input.description !== undefined)
+        updateData.description = input.description
       if (input.attachments !== undefined) {
         // Delete removed attachments from R2 (compare URLs)
         const oldAtts = await prisma.kbAttachment.findMany({
@@ -452,11 +564,18 @@ export const knowledgeBaseRouter = router({
   itemDelete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbItem.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbItem.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -466,17 +585,28 @@ export const knowledgeBaseRouter = router({
       if (!isPrivileged) {
         if (existing.teamId) {
           const ledTeam = await prisma.team.findFirst({
-            where: { id: existing.teamId, leaderId: member.id, organizationId: existing.organizationId },
+            where: {
+              id: existing.teamId,
+              leaderId: member.id,
+              organizationId: existing.organizationId,
+            },
           })
           isTeamLeader = !!ledTeam
         }
       }
 
-      if (!isPrivileged && !isTeamLeader && existing.authorId !== ctx.session.user.id) {
+      if (
+        !isPrivileged &&
+        !isTeamLeader &&
+        existing.authorId !== ctx.session.user.id
+      ) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      await prisma.kbItem.update({ where: { id: input.id }, data: { deletedAt: new Date() } })
+      await prisma.kbItem.update({
+        where: { id: input.id },
+        data: { deletedAt: new Date() },
+      })
       return { success: true }
     }),
 
@@ -485,11 +615,18 @@ export const knowledgeBaseRouter = router({
   commentList: protectedProcedure
     .input(z.object({ kbItemId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const item = await prisma.kbItem.findUnique({ where: { id: input.kbItemId } })
+      const item = await prisma.kbItem.findUnique({
+        where: { id: input.kbItemId },
+      })
       if (!item) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: item.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -502,18 +639,31 @@ export const knowledgeBaseRouter = router({
     }),
 
   commentCreate: protectedProcedure
-    .input(z.object({ kbItemId: z.string(), content: z.string().min(1).max(5000) }))
+    .input(
+      z.object({ kbItemId: z.string(), content: z.string().min(1).max(5000) }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const item = await prisma.kbItem.findUnique({ where: { id: input.kbItemId } })
+      const item = await prisma.kbItem.findUnique({
+        where: { id: input.kbItemId },
+      })
       if (!item) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: item.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const comment = await prisma.kbComment.create({
-        data: { content: input.content, kbItemId: input.kbItemId, authorId: ctx.session.user.id },
+        data: {
+          content: input.content,
+          kbItemId: input.kbItemId,
+          authorId: ctx.session.user.id,
+        },
         include: { author: { select: { id: true, name: true, image: true } } },
       })
 
@@ -523,7 +673,10 @@ export const knowledgeBaseRouter = router({
           data: {
             type: "kb_comment",
             title: `${comment.author.name} commented on "${item.title}"`,
-            body: input.content.length > 120 ? `${input.content.slice(0, 120)}…` : input.content,
+            body:
+              input.content.length > 120
+                ? `${input.content.slice(0, 120)}…`
+                : input.content,
             userId: item.authorId,
             organizationId: item.organizationId,
             kbItemId: item.id,
@@ -544,7 +697,12 @@ export const knowledgeBaseRouter = router({
       if (!comment) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: comment.kbItem.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: comment.kbItem.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -553,13 +711,21 @@ export const knowledgeBaseRouter = router({
       if (!isPrivileged) {
         if (comment.kbItem.teamId) {
           const ledTeam = await prisma.team.findFirst({
-            where: { id: comment.kbItem.teamId, leaderId: member.id, organizationId: comment.kbItem.organizationId },
+            where: {
+              id: comment.kbItem.teamId,
+              leaderId: member.id,
+              organizationId: comment.kbItem.organizationId,
+            },
           })
           isTeamLeader = !!ledTeam
         }
       }
 
-      if (comment.authorId !== ctx.session.user.id && !isPrivileged && !isTeamLeader) {
+      if (
+        comment.authorId !== ctx.session.user.id &&
+        !isPrivileged &&
+        !isTeamLeader
+      ) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
@@ -572,11 +738,18 @@ export const knowledgeBaseRouter = router({
   editHistoryList: protectedProcedure
     .input(z.object({ kbItemId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const item = await prisma.kbItem.findUnique({ where: { id: input.kbItemId } })
+      const item = await prisma.kbItem.findUnique({
+        where: { id: input.kbItemId },
+      })
       if (!item) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: item.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: item.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -595,7 +768,12 @@ export const knowledgeBaseRouter = router({
     .input(z.object({ organizationId: z.string(), teamId: z.string() }))
     .query(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: input.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -603,18 +781,35 @@ export const knowledgeBaseRouter = router({
       let isTeamLeader = false
       if (!isPrivileged) {
         const ledTeam = await prisma.team.findFirst({
-          where: { id: input.teamId, leaderId: member.id, organizationId: input.organizationId },
+          where: {
+            id: input.teamId,
+            leaderId: member.id,
+            organizationId: input.organizationId,
+          },
         })
         isTeamLeader = !!ledTeam
       }
-      if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+      if (!isPrivileged && !isTeamLeader)
+        throw new TRPCError({ code: "FORBIDDEN" })
 
       const items = await prisma.kbItem.findMany({
-        where: { organizationId: input.organizationId, teamId: input.teamId, deletedAt: { not: null } },
+        where: {
+          organizationId: input.organizationId,
+          teamId: input.teamId,
+          deletedAt: { not: null },
+        },
         include: {
           author: { select: { id: true, name: true, image: true } },
-          subcategory: { select: { id: true, name: true, category: { select: { id: true, name: true } } } },
-          attachments: { select: { id: true, name: true, url: true, type: true } },
+          subcategory: {
+            select: {
+              id: true,
+              name: true,
+              category: { select: { id: true, name: true } },
+            },
+          },
+          attachments: {
+            select: { id: true, name: true, url: true, type: true },
+          },
           links: { select: { id: true, url: true, title: true } },
           _count: { select: { attachments: true, links: true } },
         },
@@ -626,11 +821,18 @@ export const knowledgeBaseRouter = router({
   itemRestore: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await prisma.kbItem.findUnique({ where: { id: input.id } })
+      const existing = await prisma.kbItem.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -639,14 +841,22 @@ export const knowledgeBaseRouter = router({
       if (!isPrivileged) {
         if (existing.teamId) {
           const ledTeam = await prisma.team.findFirst({
-            where: { id: existing.teamId, leaderId: member.id, organizationId: existing.organizationId },
+            where: {
+              id: existing.teamId,
+              leaderId: member.id,
+              organizationId: existing.organizationId,
+            },
           })
           isTeamLeader = !!ledTeam
         }
       }
-      if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+      if (!isPrivileged && !isTeamLeader)
+        throw new TRPCError({ code: "FORBIDDEN" })
 
-      await prisma.kbItem.update({ where: { id: input.id }, data: { deletedAt: null } })
+      await prisma.kbItem.update({
+        where: { id: input.id },
+        data: { deletedAt: null },
+      })
       return { success: true }
     }),
 
@@ -660,7 +870,12 @@ export const knowledgeBaseRouter = router({
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
-        where: { organizationId_userId: { organizationId: existing.organizationId, userId: ctx.session.user.id } },
+        where: {
+          organizationId_userId: {
+            organizationId: existing.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
@@ -669,12 +884,17 @@ export const knowledgeBaseRouter = router({
       if (!isPrivileged) {
         if (existing.teamId) {
           const ledTeam = await prisma.team.findFirst({
-            where: { id: existing.teamId, leaderId: member.id, organizationId: existing.organizationId },
+            where: {
+              id: existing.teamId,
+              leaderId: member.id,
+              organizationId: existing.organizationId,
+            },
           })
           isTeamLeader = !!ledTeam
         }
       }
-      if (!isPrivileged && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+      if (!isPrivileged && !isTeamLeader)
+        throw new TRPCError({ code: "FORBIDDEN" })
 
       for (const att of existing.attachments) {
         await deleteFromR2(att.url)

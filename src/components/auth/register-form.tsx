@@ -33,18 +33,37 @@ function PasswordStrength({ password }: { password: string }) {
   }
   const score = Object.values(checks).filter(Boolean).length
 
-  const colors = ["bg-destructive", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500"]
+  const colors = [
+    "bg-destructive",
+    "bg-orange-500",
+    "bg-yellow-500",
+    "bg-lime-500",
+    "bg-green-500",
+  ]
   const labels = ["Weak", "Fair", "Good", "Strong", "Very strong"]
-  const labelColor = ["text-destructive", "text-orange-500", "text-yellow-500", "text-lime-500", "text-green-500"]
+  const labelColor = [
+    "text-destructive",
+    "text-orange-500",
+    "text-yellow-500",
+    "text-lime-500",
+    "text-green-500",
+  ]
 
   return (
     <div className="space-y-1 mt-1">
       <div className="flex gap-0.5">
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={`h-1 flex-1 rounded-sm transition-colors ${i < score ? colors[i] : "bg-border"}`} />
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-sm transition-colors ${i < score ? colors[i] : "bg-border"}`}
+          />
         ))}
       </div>
-      <p className={`text-[10px] ${labelColor[score - 1] ?? "text-muted-foreground"}`}>{labels[score - 1]}</p>
+      <p
+        className={`text-[10px] ${labelColor[score - 1] ?? "text-muted-foreground"}`}
+      >
+        {labels[score - 1]}
+      </p>
     </div>
   )
 }
@@ -63,47 +82,57 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
   })
   const watchPassword = form.watch("password")
 
-  const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setAvatarFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
-  }, [])
+  const handleAvatarSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      setAvatarFile(file)
+      const reader = new FileReader()
+      reader.onload = (ev) => setAvatarPreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    },
+    [],
+  )
 
-  const handleSignUp = useCallback(async (data: RegisterForm) => {
-    setError(null)
-    setLoading(true)
-    try {
-      let image: string | undefined
-      if (avatarFile) {
-        const body = new FormData()
-        body.set("file", avatarFile)
-        body.set("type", "profile-images")
-        const res = await fetch("/api/upload", { method: "POST", body })
-        if (res.ok) {
-          const { url } = await res.json()
-          image = url
+  const handleSignUp = useCallback(
+    async (data: RegisterForm) => {
+      setError(null)
+      setLoading(true)
+      try {
+        let image: string | undefined
+        if (avatarFile) {
+          const body = new FormData()
+          body.set("file", avatarFile)
+          body.set("type", "profile-images")
+          const res = await fetch("/api/upload", { method: "POST", body })
+          if (res.ok) {
+            const { url } = await res.json()
+            image = url
+          }
         }
-      }
-      const res = await authClient.signUp.email({ ...data, image })
-      if (res.error) {
-        setError(res.error.message || res.error.statusText || "Registration failed.")
+        const res = await authClient.signUp.email({ ...data, image })
+        if (res.error) {
+          setError(
+            res.error.message || res.error.statusText || "Registration failed.",
+          )
+          setLoading(false)
+          return
+        }
+        router.push(callbackURL || "/onboard")
+      } catch {
+        setError("Registration failed.")
         setLoading(false)
-        return
       }
-      router.push(callbackURL || "/onboard")
-    } catch {
-      setError("Registration failed.")
-      setLoading(false)
-    }
-  }, [router, avatarFile, callbackURL])
+    },
+    [router, avatarFile, callbackURL],
+  )
 
   return (
     <div className="w-full max-w-sm mx-auto">
       <h2 className="text-lg font-semibold text-foreground">Create account</h2>
-      <p className="mb-8 mt-1 text-sm text-muted-foreground">Get started with your team workspace.</p>
+      <p className="mb-8 mt-1 text-sm text-muted-foreground">
+        Get started with your team workspace.
+      </p>
 
       <div className="mb-6">
         <label className="mb-2 block text-xs font-medium text-foreground">
@@ -130,25 +159,54 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
             {avatarPreview ? "Change photo" : "Upload photo"}
           </span>
         </button>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarSelect}
+        />
       </div>
 
       <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">
         <Field>
           <FieldLabel htmlFor="name">Name</FieldLabel>
-          <Input id="name" placeholder="Your name" {...form.register("name")} disabled={loading} />
-          {form.formState.errors.name && <FieldError errors={[form.formState.errors.name]} />}
+          <Input
+            id="name"
+            placeholder="Your name"
+            {...form.register("name")}
+            disabled={loading}
+          />
+          {form.formState.errors.name && (
+            <FieldError errors={[form.formState.errors.name]} />
+          )}
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="you@example.com" {...form.register("email")} disabled={loading} />
-          {form.formState.errors.email && <FieldError errors={[form.formState.errors.email]} />}
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            {...form.register("email")}
+            disabled={loading}
+          />
+          {form.formState.errors.email && (
+            <FieldError errors={[form.formState.errors.email]} />
+          )}
         </Field>
         <Field>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <Input id="password" type="password" placeholder="At least 8 characters" {...form.register("password")} disabled={loading} />
+          <Input
+            id="password"
+            type="password"
+            placeholder="At least 8 characters"
+            {...form.register("password")}
+            disabled={loading}
+          />
           <PasswordStrength password={watchPassword} />
-          {form.formState.errors.password && <FieldError errors={[form.formState.errors.password]} />}
+          {form.formState.errors.password && (
+            <FieldError errors={[form.formState.errors.password]} />
+          )}
         </Field>
         {error && <p className="text-xs text-destructive">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>

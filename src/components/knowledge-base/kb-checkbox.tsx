@@ -9,5 +9,11 @@ export function KbCheckbox(props: Record<string, unknown>) {
     return <input className={className} type="checkbox" />
   }
 
-  return <Checkbox className={className} defaultChecked={checked === "checked"} disabled />
+  return (
+    <Checkbox
+      className={className}
+      defaultChecked={checked === "checked"}
+      disabled
+    />
+  )
 }

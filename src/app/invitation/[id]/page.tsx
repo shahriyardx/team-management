@@ -44,9 +44,16 @@ function AcceptContent() {
         method: "GET",
         query: { id: invitationId },
       })
-      const r = res as { data: InviteInfoRaw | null; error: { message: string } | null }
+      const r = res as {
+        data: InviteInfoRaw | null
+        error: { message: string } | null
+      }
       if (r.error || !r.data) {
-        if (!cancelled) setState({ phase: "error", message: r.error?.message ?? "Invitation not found or has expired." })
+        if (!cancelled)
+          setState({
+            phase: "error",
+            message: r.error?.message ?? "Invitation not found or has expired.",
+          })
         return
       }
       if (!cancelled) {
@@ -64,7 +71,9 @@ function AcceptContent() {
     }
 
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [invitationId, router])
 
   const handleAccept = useCallback(async () => {
@@ -79,7 +88,8 @@ function AcceptContent() {
       setTimeout(() => router.replace(`/${state.info.slug}`), 2000)
     } catch (err: unknown) {
       acceptedRef.current = false
-      const message = err instanceof Error ? err.message : "Failed to accept invitation."
+      const message =
+        err instanceof Error ? err.message : "Failed to accept invitation."
       setState({ phase: "error", message })
     }
   }, [invitationId, state, router])
@@ -101,8 +111,12 @@ function AcceptContent() {
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-50 text-green-700 ring-1 ring-green-200 dark:bg-green-950/30 dark:text-green-400 dark:ring-green-800">
           <Check className="size-6" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground">You&apos;re in!</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Redirecting to your workspace...</p>
+        <h2 className="text-lg font-semibold text-foreground">
+          You&apos;re in!
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Redirecting to your workspace...
+        </p>
       </div>
     )
   }
@@ -113,7 +127,9 @@ function AcceptContent() {
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-red-50 text-red-700 ring-1 ring-red-200 dark:bg-red-950/30 dark:text-red-400 dark:ring-red-800">
           <Clock className="size-6" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground">Unable to accept</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          Unable to accept
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">{state.message}</p>
       </div>
     )
@@ -128,7 +144,8 @@ function AcceptContent() {
           <Buildings className="size-5" />
         </div>
         <h2 className="text-lg font-semibold text-foreground">
-          You&apos;re invited to <span className="text-primary">{info.org}</span>
+          You&apos;re invited to{" "}
+          <span className="text-primary">{info.org}</span>
         </h2>
       </div>
 
@@ -136,19 +153,24 @@ function AcceptContent() {
         <div className="flex items-center gap-3 text-sm">
           <User className="size-4 shrink-0 text-muted-foreground" />
           <span>
-            Invited by <span className="font-medium text-foreground">{info.inviter}</span>
+            Invited by{" "}
+            <span className="font-medium text-foreground">{info.inviter}</span>
           </span>
         </div>
         <div className="flex items-center gap-3 text-sm">
           <Envelope className="size-4 shrink-0 text-muted-foreground" />
           <span>
-            For <span className="font-medium text-foreground">{info.email}</span>
+            For{" "}
+            <span className="font-medium text-foreground">{info.email}</span>
           </span>
         </div>
         <div className="flex items-center gap-3 text-sm">
           <Buildings className="size-4 shrink-0 text-muted-foreground" />
           <span>
-            Role: <span className="font-medium text-foreground">{formatRole(info.role)}</span>
+            Role:{" "}
+            <span className="font-medium text-foreground">
+              {formatRole(info.role)}
+            </span>
           </span>
         </div>
       </div>
@@ -167,7 +189,9 @@ function AcceptContent() {
       {state.phase === "accepting" && (
         <div className="flex flex-col items-center gap-3 py-4">
           <span className="size-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Accepting invitation...</p>
+          <p className="text-sm text-muted-foreground">
+            Accepting invitation...
+          </p>
         </div>
       )}
     </div>

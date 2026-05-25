@@ -14,7 +14,15 @@ export interface KbItem {
   subcategory: { id: string }
 }
 
-export function KbItemRow({ item, baseHref, onSelect }: { item: KbItem; baseHref: string; onSelect?: (id: string) => void }) {
+export function KbItemRow({
+  item,
+  baseHref,
+  onSelect,
+}: {
+  item: KbItem
+  baseHref: string
+  onSelect?: (id: string) => void
+}) {
   if (onSelect) {
     return (
       <button

@@ -38,7 +38,9 @@ export const keyResultRouter = router({
         include: {
           owner: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
           checkIns: { orderBy: { createdAt: "desc" }, take: 5 },
@@ -82,7 +84,10 @@ export const keyResultRouter = router({
         where: { id: input.objectiveId },
       })
       if (!objective || objective.organizationId !== orgId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Objective not found" })
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Objective not found",
+        })
       }
 
       const currentValue = input.currentValue ?? 0
@@ -106,7 +111,9 @@ export const keyResultRouter = router({
         include: {
           owner: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
         },
@@ -151,7 +158,10 @@ export const keyResultRouter = router({
         include: { cycle: true },
       })
       if (!objective || objective.organizationId !== orgId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Objective not found" })
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Objective not found",
+        })
       }
 
       if (!isAdmin && objective.cycle?.locked) {
@@ -193,7 +203,9 @@ export const keyResultRouter = router({
         include: {
           owner: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
         },
@@ -238,7 +250,10 @@ export const keyResultRouter = router({
         include: { cycle: true },
       })
       if (!objective || objective.organizationId !== orgId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Objective not found" })
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Objective not found",
+        })
       }
 
       if (!isAdmin && objective.cycle?.locked) {
@@ -246,10 +261,20 @@ export const keyResultRouter = router({
       }
 
       if (!isAdmin) {
-        if (!objective.ownerId) throw new TRPCError({ code: "FORBIDDEN", message: "Can only add KRs to member objectives" })
+        if (!objective.ownerId)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Can only add KRs to member objectives",
+          })
 
-        const objOwner = await prisma.member.findUnique({ where: { id: objective.ownerId } })
-        if (!objOwner) throw new TRPCError({ code: "BAD_REQUEST", message: "Objective owner not found" })
+        const objOwner = await prisma.member.findUnique({
+          where: { id: objective.ownerId },
+        })
+        if (!objOwner)
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Objective owner not found",
+          })
 
         const teamMember = await prisma.teamMember.findFirst({
           where: {
@@ -258,7 +283,10 @@ export const keyResultRouter = router({
           },
         })
         if (!teamMember) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Can only add KRs to your team's objectives" })
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Can only add KRs to your team's objectives",
+          })
         }
       }
 
@@ -283,7 +311,9 @@ export const keyResultRouter = router({
         include: {
           owner: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
         },
@@ -333,8 +363,15 @@ export const keyResultRouter = router({
       const isOwner = existing.ownerId === member.id
 
       let isTeamLeader = false
-      if (!isAdmin && !isOwner && existing.ownerId && existing.objective.teamId) {
-        const ownerMember = await prisma.member.findUnique({ where: { id: existing.ownerId } })
+      if (
+        !isAdmin &&
+        !isOwner &&
+        existing.ownerId &&
+        existing.objective.teamId
+      ) {
+        const ownerMember = await prisma.member.findUnique({
+          where: { id: existing.ownerId },
+        })
         if (ownerMember) {
           const tm = await prisma.teamMember.findFirst({
             where: {
@@ -356,18 +393,24 @@ export const keyResultRouter = router({
       }
 
       const restricted = !isAdmin && !isTeamLeader
-      if (restricted && input.title !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
-      if (restricted && input.targetValue !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
-      if (restricted && input.unit !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
-      if (restricted && input.weight !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
-      if (restricted && input.ownerId !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
+      if (restricted && input.title !== undefined)
+        throw new TRPCError({ code: "FORBIDDEN" })
+      if (restricted && input.targetValue !== undefined)
+        throw new TRPCError({ code: "FORBIDDEN" })
+      if (restricted && input.unit !== undefined)
+        throw new TRPCError({ code: "FORBIDDEN" })
+      if (restricted && input.weight !== undefined)
+        throw new TRPCError({ code: "FORBIDDEN" })
+      if (restricted && input.ownerId !== undefined)
+        throw new TRPCError({ code: "FORBIDDEN" })
 
       const data: Record<string, unknown> = {}
       if (input.title !== undefined) data.title = input.title
       if (input.description !== undefined) data.description = input.description
       if (input.targetValue !== undefined) data.targetValue = input.targetValue
       if (input.maxValue !== undefined) data.maxValue = input.maxValue
-      if (input.currentValue !== undefined) data.currentValue = input.currentValue
+      if (input.currentValue !== undefined)
+        data.currentValue = input.currentValue
       if (input.unit !== undefined) data.unit = input.unit
       if (input.weight !== undefined) data.weight = input.weight
       if (input.ownerId !== undefined) data.ownerId = input.ownerId
@@ -383,7 +426,9 @@ export const keyResultRouter = router({
         include: {
           owner: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
         },
@@ -424,13 +469,21 @@ export const keyResultRouter = router({
       if (!isAdmin) {
         // Block non-admin deletes when cycle is locked
         if (existing.objective.cycle?.locked) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cycle is locked.",
+          })
         }
 
-        if (!existing.objective.teamId) throw new TRPCError({ code: "FORBIDDEN" })
+        if (!existing.objective.teamId)
+          throw new TRPCError({ code: "FORBIDDEN" })
 
         const isTeamLeader = await prisma.team.findFirst({
-          where: { id: existing.objective.teamId, leaderId: member.id, organizationId: orgId },
+          where: {
+            id: existing.objective.teamId,
+            leaderId: member.id,
+            organizationId: orgId,
+          },
         })
         if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -481,19 +534,31 @@ export const keyResultRouter = router({
         if (!kr) throw new TRPCError({ code: "NOT_FOUND" })
 
         if (kr.objective.cycle?.locked) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cycle is locked.",
+          })
         }
 
         if (kr.objective.teamId) {
           const isTeamLeader = await prisma.team.findFirst({
-            where: { id: kr.objective.teamId, leaderId: member.id, organizationId: orgId },
+            where: {
+              id: kr.objective.teamId,
+              leaderId: member.id,
+              organizationId: orgId,
+            },
           })
           if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
         } else if (kr.objective.ownerId) {
-          const ownerMember = await prisma.member.findUnique({ where: { id: kr.objective.ownerId } })
+          const ownerMember = await prisma.member.findUnique({
+            where: { id: kr.objective.ownerId },
+          })
           if (!ownerMember) throw new TRPCError({ code: "BAD_REQUEST" })
           const isTeamLeader = await prisma.team.findFirst({
-            where: { leaderId: member.id, members: { some: { userId: ownerMember.userId } } },
+            where: {
+              leaderId: member.id,
+              members: { some: { userId: ownerMember.userId } },
+            },
           })
           if (!isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
         } else {
@@ -545,7 +610,9 @@ export const keyResultRouter = router({
 
       const isAdmin = member.role === "admin" || member.role === "owner"
 
-      const kr = await prisma.keyResult.findUnique({ where: { id: input.krId } })
+      const kr = await prisma.keyResult.findUnique({
+        where: { id: input.krId },
+      })
       if (!kr) throw new TRPCError({ code: "NOT_FOUND" })
 
       if (!isAdmin) {
@@ -566,7 +633,11 @@ export const keyResultRouter = router({
           where: { id: kr.objectiveId },
           select: { cycle: { select: { locked: true } } },
         })
-        if (sourceCycle?.cycle?.locked) throw new TRPCError({ code: "FORBIDDEN", message: "Cycle is locked." })
+        if (sourceCycle?.cycle?.locked)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cycle is locked.",
+          })
 
         const teamIds = new Set<string>()
         if (sourceObj.teamId) teamIds.add(sourceObj.teamId)
@@ -586,7 +657,10 @@ export const keyResultRouter = router({
 
       await prisma.$transaction(async (tx) => {
         await tx.keyResult.updateMany({
-          where: { objectiveId: input.targetObjectiveId, sortOrder: { gte: input.sortOrder } },
+          where: {
+            objectiveId: input.targetObjectiveId,
+            sortOrder: { gte: input.sortOrder },
+          },
           data: { sortOrder: { increment: 1 } },
         })
 
@@ -625,11 +699,14 @@ async function recalcObjectiveProgress(objectiveId: string) {
   const objectiveProgress =
     totalWeight > 0
       ? Math.round(
-          (allKrs.reduce((sum, kr) => sum + kr.progress * kr.weight, 0) / totalWeight) * 10,
+          (allKrs.reduce((sum, kr) => sum + kr.progress * kr.weight, 0) /
+            totalWeight) *
+            10,
         ) / 10
       : 0
 
-  const avgProgress = allKrs.reduce((sum, kr) => sum + kr.progress, 0) / allKrs.length
+  const avgProgress =
+    allKrs.reduce((sum, kr) => sum + kr.progress, 0) / allKrs.length
 
   let objectiveStatus: string
   if (objectiveProgress >= 100) objectiveStatus = "completed"

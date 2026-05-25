@@ -13,11 +13,21 @@ export default function TeamOkrDetailPage() {
   const activeTeamId = session?.session?.activeTeamId
 
   if (loading || !organization) {
-    return <div className="p-6"><Skeleton className="h-48" /></div>
+    return (
+      <div className="p-6">
+        <Skeleton className="h-48" />
+      </div>
+    )
   }
 
   if (!activeTeamId) {
-    return <div className="flex flex-1 items-center justify-center p-6"><p className="text-xs text-muted-foreground">No active team selected.</p></div>
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <p className="text-xs text-muted-foreground">
+          No active team selected.
+        </p>
+      </div>
+    )
   }
 
   return (

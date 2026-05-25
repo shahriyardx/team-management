@@ -1,11 +1,25 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
 
-type Org = { id: string; name: string; slug: string; logo?: string | null; websiteUrl?: string | null; department?: string | null; teamSize?: string | null }
+type Org = {
+  id: string
+  name: string
+  slug: string
+  logo?: string | null
+  websiteUrl?: string | null
+  department?: string | null
+  teamSize?: string | null
+}
 
 type OrgContextValue = {
   organizations: Org[]
@@ -19,16 +33,27 @@ type OrgContextValue = {
 
 const OrgContext = createContext<OrgContextValue | null>(null)
 
-export function OrganizationProvider({ children }: { children: React.ReactNode }) {
+export function OrganizationProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const router = useRouter()
-  const { data: session, isPending: sessionLoading, refetch: refetchSession } = authClient.useSession()
+  const {
+    data: session,
+    isPending: sessionLoading,
+    refetch: refetchSession,
+  } = authClient.useSession()
   const [organizations, setOrganizations] = useState<Org[]>([])
   const [orgsLoaded, setOrgsLoaded] = useState(false)
   const utils = api.useUtils()
 
   useEffect(() => {
     if (sessionLoading) return
-    if (!session) { router.replace("/"); return }
+    if (!session) {
+      router.replace("/")
+      return
+    }
     if (orgsLoaded) return
 
     utils.member.listActiveOrganizations.fetch().then(({ organizations }) => {
@@ -41,14 +66,19 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       }
 
       if (!session.session.activeOrganizationId) {
-        authClient.organization.setActive({ organizationId: organizations[0].id }).then(() => {
-          refetchSession()
-        })
+        authClient.organization
+          .setActive({ organizationId: organizations[0].id })
+          .then(() => {
+            refetchSession()
+          })
       }
     })
   }, [session, sessionLoading, router, orgsLoaded, refetchSession])
 
-  const organization = organizations.find((o) => o.id === session?.session?.activeOrganizationId) ?? null
+  const organization =
+    organizations.find(
+      (o) => o.id === session?.session?.activeOrganizationId,
+    ) ?? null
 
   const onSwitchOrg = useCallback(
     async (orgId: string) => {
@@ -84,6 +114,9 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
 export function useOrganization() {
   const ctx = useContext(OrgContext)
-  if (!ctx) throw new Error("useOrganization must be used within an OrganizationProvider")
+  if (!ctx)
+    throw new Error(
+      "useOrganization must be used within an OrganizationProvider",
+    )
   return ctx
 }

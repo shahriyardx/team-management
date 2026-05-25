@@ -39,16 +39,25 @@ const orgSchema = z.object({
 type OrgForm = z.infer<typeof orgSchema>
 
 function generateSlug(name: string) {
-  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
 }
 
-export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: string) => void }) {
+export function AddOrganizationForm({
+  onNameChange,
+}: {
+  onNameChange?: (name: string) => void
+}) {
   const router = useRouter()
 
   const [emailNotVerified, setEmailNotVerified] = useState(false)
   const [slug, setSlug] = useState("")
   const [manualSlug, setManualSlug] = useState(false)
-  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
+  const [slugStatus, setSlugStatus] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle")
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const checkTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -89,11 +98,14 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
     return () => clearTimeout(checkTimer.current)
   }, [slug])
 
-  const handleSlugEdit = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
-    setSlug(val)
-    setManualSlug(true)
-  }, [])
+  const handleSlugEdit = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+      setSlug(val)
+      setManualSlug(true)
+    },
+    [],
+  )
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -104,7 +116,9 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
   }
 
   useEffect(() => {
-    return () => { URL.revokeObjectURL(logoPreview ?? "") }
+    return () => {
+      URL.revokeObjectURL(logoPreview ?? "")
+    }
   }, [logoPreview])
 
   const onSubmit = useCallback(
@@ -127,33 +141,39 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
       }
 
       const res = await authClient.organization.create({
-          name: data.name,
-          slug,
-          logo,
-          websiteUrl: data.websiteUrl || undefined,
-          department: data.department || undefined,
-          teamSize: data.teamSize || undefined,
-        } as any)
-        const r = res as { data: { id: string; slug: string } | null; error: { message: string } | null }
-        if (r.error) {
-          if (r.error.message.toLowerCase().includes("verify your email")) {
-            setEmailNotVerified(true)
-          } else {
-            form.setError("name", { message: r.error.message })
-          }
-          return
-        }
-        if (r.data) {
-          await authClient.organization.setActive({ organizationId: r.data.id })
-          router.replace(`/${r.data.slug}`)
+        name: data.name,
+        slug,
+        logo,
+        websiteUrl: data.websiteUrl || undefined,
+        department: data.department || undefined,
+        teamSize: data.teamSize || undefined,
+      } as any)
+      const r = res as {
+        data: { id: string; slug: string } | null
+        error: { message: string } | null
+      }
+      if (r.error) {
+        if (r.error.message.toLowerCase().includes("verify your email")) {
+          setEmailNotVerified(true)
         } else {
-          router.replace("/onboard")
+          form.setError("name", { message: r.error.message })
         }
+        return
+      }
+      if (r.data) {
+        await authClient.organization.setActive({ organizationId: r.data.id })
+        router.replace(`/${r.data.slug}`)
+      } else {
+        router.replace("/onboard")
+      }
     },
     [form, router, slug, slugStatus, logoFile],
   )
 
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "teams.weirdsoft.co.uk"
+  const hostname =
+    typeof window !== "undefined"
+      ? window.location.hostname
+      : "teams.weirdsoft.co.uk"
 
   return (
     <div className="w-full">
@@ -195,7 +215,11 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
           <div className="relative h-32 w-32">
             <div className="pointer-events-none flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 overflow-hidden">
               {logoPreview ? (
-                <img src={logoPreview} alt="Organization logo" className="size-full object-cover" />
+                <img
+                  src={logoPreview}
+                  alt="Organization logo"
+                  className="size-full object-cover"
+                />
               ) : (
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                   <Building className="size-5" />
@@ -233,7 +257,10 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
         {/* Editable slug preview */}
         {nameValue && (
           <div className="space-y-2">
-            <label htmlFor="slug" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="slug"
+              className="block text-xs font-medium text-foreground"
+            >
               Workspace URL
             </label>
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs">
@@ -311,9 +338,7 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
 
         {/* Website URL */}
         <Field>
-          <FieldLabel htmlFor="websiteUrl">
-            Website URL (optional)
-          </FieldLabel>
+          <FieldLabel htmlFor="websiteUrl">Website URL (optional)</FieldLabel>
           <Input
             id="websiteUrl"
             type="url"
@@ -322,9 +347,7 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
             disabled={form.formState.isSubmitting}
           />
           {form.formState.errors.websiteUrl && (
-            <FieldError>
-              {form.formState.errors.websiteUrl.message}
-            </FieldError>
+            <FieldError>{form.formState.errors.websiteUrl.message}</FieldError>
           )}
         </Field>
 
@@ -348,11 +371,17 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
             className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
           >
             I accept the{" "}
-            <a href="/terms" className="text-foreground underline underline-offset-2 hover:text-muted-foreground">
+            <a
+              href="/terms"
+              className="text-foreground underline underline-offset-2 hover:text-muted-foreground"
+            >
               Terms of Service
             </a>{" "}
             and{" "}
-            <a href="/privacy" className="text-foreground underline underline-offset-2 hover:text-muted-foreground">
+            <a
+              href="/privacy"
+              className="text-foreground underline underline-offset-2 hover:text-muted-foreground"
+            >
               Privacy Policy
             </a>
             .
@@ -374,9 +403,7 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
             slugStatus === "taken"
           }
         >
-          {form.formState.isSubmitting
-            ? "Creating..."
-            : "Create organization"}
+          {form.formState.isSubmitting ? "Creating..." : "Create organization"}
         </Button>
       </form>
     </div>

@@ -3,7 +3,22 @@
 import { useState } from "react"
 import { format } from "date-fns"
 import { useRouter, usePathname } from "next/navigation"
-import { ArrowLeft, Heart, PencilSimple, Trash, FileImage as FileImageIcon, FilePdf, FileDoc, FileXls, FileCsv, FilePpt, FileText, FileCode, FileMd, FileArchive } from "@phosphor-icons/react"
+import {
+  ArrowLeft,
+  Heart,
+  PencilSimple,
+  Trash,
+  FileImage as FileImageIcon,
+  FilePdf,
+  FileDoc,
+  FileXls,
+  FileCsv,
+  FilePpt,
+  FileText,
+  FileCode,
+  FileMd,
+  FileArchive,
+} from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
@@ -27,11 +42,13 @@ const FILE_ICONS: Record<string, typeof FileImageIcon> = {
   "image/": FileImageIcon,
   "application/pdf": FilePdf,
   "application/msword": FileDoc,
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": FileDoc,
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    FileDoc,
   "application/vnd.ms-excel": FileXls,
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileXls,
   "application/vnd.ms-powerpoint": FilePpt,
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": FilePpt,
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    FilePpt,
   "text/csv": FileCsv,
   "text/plain": FileText,
   "text/markdown": FileMd,
@@ -129,7 +146,9 @@ export function AnnouncementDetail({ announcementId }: Props) {
 
       <div>
         {(() => {
-          const thumb = announcement.attachments.find((a) => a.type?.startsWith("image/"))
+          const thumb = announcement.attachments.find((a) =>
+            a.type?.startsWith("image/"),
+          )
           return thumb ? (
             <img
               src={thumb.url}
@@ -140,17 +159,23 @@ export function AnnouncementDetail({ announcementId }: Props) {
         })()}
         <div className="flex items-center gap-2">
           {announcement.pinned && (
-            <Badge variant="outline" className="text-[10px]">Pinned</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              Pinned
+            </Badge>
           )}
           {announcement.team && (
-            <Badge variant="outline" className="text-[10px]">{announcement.team.name}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {announcement.team.name}
+            </Badge>
           )}
         </div>
         <h1 className="text-lg font-semibold mt-2">{announcement.title}</h1>
         <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
           <span>{announcement.author.name}</span>
           <span>&middot;</span>
-          <span>{format(new Date(announcement.createdAt), "MMMM d, yyyy")}</span>
+          <span>
+            {format(new Date(announcement.createdAt), "MMMM d, yyyy")}
+          </span>
         </div>
       </div>
 
@@ -177,29 +202,35 @@ export function AnnouncementDetail({ announcementId }: Props) {
 
       {announcement.attachments.some((a) => !a.isThumbnail) && (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Attachments</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Attachments
+          </p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {announcement.attachments.filter((a) => !a.isThumbnail).map((att) => {
-              const isImage = att.type?.startsWith("image/")
-              const Icon = getFileIcon(att.type)
-              return (
-                <button
-                  key={att.id}
-                  type="button"
-                  onClick={() => {
-                    if (isImage) setLightboxUrl(att.url)
-                    else window.open(att.url, "_blank", "noopener,noreferrer")
-                  }}
-                  className="flex items-center gap-3 border border-border px-3 py-2.5 text-xs text-left text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                >
-                  <Icon className="size-5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{att.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{formatSize(att.size)}</p>
-                  </div>
-                </button>
-              )
-            })}
+            {announcement.attachments
+              .filter((a) => !a.isThumbnail)
+              .map((att) => {
+                const isImage = att.type?.startsWith("image/")
+                const Icon = getFileIcon(att.type)
+                return (
+                  <button
+                    key={att.id}
+                    type="button"
+                    onClick={() => {
+                      if (isImage) setLightboxUrl(att.url)
+                      else window.open(att.url, "_blank", "noopener,noreferrer")
+                    }}
+                    className="flex items-center gap-3 border border-border px-3 py-2.5 text-xs text-left text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    <Icon className="size-5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{att.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatSize(att.size)}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
           </div>
         </div>
       )}
@@ -209,10 +240,20 @@ export function AnnouncementDetail({ announcementId }: Props) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => likeMutation.mutate({ announcementId: announcement.id, organizationId: organization?.id ?? "" })}
-            className={announcement.liked ? "text-red-500 border-red-500/30" : ""}
+            onClick={() =>
+              likeMutation.mutate({
+                announcementId: announcement.id,
+                organizationId: organization?.id ?? "",
+              })
+            }
+            className={
+              announcement.liked ? "text-red-500 border-red-500/30" : ""
+            }
           >
-            <Heart className="mr-1 size-3.5" weight={announcement.liked ? "fill" : "regular"} />
+            <Heart
+              className="mr-1 size-3.5"
+              weight={announcement.liked ? "fill" : "regular"}
+            />
             {announcement._count.likes}
           </Button>
         )}
@@ -256,10 +297,17 @@ export function AnnouncementDetail({ announcementId }: Props) {
             <DialogDescription>This cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
             <Button
               variant="destructive"
-              onClick={() => deleteMutation.mutate({ id: announcement.id, organizationId: organization?.id ?? "" })}
+              onClick={() =>
+                deleteMutation.mutate({
+                  id: announcement.id,
+                  organizationId: organization?.id ?? "",
+                })
+              }
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
@@ -269,7 +317,12 @@ export function AnnouncementDetail({ announcementId }: Props) {
       </Dialog>
 
       {/* Image lightbox */}
-      <Dialog open={!!lightboxUrl} onOpenChange={(o) => { if (!o) setLightboxUrl(null) }}>
+      <Dialog
+        open={!!lightboxUrl}
+        onOpenChange={(o) => {
+          if (!o) setLightboxUrl(null)
+        }}
+      >
         <DialogContent className="max-w-4xl p-1 bg-black/90 border-none">
           {lightboxUrl && (
             <img

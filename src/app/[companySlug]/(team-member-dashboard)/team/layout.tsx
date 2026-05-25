@@ -10,7 +10,9 @@ export async function generateMetadata({
   params: Promise<{ companySlug: string }>
 }): Promise<Metadata> {
   const { companySlug } = await params
-  const org = await prisma.organization.findUnique({ where: { slug: companySlug } })
+  const org = await prisma.organization.findUnique({
+    where: { slug: companySlug },
+  })
   const name = org?.name ?? "WeirdTeams"
   return {
     title: `Team — ${name} — WeirdTeams`,
@@ -34,7 +36,9 @@ export default async function TeamLayout({
   if (!orgId) redirect("/onboard")
 
   const member = await prisma.member.findUnique({
-    where: { organizationId_userId: { organizationId: orgId, userId: session.user.id } },
+    where: {
+      organizationId_userId: { organizationId: orgId, userId: session.user.id },
+    },
   })
 
   if (!member) redirect("/onboard")
@@ -71,10 +75,12 @@ export default async function TeamLayout({
     if (validMember.status === "inactive") {
       return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 p-6">
-          <h2 className="text-sm font-medium text-foreground">Access Deactivated</h2>
+          <h2 className="text-sm font-medium text-foreground">
+            Access Deactivated
+          </h2>
           <p className="text-xs text-muted-foreground text-center max-w-md">
-            Your access to this team has been deactivated. Contact your team leader or organization
-            owner for more information.
+            Your access to this team has been deactivated. Contact your team
+            leader or organization owner for more information.
           </p>
         </div>
       )

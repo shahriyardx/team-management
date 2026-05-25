@@ -38,7 +38,9 @@ export const announcementRouter = router({
             })
           ).map((tm) => tm.teamId)
 
-      const where: Record<string, unknown> = { organizationId: input.organizationId }
+      const where: Record<string, unknown> = {
+        organizationId: input.organizationId,
+      }
 
       if (input.search) {
         where.title = { contains: input.search, mode: "insensitive" }
@@ -58,10 +60,7 @@ export const announcementRouter = router({
       } else if (input.teamId) {
         where.teamId = input.teamId
       } else if (!isOrgAdmin && userTeamIds) {
-        where.OR = [
-          { teamId: null },
-          { teamId: { in: userTeamIds } },
-        ]
+        where.OR = [{ teamId: null }, { teamId: { in: userTeamIds } }]
       }
 
       const [announcements, total] = await Promise.all([
@@ -69,12 +68,17 @@ export const announcementRouter = router({
           where,
           include: {
             author: { select: { id: true, name: true, image: true } },
-            attachments: { where: { isThumbnail: true }, select: { url: true }, take: 1 },
+            attachments: {
+              where: { isThumbnail: true },
+              select: { url: true },
+              take: 1,
+            },
             _count: { select: { comments: true, likes: true } },
           },
-          orderBy: input.scope === "team"
-            ? [{ createdAt: "desc" }]
-            : [{ pinned: "desc" }, { createdAt: "desc" }],
+          orderBy:
+            input.scope === "team"
+              ? [{ createdAt: "desc" }]
+              : [{ pinned: "desc" }, { createdAt: "desc" }],
           skip: input.cursor ?? 0,
           take: input.take + 1,
         }),
@@ -126,7 +130,16 @@ export const announcementRouter = router({
         include: {
           author: { select: { id: true, name: true, image: true } },
           team: { select: { id: true, name: true } },
-          attachments: { select: { id: true, name: true, url: true, type: true, size: true, isThumbnail: true } },
+          attachments: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              type: true,
+              size: true,
+              isThumbnail: true,
+            },
+          },
           links: { select: { id: true, url: true, title: true } },
           comments: {
             include: {
@@ -168,9 +181,19 @@ export const announcementRouter = router({
         enableComments: z.boolean().optional(),
         enableLikes: z.boolean().optional(),
         pinned: z.boolean().optional(),
-        links: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
+        links: z
+          .array(z.object({ url: z.string(), title: z.string() }))
+          .optional(),
         attachments: z
-          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number(), isThumbnail: z.boolean().optional() }))
+          .array(
+            z.object({
+              name: z.string(),
+              url: z.string(),
+              type: z.string(),
+              size: z.number(),
+              isThumbnail: z.boolean().optional(),
+            }),
+          )
           .optional(),
       }),
     )
@@ -189,7 +212,9 @@ export const announcementRouter = router({
 
       // Team-scoped: must be team leader or org admin
       if (input.teamId && !isOrgAdmin) {
-        const team = await prisma.team.findUnique({ where: { id: input.teamId } })
+        const team = await prisma.team.findUnique({
+          where: { id: input.teamId },
+        })
         if (!team || team.leaderId !== member.id) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
@@ -255,7 +280,7 @@ export const announcementRouter = router({
         await prisma.notification.createMany({
           data: notifyIds.map((userId) => ({
             type: "announcement",
-            title: "New announcement: " + input.title,
+            title: `New announcement: ${input.title}`,
             organizationId: input.organizationId,
             userId,
             announcementId: announcement.id,
@@ -276,9 +301,19 @@ export const announcementRouter = router({
         enableComments: z.boolean().optional(),
         enableLikes: z.boolean().optional(),
         pinned: z.boolean().optional(),
-        links: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
+        links: z
+          .array(z.object({ url: z.string(), title: z.string() }))
+          .optional(),
         attachments: z
-          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number(), isThumbnail: z.boolean().optional() }))
+          .array(
+            z.object({
+              name: z.string(),
+              url: z.string(),
+              type: z.string(),
+              size: z.number(),
+              isThumbnail: z.boolean().optional(),
+            }),
+          )
           .optional(),
       }),
     )
@@ -293,7 +328,9 @@ export const announcementRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const existing = await prisma.announcement.findUnique({ where: { id: input.id } })
+      const existing = await prisma.announcement.findUnique({
+        where: { id: input.id },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
@@ -303,7 +340,13 @@ export const announcementRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const { id, organizationId: _orgId, links: _links, attachments: _newAttachments, ...data } = input
+      const {
+        id,
+        organizationId: _orgId,
+        links: _links,
+        attachments: _newAttachments,
+        ...data
+      } = input
 
       const updateData: Record<string, unknown> = { ...data }
 
@@ -333,7 +376,12 @@ export const announcementRouter = router({
       })
 
       const liked = !!(await prisma.announcementLike.findUnique({
-        where: { announcementId_userId: { announcementId: input.id, userId: ctx.session.user.id } },
+        where: {
+          announcementId_userId: {
+            announcementId: input.id,
+            userId: ctx.session.user.id,
+          },
+        },
       }))
 
       return { announcement: { ...announcement, liked } }
@@ -389,7 +437,9 @@ export const announcementRouter = router({
 
       const attachment = await prisma.announcementAttachment.findUnique({
         where: { id: input.id },
-        include: { announcement: { select: { authorId: true, organizationId: true } } },
+        include: {
+          announcement: { select: { authorId: true, organizationId: true } },
+        },
       })
       if (!attachment) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -429,7 +479,8 @@ export const announcementRouter = router({
         select: { enableComments: true, authorId: true, title: true },
       })
       if (!announcement) throw new TRPCError({ code: "NOT_FOUND" })
-      if (!announcement.enableComments) throw new TRPCError({ code: "FORBIDDEN" })
+      if (!announcement.enableComments)
+        throw new TRPCError({ code: "FORBIDDEN" })
 
       const comment = await prisma.announcementComment.create({
         data: {
@@ -448,7 +499,11 @@ export const announcementRouter = router({
         await prisma.notification.create({
           data: {
             type: "announcement_comment",
-            title: comment.author.name + ' commented on "' + announcement.title + '"',
+            title:
+              comment.author.name +
+              ' commented on "' +
+              announcement.title +
+              '"',
             body: input.content.slice(0, 120),
             organizationId: input.organizationId,
             userId: announcement.authorId,
@@ -467,7 +522,7 @@ export const announcementRouter = router({
           await prisma.notification.create({
             data: {
               type: "announcement_comment",
-              title: comment.author.name + ' replied to your comment',
+              title: `${comment.author.name} replied to your comment`,
               body: input.content.slice(0, 120),
               organizationId: input.organizationId,
               userId: parentComment.authorId,
@@ -501,7 +556,8 @@ export const announcementRouter = router({
 
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
       const isCommentAuthor = existing.authorId === ctx.session.user.id
-      const isAnnouncementAuthor = existing.announcement.authorId === ctx.session.user.id
+      const isAnnouncementAuthor =
+        existing.announcement.authorId === ctx.session.user.id
 
       if (!isOrgAdmin && !isCommentAuthor && !isAnnouncementAuthor) {
         throw new TRPCError({ code: "FORBIDDEN" })

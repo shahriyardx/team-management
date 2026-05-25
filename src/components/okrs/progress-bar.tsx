@@ -18,20 +18,32 @@ interface ProgressBarProps {
   showLabel?: boolean
 }
 
-export function ProgressBar({ value, size = "md", status, showLabel }: ProgressBarProps) {
+export function ProgressBar({
+  value,
+  size = "md",
+  status,
+  showLabel,
+}: ProgressBarProps) {
   const height = size === "sm" ? "h-1.5" : size === "lg" ? "h-3" : "h-2"
-  const barColor = status ? statusColors[status] ?? "bg-muted-foreground/30" : "bg-muted-foreground/30"
+  const barColor = status
+    ? (statusColors[status] ?? "bg-muted-foreground/30")
+    : "bg-muted-foreground/30"
 
   return (
     <div className="flex items-center gap-2">
       <div className={cn("flex-1 rounded-none bg-muted", height)}>
         <div
-          className={cn("h-full rounded-none transition-all duration-300", barColor)}
+          className={cn(
+            "h-full rounded-none transition-all duration-300",
+            barColor,
+          )}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         />
       </div>
       {showLabel && (
-        <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">{value}%</span>
+        <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
+          {value}%
+        </span>
       )}
     </div>
   )

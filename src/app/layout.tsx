@@ -31,10 +31,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        "h-full dark antialiased",
-        spaceGrotesk.variable,
-      )}
+      className={cn("h-full dark antialiased", spaceGrotesk.variable)}
     >
       <body className="min-h-full flex flex-col">
         <TRPCProvider>

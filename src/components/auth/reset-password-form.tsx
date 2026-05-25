@@ -35,18 +35,37 @@ function PasswordStrength({ password }: { password: string }) {
   }
   const score = Object.values(checks).filter(Boolean).length
 
-  const colors = ["bg-destructive", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-green-500"]
+  const colors = [
+    "bg-destructive",
+    "bg-orange-500",
+    "bg-yellow-500",
+    "bg-lime-500",
+    "bg-green-500",
+  ]
   const labels = ["Weak", "Fair", "Good", "Strong", "Very strong"]
-  const labelColor = ["text-destructive", "text-orange-500", "text-yellow-500", "text-lime-500", "text-green-500"]
+  const labelColor = [
+    "text-destructive",
+    "text-orange-500",
+    "text-yellow-500",
+    "text-lime-500",
+    "text-green-500",
+  ]
 
   return (
     <div className="space-y-1 mt-1">
       <div className="flex gap-0.5">
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={`h-1 flex-1 rounded-sm transition-colors ${i < score ? colors[i] : "bg-border"}`} />
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-sm transition-colors ${i < score ? colors[i] : "bg-border"}`}
+          />
         ))}
       </div>
-      <p className={`text-[10px] ${labelColor[score - 1] ?? "text-muted-foreground"}`}>{labels[score - 1]}</p>
+      <p
+        className={`text-[10px] ${labelColor[score - 1] ?? "text-muted-foreground"}`}
+      >
+        {labels[score - 1]}
+      </p>
     </div>
   )
 }
@@ -67,7 +86,10 @@ export function ResetPasswordForm() {
 
   const handleSubmit = useCallback(
     async (data: ResetForm) => {
-      if (!token) { setError("Invalid or missing reset token."); return }
+      if (!token) {
+        setError("Invalid or missing reset token.")
+        return
+      }
 
       setError(null)
       setLoading(true)
@@ -101,7 +123,10 @@ export function ResetPasswordForm() {
           This reset link is invalid or has expired.
         </p>
         <p className="text-xs text-muted-foreground">
-          <Link href="/auth/forgot-password" className="text-foreground underline underline-offset-4 hover:text-muted-foreground">
+          <Link
+            href="/auth/forgot-password"
+            className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+          >
             Request a new reset link
           </Link>
         </p>
@@ -111,7 +136,9 @@ export function ResetPasswordForm() {
 
   return (
     <div className="w-full max-w-sm mx-auto">
-      <h2 className="text-lg font-semibold text-foreground">Reset your password</h2>
+      <h2 className="text-lg font-semibold text-foreground">
+        Reset your password
+      </h2>
       <p className="mb-8 mt-1 text-sm text-muted-foreground">
         Enter your new password below.
       </p>
@@ -127,7 +154,9 @@ export function ResetPasswordForm() {
             disabled={loading}
           />
           <PasswordStrength password={watchPassword} />
-          {form.formState.errors.password && <FieldError errors={[form.formState.errors.password]} />}
+          {form.formState.errors.password && (
+            <FieldError errors={[form.formState.errors.password]} />
+          )}
         </Field>
         <Field>
           <FieldLabel htmlFor="confirm">Confirm password</FieldLabel>
@@ -138,7 +167,9 @@ export function ResetPasswordForm() {
             {...form.register("confirm")}
             disabled={loading}
           />
-          {form.formState.errors.confirm && <FieldError errors={[form.formState.errors.confirm]} />}
+          {form.formState.errors.confirm && (
+            <FieldError errors={[form.formState.errors.confirm]} />
+          )}
         </Field>
         {error && <p className="text-xs text-destructive">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
@@ -147,7 +178,10 @@ export function ResetPasswordForm() {
       </form>
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
-        <Link href="/auth/login" className="text-foreground underline underline-offset-4 hover:text-muted-foreground">
+        <Link
+          href="/auth/login"
+          className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+        >
           Back to sign in
         </Link>
       </p>

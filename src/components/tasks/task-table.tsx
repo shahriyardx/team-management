@@ -131,7 +131,12 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   const activeTeamId = session?.session?.activeTeamId
 
   const { data, isLoading } = api.task.list.useQuery(
-    { organizationId: organization?.id ?? "", teamId: activeTeamId ?? null, skip: 0, take: 100 },
+    {
+      organizationId: organization?.id ?? "",
+      teamId: activeTeamId ?? null,
+      skip: 0,
+      take: 100,
+    },
     { enabled: !!organization },
   )
   const tasks = data?.tasks ?? []
@@ -179,7 +184,9 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
     ? orgMembers.filter((m) => teamUserIds.has(m.userId))
     : orgMembers.filter((m) => m.role === "owner" || m.role === "admin")
 
-  const membersLoading = activeTeamId ? orgMembersLoading || teamLoading : orgMembersLoading
+  const membersLoading = activeTeamId
+    ? orgMembersLoading || teamLoading
+    : orgMembersLoading
 
   const currentMember = orgMembers.find((m) => m.userId === session?.user?.id)
   const canEditAll =
@@ -221,10 +228,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   })
 
   const hasActiveFilters =
-    searchQuery ||
-    filterPriority ||
-    filterStatus ||
-    filterAssignee
+    searchQuery || filterPriority || filterStatus || filterAssignee
 
   // Client-side pagination of filtered results
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE))
@@ -307,7 +311,11 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       if (editTask) {
         updateMutation.mutate({ id: editTask.id, ...input })
       } else {
-        createMutation.mutate({ ...input, organizationId: organization.id, teamId: activeTeamId ?? undefined })
+        createMutation.mutate({
+          ...input,
+          organizationId: organization.id,
+          teamId: activeTeamId ?? undefined,
+        })
       }
       setCreateOpen(false)
     },
@@ -327,7 +335,10 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
 
   const handleStatusChange = useCallback(
     (taskId: string, status: string) => {
-      changeStatusMutation.mutate({ id: taskId, status: status as "todo" | "in_progress" | "done" })
+      changeStatusMutation.mutate({
+        id: taskId,
+        status: status as "todo" | "in_progress" | "done",
+      })
     },
     [changeStatusMutation],
   )
@@ -373,10 +384,18 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-lg font-semibold text-foreground">
-            {mode === "all" ? "All Tasks" : mode === "assigned" ? "Assigned Tasks" : "My tasks"}
+            {mode === "all"
+              ? "All Tasks"
+              : mode === "assigned"
+                ? "Assigned Tasks"
+                : "My tasks"}
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {mode === "assigned" ? "Tasks you assigned to others" : mode === "mine" ? "Tasks assigned to you" : "All tasks in the team"}
+            {mode === "assigned"
+              ? "Tasks you assigned to others"
+              : mode === "mine"
+                ? "Tasks assigned to you"
+                : "All tasks in the team"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -580,15 +599,16 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           </div>
 
           <DialogFooter>
-            {editTask && (canEditAll || editTask.createdBy.id === session?.user?.id) && (
-              <Button
-                variant="destructive"
-                onClick={() => setConfirmDelete(editTask)}
-              >
-                <Trash className="size-3.5" />
-                Delete
-              </Button>
-            )}
+            {editTask &&
+              (canEditAll || editTask.createdBy.id === session?.user?.id) && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setConfirmDelete(editTask)}
+                >
+                  <Trash className="size-3.5" />
+                  Delete
+                </Button>
+              )}
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
@@ -749,15 +769,16 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
             </div>
           </div>
           <DialogFooter>
-            {viewTask && (canEditAll || viewTask.createdBy.id === session?.user?.id) && (
-              <Button
-                variant="destructive"
-                onClick={() => setConfirmDelete(viewTask)}
-              >
-                <Trash className="size-3.5" />
-                Delete
-              </Button>
-            )}
+            {viewTask &&
+              (canEditAll || viewTask.createdBy.id === session?.user?.id) && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setConfirmDelete(viewTask)}
+                >
+                  <Trash className="size-3.5" />
+                  Delete
+                </Button>
+              )}
             <Button variant="outline" onClick={() => setViewTask(null)}>
               Close
             </Button>
@@ -831,8 +852,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                   (a) => a.memberId === currentMember?.id,
                 )
                 const canEdit =
-                  canEditAll ||
-                  task.createdById === session?.user?.id
+                  canEditAll || task.createdById === session?.user?.id
                 const canChangeStatus = canEditAll || isAssignee
 
                 return (

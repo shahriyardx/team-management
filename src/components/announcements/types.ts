@@ -33,7 +33,14 @@ export type AnnouncementDetail = {
   author: { id: string; name: string; image: string | null }
   liked: boolean
   _count: { comments: number; likes: number }
-  attachments: Array<{ id: string; name: string; url: string; type: string; size: number; isThumbnail?: boolean }>
+  attachments: Array<{
+    id: string
+    name: string
+    url: string
+    type: string
+    size: number
+    isThumbnail?: boolean
+  }>
   links: Array<{ id: string; url: string; title: string }>
   comments: Array<{
     id: string

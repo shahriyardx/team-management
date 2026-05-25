@@ -9,7 +9,11 @@ import { ProfileSidebar } from "@/components/profile-sidebar"
 import { ArrowLeft } from "@phosphor-icons/react"
 import Link from "next/link"
 
-export function ProfileLayoutClient({ children }: { children: React.ReactNode }) {
+export function ProfileLayoutClient({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <SidebarProvider>
       <ProfileSidebar />
@@ -26,9 +30,7 @@ export function ProfileLayoutClient({ children }: { children: React.ReactNode })
             </Link>
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )

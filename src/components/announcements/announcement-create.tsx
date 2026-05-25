@@ -5,7 +5,22 @@ import { useRouter, useParams, usePathname } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowLeft, Plus, X, File, FileImage, FilePdf, FileDoc, FileXls, FileCsv, FilePpt, FileText, FileCode, FileMd, FileArchive } from "@phosphor-icons/react"
+import {
+  ArrowLeft,
+  Plus,
+  X,
+  File,
+  FileImage,
+  FilePdf,
+  FileDoc,
+  FileXls,
+  FileCsv,
+  FilePpt,
+  FileText,
+  FileCode,
+  FileMd,
+  FileArchive,
+} from "@phosphor-icons/react"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
@@ -29,11 +44,13 @@ const FILE_ICONS: Record<string, typeof File> = {
   "image/": FileImage,
   "application/pdf": FilePdf,
   "application/msword": FileDoc,
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": FileDoc,
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    FileDoc,
   "application/vnd.ms-excel": FileXls,
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileXls,
   "application/vnd.ms-powerpoint": FilePpt,
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": FilePpt,
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    FilePpt,
   "text/csv": FileCsv,
   "text/plain": FileText,
   "text/markdown": FileMd,
@@ -77,7 +94,7 @@ export function AnnouncementForm({ announcementId }: Props) {
   const router = useRouter()
   const params = useParams()
   const pathname = usePathname()
-  const slug = params.companySlug as string
+  const _slug = params.companySlug as string
   const utils = api.useUtils()
   const { data: sessionData } = authClient.useSession()
   const isManageTeam = pathname.includes("/manage-team/")
@@ -100,7 +117,13 @@ export function AnnouncementForm({ announcementId }: Props) {
   const [newLinkUrl, setNewLinkUrl] = useState("")
   const [newLinkTitle, setNewLinkTitle] = useState("")
   const [thumbnailFile, setThumbnailFile] = useState<
-    Array<{ name: string; url?: string; uploading?: boolean; error?: string; id?: string }>
+    Array<{
+      name: string
+      url?: string
+      uploading?: boolean
+      error?: string
+      id?: string
+    }>
   >([])
   const [selectedFiles, setSelectedFiles] = useState<
     Array<{
@@ -112,7 +135,14 @@ export function AnnouncementForm({ announcementId }: Props) {
     }>
   >([])
   const [existingAttachments, setExistingAttachments] = useState<
-    Array<{ id: string; name: string; url: string; type: string; size: number; isThumbnail?: boolean }>
+    Array<{
+      id: string
+      name: string
+      url: string
+      type: string
+      size: number
+      isThumbnail?: boolean
+    }>
   >([])
   const [uploadError, setUploadError] = useState("")
   const [isUploading, setIsUploading] = useState(false)
@@ -137,12 +167,17 @@ export function AnnouncementForm({ announcementId }: Props) {
       enableComments: a.enableComments,
       enableLikes: a.enableLikes,
     })
-    const thumb = a.attachments?.find((att: { isThumbnail?: boolean }) => att.isThumbnail)
+    const thumb = a.attachments?.find(
+      (att: { isThumbnail?: boolean }) => att.isThumbnail,
+    )
     if (thumb) {
       setThumbnailFile([{ name: "Thumbnail", url: thumb.url }])
     }
     if (a.links?.length) {
-      const existing = a.links.map((l: { url: string; title: string }) => ({ url: l.url, title: l.title }))
+      const existing = a.links.map((l: { url: string; title: string }) => ({
+        url: l.url,
+        title: l.title,
+      }))
       setLinks(existing)
     }
     if (a.attachments?.length) {
@@ -165,7 +200,9 @@ export function AnnouncementForm({ announcementId }: Props) {
     }
   }, [])
 
-  const basePath = pathname.replace(/\/create\/?$/, "").replace(/\/edit\/?$/, "")
+  const basePath = pathname
+    .replace(/\/create\/?$/, "")
+    .replace(/\/edit\/?$/, "")
   const createMutation = api.announcement.create.useMutation({
     onSuccess: (res) => {
       utils.announcement.list.invalidate()
@@ -219,7 +256,13 @@ export function AnnouncementForm({ announcementId }: Props) {
 
   const addLink = () => {
     if (!newLinkUrl.trim()) return
-    setLinks([...links, { url: newLinkUrl.trim(), title: newLinkTitle.trim() || newLinkUrl.trim() }])
+    setLinks([
+      ...links,
+      {
+        url: newLinkUrl.trim(),
+        title: newLinkTitle.trim() || newLinkUrl.trim(),
+      },
+    ])
     setNewLinkUrl("")
     setNewLinkTitle("")
   }
@@ -236,7 +279,15 @@ export function AnnouncementForm({ announcementId }: Props) {
       filesToUpload.push({ file: thumbnailFileRef.current, isThumbnail: true })
     }
 
-    let attachments: Array<{ name: string; url: string; type: string; size: number; isThumbnail?: boolean }> | undefined
+    let attachments:
+      | Array<{
+          name: string
+          url: string
+          type: string
+          size: number
+          isThumbnail?: boolean
+        }>
+      | undefined
 
     if (filesToUpload.length > 0) {
       // Show uploading state for selected files
@@ -305,10 +356,7 @@ export function AnnouncementForm({ announcementId }: Props) {
       const keptAttachments = existingAttachments
         .filter((a) => !a.isThumbnail)
         .map((a) => ({ name: a.name, url: a.url, type: a.type, size: a.size }))
-      const finalAttachments = [
-        ...keptAttachments,
-        ...(attachments ?? []),
-      ]
+      const finalAttachments = [...keptAttachments, ...(attachments ?? [])]
 
       updateMutation.mutate({
         id: announcementId,
@@ -397,7 +445,11 @@ export function AnnouncementForm({ announcementId }: Props) {
           render={({ field, fieldState }) => (
             <Field>
               <FieldLabel>Content (markdown supported)</FieldLabel>
-              <Textarea {...field} placeholder="Write your announcement..." rows={12} />
+              <Textarea
+                {...field}
+                placeholder="Write your announcement..."
+                rows={12}
+              />
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}
@@ -410,13 +462,18 @@ export function AnnouncementForm({ announcementId }: Props) {
             render={({ field }) => (
               <Field>
                 <FieldLabel>Scope</FieldLabel>
-                <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={(v) => field.onChange(v || undefined)}
+                >
                   <SelectTrigger className="h-8 w-full rounded-none text-xs">
                     <SelectValue placeholder="Org-wide" />
                   </SelectTrigger>
                   <SelectContent position="popper">
                     {teams.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -441,7 +498,12 @@ export function AnnouncementForm({ announcementId }: Props) {
               placeholder="URL"
               className="h-8 text-xs rounded-none flex-1"
             />
-            <Button size="icon" variant="outline" onClick={addLink} type="button">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={addLink}
+              type="button"
+            >
               <Plus className="size-3" />
             </Button>
           </div>
@@ -472,37 +534,46 @@ export function AnnouncementForm({ announcementId }: Props) {
           <FieldLabel>Attachments (optional)</FieldLabel>
 
           {/* Existing attachments (edit mode) */}
-          {isEdit && existingAttachments.filter((a) => !a.isThumbnail).length > 0 && (
-            <div className="mb-3 space-y-1">
-              <p className="text-[11px] text-muted-foreground">Existing attachments</p>
-              {existingAttachments.filter((a) => !a.isThumbnail).map((att) => {
-                const Icon = getFileIcon(att.type)
-                return (
-                  <div
-                    key={att.id}
-                    className="flex items-center gap-3 border border-border px-3 py-2.5"
-                  >
-                    <Icon className="size-5 shrink-0 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{att.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{formatSize(att.size)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExistingAttachments((prev) =>
-                          prev.filter((a) => a.id !== att.id),
-                        )
-                      }
-                      className="text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          {isEdit &&
+            existingAttachments.filter((a) => !a.isThumbnail).length > 0 && (
+              <div className="mb-3 space-y-1">
+                <p className="text-[11px] text-muted-foreground">
+                  Existing attachments
+                </p>
+                {existingAttachments
+                  .filter((a) => !a.isThumbnail)
+                  .map((att) => {
+                    const Icon = getFileIcon(att.type)
+                    return (
+                      <div
+                        key={att.id}
+                        className="flex items-center gap-3 border border-border px-3 py-2.5"
+                      >
+                        <Icon className="size-5 shrink-0 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">
+                            {att.name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatSize(att.size)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExistingAttachments((prev) =>
+                              prev.filter((a) => a.id !== att.id),
+                            )
+                          }
+                          className="text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
 
           <FileDropzone
             onDrop={onAttachmentsDrop}
@@ -512,11 +583,14 @@ export function AnnouncementForm({ announcementId }: Props) {
               "image/*": [],
               "application/pdf": [],
               "application/msword": [],
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [],
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                [],
               "application/vnd.ms-excel": [],
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [],
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                [],
               "application/vnd.ms-powerpoint": [],
-              "application/vnd.openxmlformats-officedocument.presentationml.presentation": [],
+              "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+                [],
               "text/plain": [],
               "text/csv": [],
               "text/markdown": [],

@@ -110,7 +110,12 @@ export function KrRow({ kr, readOnly }: KrRowProps) {
 
   return (
     <>
-      <div className={"border border-muted-foreground/20 border-l-2 px-3 py-2 " + (statusCardStyle[kr.status] ?? "border-l-muted-foreground/20")}>
+      <div
+        className={
+          "border border-muted-foreground/20 border-l-2 px-3 py-2 " +
+          (statusCardStyle[kr.status] ?? "border-l-muted-foreground/20")
+        }
+      >
         <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2 min-w-0">

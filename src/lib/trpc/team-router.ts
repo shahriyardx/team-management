@@ -22,12 +22,16 @@ export const teamRouter = router({
         include: {
           leader: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
           members: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
             orderBy: { createdAt: "asc" },
           },
@@ -56,12 +60,16 @@ export const teamRouter = router({
         include: {
           leader: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
           members: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
             orderBy: { createdAt: "asc" },
           },
@@ -89,17 +97,23 @@ export const teamRouter = router({
       const teams = await prisma.team.findMany({
         where: {
           organizationId: input.organizationId,
-          ...(isOwnerAdmin ? {} : { members: { some: { userId: ctx.session.user.id } } }),
+          ...(isOwnerAdmin
+            ? {}
+            : { members: { some: { userId: ctx.session.user.id } } }),
         },
         include: {
           leader: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
           members: {
             include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
             },
           },
         },
@@ -108,7 +122,9 @@ export const teamRouter = router({
 
       // Filter out teams where user's membership is inactive
       const filteredTeams = teams.filter((t) => {
-        const myMembership = t.members.find((m) => m.userId === ctx.session.user.id)
+        const myMembership = t.members.find(
+          (m) => m.userId === ctx.session.user.id,
+        )
         return !myMembership || myMembership.status !== "inactive"
       })
 
@@ -144,7 +160,13 @@ export const teamRouter = router({
     }),
 
   addTeamMember: protectedProcedure
-    .input(z.object({ teamId: z.string(), organizationId: z.string(), userId: z.string() }))
+    .input(
+      z.object({
+        teamId: z.string(),
+        organizationId: z.string(),
+        userId: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
         where: {
@@ -173,12 +195,22 @@ export const teamRouter = router({
           },
         },
       })
-      if (!targetMember) throw new TRPCError({ code: "BAD_REQUEST", message: "User is not an org member" })
+      if (!targetMember)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not an org member",
+        })
 
       const existing = await prisma.teamMember.findUnique({
-        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
       })
-      if (existing) throw new TRPCError({ code: "BAD_REQUEST", message: "Already a member of this team" })
+      if (existing)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Already a member of this team",
+        })
 
       await prisma.teamMember.create({
         data: { teamId: input.teamId, userId: input.userId, role: "member" },
@@ -188,7 +220,13 @@ export const teamRouter = router({
     }),
 
   removeTeamMember: protectedProcedure
-    .input(z.object({ teamId: z.string(), organizationId: z.string(), userId: z.string() }))
+    .input(
+      z.object({
+        teamId: z.string(),
+        organizationId: z.string(),
+        userId: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const member = await prisma.member.findUnique({
         where: {
@@ -211,15 +249,26 @@ export const teamRouter = router({
 
       // Only owner/admin can remove the leader
       const targetTeamMember = await prisma.teamMember.findUnique({
-        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
       })
-      if (!targetTeamMember) throw new TRPCError({ code: "BAD_REQUEST", message: "Not a team member" })
+      if (!targetTeamMember)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Not a team member",
+        })
       if (targetTeamMember.role === "leader" && !isOwnerAdmin) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot remove team leader" })
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot remove team leader",
+        })
       }
 
       await prisma.teamMember.delete({
-        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
       })
 
       return { success: true }
@@ -279,15 +328,22 @@ export const teamRouter = router({
       }
 
       // Verify leader member belongs to org
-      const leaderMember = await prisma.member.findUnique({ where: { id: input.leaderMemberId } })
-      if (!leaderMember || leaderMember.organizationId !== team.organizationId) {
+      const leaderMember = await prisma.member.findUnique({
+        where: { id: input.leaderMemberId },
+      })
+      if (
+        !leaderMember ||
+        leaderMember.organizationId !== team.organizationId
+      ) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid leader" })
       }
 
       await prisma.$transaction(async (tx) => {
         // Demote old leader to regular member
         if (team.leaderId) {
-          const oldLeader = await tx.member.findUnique({ where: { id: team.leaderId } })
+          const oldLeader = await tx.member.findUnique({
+            where: { id: team.leaderId },
+          })
           if (oldLeader) {
             await tx.teamMember.updateMany({
               where: { teamId: input.teamId, userId: oldLeader.userId },
@@ -304,16 +360,30 @@ export const teamRouter = router({
 
         // Set the new leader's role in team
         const existingMembership = await tx.teamMember.findUnique({
-          where: { teamId_userId: { teamId: input.teamId, userId: leaderMember.userId } },
+          where: {
+            teamId_userId: {
+              teamId: input.teamId,
+              userId: leaderMember.userId,
+            },
+          },
         })
         if (existingMembership) {
           await tx.teamMember.update({
-            where: { teamId_userId: { teamId: input.teamId, userId: leaderMember.userId } },
+            where: {
+              teamId_userId: {
+                teamId: input.teamId,
+                userId: leaderMember.userId,
+              },
+            },
             data: { role: "leader" },
           })
         } else {
           await tx.teamMember.create({
-            data: { teamId: input.teamId, userId: leaderMember.userId, role: "leader" },
+            data: {
+              teamId: input.teamId,
+              userId: leaderMember.userId,
+              role: "leader",
+            },
           })
         }
       })
@@ -322,12 +392,14 @@ export const teamRouter = router({
     }),
 
   setTeamMemberStatus: protectedProcedure
-    .input(z.object({
-      teamId: z.string(),
-      organizationId: z.string(),
-      userId: z.string(),
-      status: z.enum(["active", "inactive"]),
-    }))
+    .input(
+      z.object({
+        teamId: z.string(),
+        organizationId: z.string(),
+        userId: z.string(),
+        status: z.enum(["active", "inactive"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const caller = await prisma.member.findUnique({
         where: {
@@ -346,19 +418,31 @@ export const teamRouter = router({
 
       const isOwnerAdmin = caller.role === "owner" || caller.role === "admin"
       const isTeamLeader = team.leaderId === caller.id
-      if (!isOwnerAdmin && !isTeamLeader) throw new TRPCError({ code: "FORBIDDEN" })
+      if (!isOwnerAdmin && !isTeamLeader)
+        throw new TRPCError({ code: "FORBIDDEN" })
 
       // Don't allow making the leader inactive
       const targetTeamMember = await prisma.teamMember.findUnique({
-        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
       })
-      if (!targetTeamMember) throw new TRPCError({ code: "BAD_REQUEST", message: "Not a team member" })
+      if (!targetTeamMember)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Not a team member",
+        })
       if (targetTeamMember.role === "leader") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change status of team leader" })
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot change status of team leader",
+        })
       }
 
       await prisma.teamMember.update({
-        where: { teamId_userId: { teamId: input.teamId, userId: input.userId } },
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
         data: { status: input.status },
       })
 

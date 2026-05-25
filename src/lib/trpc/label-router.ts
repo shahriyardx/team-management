@@ -60,7 +60,11 @@ export const labelRouter = router({
     .mutation(async ({ ctx, input }) => {
       const label = await prisma.label.findUnique({
         where: { id: input.id },
-        include: { organization: { include: { members: { where: { userId: ctx.session.user.id } } } } },
+        include: {
+          organization: {
+            include: { members: { where: { userId: ctx.session.user.id } } },
+          },
+        },
       })
       if (!label) throw new TRPCError({ code: "NOT_FOUND" })
       const member = label.organization.members[0]
