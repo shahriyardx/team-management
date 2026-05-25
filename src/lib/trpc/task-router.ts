@@ -274,31 +274,30 @@ export const taskRouter = router({
             ...(isOwner ? { teamId: null } : teamId ? { teamId } : {}),
           },
         }),
-        // Organization Tasks: teamId null, todo status
+        // Organization Tasks: teamId null, todo, assigned to me
         prisma.task.count({
           where: {
             organizationId: input.organizationId,
             status: "todo",
             teamId: null,
-            ...(isLeader
-              ? { assignees: { some: { memberId: member.id } } }
-              : {}),
+            assignees: { some: { memberId: member.id } },
           },
         }),
-        // Team Tasks: scoped to active team, todo status
+        // Team Tasks: scoped to active team, todo, assigned to me
         prisma.task.count({
           where: {
             organizationId: input.organizationId,
             status: "todo",
+            assignees: { some: { memberId: member.id } },
             ...(teamId ? { teamId } : { teamId: null }),
           },
         }),
-        // Assigned Tasks: created by me, todo status
+        // Assigned Tasks: assigned to me, todo status
         prisma.task.count({
           where: {
             organizationId: input.organizationId,
             status: "todo",
-            createdById: ctx.session.user.id,
+            assignees: { some: { memberId: member.id } },
             ...(isOwner ? { teamId: null } : teamId ? { teamId } : {}),
           },
         }),
