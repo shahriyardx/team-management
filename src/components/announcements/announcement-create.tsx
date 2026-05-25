@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter, useParams, usePathname } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -118,6 +118,8 @@ export function AnnouncementForm({ announcementId }: Props) {
   const [uploadError, setUploadError] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [isThumbnailUploading, setIsThumbnailUploading] = useState(false)
+  const thumbnailFileRef = useRef<File | null>(null)
+  const thumbnailBlobUrlRef = useRef<string | null>(null)
   // Fetch existing announcement for edit mode
   const { data: existingData } = api.announcement.getById.useQuery(
     { id: announcementId ?? "", organizationId: organization?.id ?? "" },
@@ -155,6 +157,15 @@ export function AnnouncementForm({ announcementId }: Props) {
   )
   const teams = (teamsData?.teams ?? []) as Array<{ id: string; name: string }>
 
+  // Revoke blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (thumbnailBlobUrlRef.current) {
+        URL.revokeObjectURL(thumbnailBlobUrlRef.current)
+      }
+    }
+  }, [])
+
   const basePath = pathname.replace(/\/create\/?$/, "").replace(/\/edit\/?$/, "")
   const createMutation = api.announcement.create.useMutation({
     onSuccess: (res) => {
@@ -181,22 +192,18 @@ export function AnnouncementForm({ announcementId }: Props) {
   }
 
   const onThumbnailDrop = useCallback(
-    async (files: File[]) => {
+    (files: File[]) => {
       const file = files[0]
       if (!file) return
-      setIsThumbnailUploading(true)
-      setThumbnailFile([{ name: file.name, uploading: true }])
-      try {
-        const url = await uploadFile(file)
-        setThumbnailFile([{ name: file.name, url, uploading: false }])
-        form.setValue("thumbnail", url)
-      } catch (e) {
-        setThumbnailFile([
-          { name: file.name, uploading: false, error: (e as Error).message },
-        ])
-      } finally {
-        setIsThumbnailUploading(false)
+      // Revoke previous blob URL
+      if (thumbnailBlobUrlRef.current) {
+        URL.revokeObjectURL(thumbnailBlobUrlRef.current)
       }
+      const blobUrl = URL.createObjectURL(file)
+      thumbnailBlobUrlRef.current = blobUrl
+      thumbnailFileRef.current = file
+      setThumbnailFile([{ name: file.name, url: blobUrl }])
+      form.setValue("thumbnail", "")
     },
     [form],
   )
@@ -222,6 +229,24 @@ export function AnnouncementForm({ announcementId }: Props) {
   const onSubmit = async (values: FormValues) => {
     setIsUploading(true)
     setUploadError("")
+
+    // Upload thumbnail if a new file was selected
+    let thumbnailUrl = values.thumbnail
+    if (thumbnailFileRef.current) {
+      setIsThumbnailUploading(true)
+      try {
+        thumbnailUrl = await uploadFile(thumbnailFileRef.current)
+        thumbnailFileRef.current = null
+        setThumbnailFile([{ name: "Thumbnail", url: thumbnailUrl }])
+        form.setValue("thumbnail", thumbnailUrl)
+      } catch (e) {
+        setUploadError("Failed to upload thumbnail")
+        setIsUploading(false)
+        setIsThumbnailUploading(false)
+        return
+      }
+      setIsThumbnailUploading(false)
+    }
 
     let attachments:
       | Array<{ name: string; url: string; type: string; size: number }>
@@ -269,7 +294,7 @@ export function AnnouncementForm({ announcementId }: Props) {
         pinned: values.pinned,
         enableComments: values.enableComments,
         enableLikes: values.enableLikes,
-        thumbnail: values.thumbnail || null,
+        thumbnail: thumbnailUrl || null,
         links: links.length > 0 ? links : [],
         attachments,
       })
@@ -284,7 +309,7 @@ export function AnnouncementForm({ announcementId }: Props) {
         pinned: values.pinned,
         enableComments: values.enableComments,
         enableLikes: values.enableLikes,
-        thumbnail: values.thumbnail || undefined,
+        thumbnail: thumbnailUrl || undefined,
         links: links.length > 0 ? links : undefined,
         attachments,
       })
@@ -317,6 +342,11 @@ export function AnnouncementForm({ announcementId }: Props) {
           <FileDropzone
             onDrop={onThumbnailDrop}
             onRemove={() => {
+              if (thumbnailBlobUrlRef.current) {
+                URL.revokeObjectURL(thumbnailBlobUrlRef.current)
+                thumbnailBlobUrlRef.current = null
+              }
+              thumbnailFileRef.current = null
               setThumbnailFile([])
               form.setValue("thumbnail", "")
             }}

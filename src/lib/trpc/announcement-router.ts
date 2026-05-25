@@ -339,7 +339,10 @@ export const announcementRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const existing = await prisma.announcement.findUnique({ where: { id: input.id } })
+      const existing = await prisma.announcement.findUnique({
+        where: { id: input.id },
+        include: { attachments: { select: { url: true } } },
+      })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
@@ -347,6 +350,16 @@ export const announcementRouter = router({
 
       if (!isOrgAdmin && !isAuthor) {
         throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      // Delete attachments from R2
+      for (const att of existing.attachments) {
+        await deleteFromR2(att.url)
+      }
+
+      // Delete thumbnail from R2
+      if (existing.thumbnail) {
+        await deleteFromR2(existing.thumbnail)
       }
 
       await prisma.announcement.delete({ where: { id: input.id } })
