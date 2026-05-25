@@ -27,7 +27,7 @@ interface Props {
 
 const PAGE_SIZE = 20
 
-export function AnnouncementList({ scope, showScopeToggle }: Props) {
+export function AnnouncementList({ scope, showScopeToggle, defaultScope }: Props) {
   const { organization } = useOrganization()
   const router = useRouter()
   const params = useParams()
