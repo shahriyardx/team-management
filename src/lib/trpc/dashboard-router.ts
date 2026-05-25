@@ -19,17 +19,25 @@ export const dashboardRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const [memberCount, teamCount, taskCount, org] = await Promise.all([
+      const [memberCount, teamCount, taskCount] = await Promise.all([
         prisma.member.count({ where: { organizationId: input.organizationId } }),
         prisma.team.count({ where: { organizationId: input.organizationId } }),
         prisma.task.count({ where: { organizationId: input.organizationId } }),
-        prisma.organization.findUnique({
-          where: { id: input.organizationId },
-          select: { storageUsed: true },
+      ])
+
+      // Calculate storage used from actual attachment sizes
+      const [announcementBytes, kbBytes] = await Promise.all([
+        prisma.announcementAttachment.aggregate({
+          where: { announcement: { organizationId: input.organizationId } },
+          _sum: { size: true },
+        }),
+        prisma.kbAttachment.aggregate({
+          where: { kbItem: { organizationId: input.organizationId } },
+          _sum: { size: true },
         }),
       ])
 
-      const storageUsed = Number(org?.storageUsed ?? 0)
+      const storageUsed = Number(announcementBytes._sum.size ?? 0) + Number(kbBytes._sum.size ?? 0)
       const storageLimit = 1073741824
 
       return { memberCount, teamCount, taskCount, storageUsed, storageLimit }

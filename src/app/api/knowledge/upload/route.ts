@@ -49,16 +49,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid file type." }, { status: 400 })
   }
 
-  // Check storage quota
-  const org = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: { storageUsed: true },
-  })
-  if (!org) {
-    return NextResponse.json({ error: "Organization not found." }, { status: 404 })
-  }
+  // Check storage quota (calculated from actual attachment sizes)
+  const [announcementBytes, kbBytes] = await Promise.all([
+    prisma.announcementAttachment.aggregate({
+      where: { announcement: { organizationId: orgId } },
+      _sum: { size: true },
+    }),
+    prisma.kbAttachment.aggregate({
+      where: { kbItem: { organizationId: orgId } },
+      _sum: { size: true },
+    }),
+  ])
 
-  const currentUsed = Number(org.storageUsed)
+  const currentUsed = Number(announcementBytes._sum.size ?? 0) + Number(kbBytes._sum.size ?? 0)
   if (currentUsed + file.size > ONE_GB) {
     return NextResponse.json({ error: "Storage limit reached (1GB)." }, { status: 413 })
   }
@@ -67,12 +70,6 @@ export async function POST(req: NextRequest) {
   if (!url) {
     return NextResponse.json({ error: "R2 not configured." }, { status: 500 })
   }
-
-  // Track storage usage
-  await prisma.organization.update({
-    where: { id: orgId },
-    data: { storageUsed: { increment: file.size } },
-  })
 
   return NextResponse.json({ url, size: file.size })
 }

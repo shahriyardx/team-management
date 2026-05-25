@@ -80,7 +80,6 @@ model Organization {
   websiteUrl    String?
   department    String?
   teamSize      String?
-  storageUsed   BigInt         @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   members       Member[]

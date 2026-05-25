@@ -647,7 +647,7 @@ export const knowledgeBaseRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await prisma.kbItem.findUnique({
         where: { id: input.id },
-        include: { attachments: { select: { url: true, size: true } } },
+        include: { attachments: { select: { url: true } } },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -670,15 +670,6 @@ export const knowledgeBaseRouter = router({
 
       for (const att of existing.attachments) {
         await deleteFromR2(att.url)
-      }
-
-      // Decrement org storage
-      const totalBytes = existing.attachments.reduce((sum, a) => sum + Number(a.size), 0)
-      if (totalBytes > 0) {
-        await prisma.organization.update({
-          where: { id: existing.organizationId },
-          data: { storageUsed: { decrement: totalBytes } },
-        })
       }
 
       await prisma.kbItem.delete({ where: { id: input.id } })

@@ -346,7 +346,7 @@ export const announcementRouter = router({
 
       const existing = await prisma.announcement.findUnique({
         where: { id: input.id },
-        include: { attachments: { select: { url: true, size: true } } },
+        include: { attachments: { select: { url: true } } },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -361,13 +361,6 @@ export const announcementRouter = router({
       for (const att of existing.attachments) {
         await deleteFromR2(att.url)
       }
-
-      // Decrement storage
-      const totalBytes = existing.attachments.reduce((sum, a) => sum + Number(a.size), 0)
-      await prisma.organization.update({
-        where: { id: input.organizationId },
-        data: { storageUsed: { decrement: totalBytes } },
-      })
 
       await prisma.announcement.delete({ where: { id: input.id } })
       return { success: true }
@@ -397,12 +390,6 @@ export const announcementRouter = router({
       if (!isOrgAdmin && !isAuthor) throw new TRPCError({ code: "FORBIDDEN" })
 
       await deleteFromR2(attachment.url)
-
-      await prisma.organization.update({
-        where: { id: input.organizationId },
-        data: { storageUsed: { decrement: attachment.size } },
-      })
-
       await prisma.announcementAttachment.delete({ where: { id: input.id } })
       return { success: true }
     }),
