@@ -108,7 +108,13 @@ const commentSchema = z.object({
 
 type CommentForm = z.infer<typeof commentSchema>
 
-export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
+export function TaskTable({
+  mode,
+  showOrgTasks,
+}: {
+  mode: "mine" | "all" | "assigned"
+  showOrgTasks?: boolean
+}) {
   const { session, organization } = useOrganization()
 
   const activeTeamId = session?.session?.activeTeamId
@@ -117,7 +123,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
     {
       organizationId: organization?.id ?? "",
       teamId: activeTeamId ?? null,
-      includeOrgTasks: mode === "mine" && !!activeTeamId,
+      includeOrgTasks: !!showOrgTasks,
       skip: 0,
       take: 100,
     },
@@ -195,7 +201,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       const queryInput = {
         organizationId: organization?.id ?? "",
         teamId: activeTeamId ?? null,
-        includeOrgTasks: mode === "mine" && !!activeTeamId,
+        includeOrgTasks: !!showOrgTasks,
         skip: 0,
         take: 100,
       }
@@ -316,7 +322,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       const queryInput = {
         organizationId: organization?.id ?? "",
         teamId: activeTeamId ?? null,
-        includeOrgTasks: mode === "mine" && !!activeTeamId,
+        includeOrgTasks: !!showOrgTasks,
         skip: 0,
         take: 100,
       }
