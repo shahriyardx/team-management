@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData()
   const file = formData.get("file") as File | null
+  const fileType = (formData.get("type") as string) || "attachments"
 
   if (!file) {
     return NextResponse.json({ error: "No file provided." }, { status: 400 })
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Storage limit reached (1GB)." }, { status: 413 })
   }
 
-  const url = await uploadToR2(file, "knowledge")
+  const url = await uploadToR2(file, { folder: fileType, orgId })
   if (!url) {
     return NextResponse.json({ error: "R2 not configured." }, { status: 500 })
   }

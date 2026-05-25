@@ -14,7 +14,10 @@ function getClient() {
   })
 }
 
-export async function uploadToR2(file: File, folder = "logos"): Promise<string | null> {
+export async function uploadToR2(
+  file: File,
+  options: { folder: string; orgId?: string } = { folder: "logos" },
+): Promise<string | null> {
   const client = getClient()
   if (!client) return null
 
@@ -23,7 +26,9 @@ export async function uploadToR2(file: File, folder = "logos"): Promise<string |
   if (!bucket || !publicUrl) return null
 
   const ext = file.name.split(".").pop() ?? "png"
-  const key = `${folder}/${crypto.randomUUID()}.${ext}`
+  const key = options.orgId
+    ? `${options.folder}/${options.orgId}/${crypto.randomUUID()}.${ext}`
+    : `${options.folder}/${crypto.randomUUID()}.${ext}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
 

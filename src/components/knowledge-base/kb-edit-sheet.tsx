@@ -88,7 +88,7 @@ export function KbEditSheet({
         files.map(async (f) => {
           if (f.url && !f.file) return { name: f.name, url: f.url, type: f.type, size: f.size }
           if (!f.file) return { name: f.name, url: f.url, type: f.type, size: f.size }
-          const body = new FormData(); body.set("file", f.file)
+          const body = new FormData(); body.set("file", f.file); body.set("type", "knowledgebase")
           const res = await fetch("/api/knowledge/upload", { method: "POST", body })
           if (!res.ok) { const err = await res.json().catch(() => ({ error: "Upload failed" })); throw new Error(err.error) }
           const { url } = await res.json()

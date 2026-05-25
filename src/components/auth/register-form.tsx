@@ -80,6 +80,7 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
       if (avatarFile) {
         const body = new FormData()
         body.set("file", avatarFile)
+        body.set("type", "profile-images")
         const res = await fetch("/api/upload", { method: "POST", body })
         if (res.ok) {
           const { url } = await res.json()

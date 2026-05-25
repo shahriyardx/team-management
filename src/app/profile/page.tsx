@@ -51,6 +51,7 @@ export default function ProfilePage() {
     try {
       const body = new FormData()
       body.set("file", file)
+      body.set("type", "profile-images")
       const res = await fetch("/api/upload", { method: "POST", body })
       if (!res.ok) return
       const { url } = await res.json()

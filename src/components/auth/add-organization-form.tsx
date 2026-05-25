@@ -116,6 +116,7 @@ export function AddOrganizationForm({ onNameChange }: { onNameChange?: (name: st
       if (logoFile) {
         const body = new FormData()
         body.set("file", logoFile)
+        body.set("type", "logos")
         const uploadRes = await fetch("/api/upload", { method: "POST", body })
         if (!uploadRes.ok) {
           form.setError("name", { message: "Logo upload failed." })

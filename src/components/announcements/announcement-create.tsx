@@ -183,6 +183,7 @@ export function AnnouncementForm({ announcementId }: Props) {
   const uploadFile = async (file: File): Promise<string> => {
     const body = new FormData()
     body.set("file", file)
+    body.set("type", "announcements")
     const res = await fetch("/api/knowledge/upload", { method: "POST", body })
     if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed")
     const { url } = await res.json()

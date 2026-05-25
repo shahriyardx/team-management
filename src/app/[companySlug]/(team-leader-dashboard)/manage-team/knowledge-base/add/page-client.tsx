@@ -72,7 +72,7 @@ export default function TeamAddKnowledgePage() {
       const uploaded = await Promise.all(
         files.map(async (f) => {
           if (f.url) return f
-          const body = new FormData(); body.set("file", f.file)
+          const body = new FormData(); body.set("file", f.file); body.set("type", "knowledgebase")
           const res = await fetch("/api/knowledge/upload", { method: "POST", body })
           if (!res.ok) { const err = await res.json().catch(() => ({ error: "Upload failed" })); return { ...f, uploading: false, error: err.error } }
           const { url } = await res.json(); return { ...f, uploading: false, url }

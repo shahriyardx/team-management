@@ -60,6 +60,7 @@ export default function GeneralSettingsPage() {
     try {
       const body = new FormData()
       body.set("file", file)
+      body.set("type", "logos")
       const res = await fetch("/api/upload", { method: "POST", body })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Upload failed" }))

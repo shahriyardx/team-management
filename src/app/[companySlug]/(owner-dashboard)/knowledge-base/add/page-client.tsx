@@ -101,6 +101,7 @@ export default function AddKnowledgePage() {
           if (f.url) return f
           const body = new FormData()
           body.set("file", f.file)
+          body.set("type", "knowledgebase")
           const res = await fetch("/api/knowledge/upload", { method: "POST", body })
           if (!res.ok) {
             const err = await res.json().catch(() => ({ error: "Upload failed" }))
