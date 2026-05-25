@@ -114,7 +114,7 @@ export const dashboardRouter = router({
       const taskCount = await prisma.taskAssignee.count({
         where: {
           memberId: { in: memberIds },
-          task: { status: { not: "done" } },
+          task: { teamId: input.teamId, status: { not: "done" } },
         },
       })
 
