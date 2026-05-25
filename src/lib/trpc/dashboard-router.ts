@@ -95,7 +95,13 @@ export const dashboardRouter = router({
       }
 
       const taskCount = await prisma.taskAssignee.count({
-        where: { memberId: member.id, task: { status: { not: "done" } } },
+        where: {
+          memberId: member.id,
+          task: {
+            teamId: ctx.session.session.activeTeamId ?? undefined,
+            status: { not: "done" },
+          },
+        },
       })
 
       return { okrProgress, taskCount }
