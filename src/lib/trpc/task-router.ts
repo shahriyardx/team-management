@@ -632,21 +632,56 @@ export const taskRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const first = await prisma.task.findUnique({
-        where: { id: input.items[0]?.id ?? "" },
-        select: { organizationId: true },
+      const taskIds = [...new Set(input.items.map((i) => i.id))]
+      const tasks = await prisma.task.findMany({
+        where: { id: { in: taskIds } },
+        include: { assignees: assigneesInclude },
       })
-      if (!first) throw new TRPCError({ code: "NOT_FOUND" })
+      if (tasks.length !== taskIds.length) throw new TRPCError({ code: "NOT_FOUND" })
 
       const member = await prisma.member.findUnique({
         where: {
           organizationId_userId: {
-            organizationId: first.organizationId,
+            organizationId: tasks[0].organizationId,
             userId: ctx.session.user.id,
           },
         },
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const isOwnerAdmin = member.role === "owner" || member.role === "admin"
+
+      for (const task of tasks) {
+        const isAssignee = task.assignees.some(
+          (a) => a.member.user.id === ctx.session.user.id,
+        )
+
+        if (task.teamId) {
+          const isLeader = await prisma.team.findFirst({
+            where: {
+              id: task.teamId,
+              organizationId: task.organizationId,
+              leaderId: member.id,
+            },
+          })
+          if (
+            !isLeader &&
+            !isOwnerAdmin &&
+            task.createdById !== ctx.session.user.id &&
+            !isAssignee
+          ) {
+            throw new TRPCError({ code: "FORBIDDEN" })
+          }
+        } else {
+          if (
+            !isOwnerAdmin &&
+            task.createdById !== ctx.session.user.id &&
+            !isAssignee
+          ) {
+            throw new TRPCError({ code: "FORBIDDEN" })
+          }
+        }
+      }
 
       await prisma.$transaction(
         input.items.map((item) =>
