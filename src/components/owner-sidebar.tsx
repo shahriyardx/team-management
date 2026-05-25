@@ -57,7 +57,6 @@ function ownerItems(
         {
           title: "Assigned Tasks",
           url: `/${slug}/tasks/assigned`,
-          badge: counts.assignedTasks,
         },
       ],
     },

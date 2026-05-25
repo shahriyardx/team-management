@@ -90,7 +90,6 @@ function leaderItems(
         {
           title: "Assigned Tasks",
           url: `/${slug}/manage-team/tasks/assigned`,
-          badge: counts.assignedTasks,
         },
       ],
     },

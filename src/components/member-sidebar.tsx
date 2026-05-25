@@ -61,7 +61,6 @@ function memberItems(
         {
           title: "Assigned Tasks",
           url: `/${slug}/team/tasks/assigned`,
-          badge: counts.assignedTasks,
         },
       ],
     },
