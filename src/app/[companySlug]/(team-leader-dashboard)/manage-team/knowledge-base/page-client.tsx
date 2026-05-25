@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import { MagnifyingGlassIcon, PlusIcon, X } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,6 +25,24 @@ export default function TeamKnowledgeBasePage() {
   const { data: session } = authClient.useSession()
   const activeTeamId = session?.session?.activeTeamId
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const item = params.get("item")
+    if (item) setSelectedSlug(item)
+  }, [])
+
+  const handleSelect = (slug: string) => {
+    setSelectedSlug(slug)
+    router.replace(`?item=${slug}`, { scroll: false })
+  }
+
+  const handleClose = () => {
+    handleSelect(null)
+    router.replace(pathname, { scroll: false })
+  }
 
   const {
     categories, isCategoryLoading, selectedCategoryId, setSelectedCategoryId,
@@ -90,7 +108,7 @@ export default function TeamKnowledgeBasePage() {
           <div className="space-y-1">
             <p className="mb-3 text-xs text-muted-foreground">{totalResults} result{totalResults !== 1 ? "s" : ""}</p>
             {searchResults.map((item: KbItem) => (
-              <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={setSelectedSlug} />
+              <KbItemRow key={item.id} item={item} baseHref={baseHref} onSelect={handleSelect} />
             ))}
             {totalResults > PAGE && (
               <div className="flex items-center justify-between pt-3">
@@ -108,13 +126,13 @@ export default function TeamKnowledgeBasePage() {
       ) : categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 border border-border p-6"><p className="text-xs text-muted-foreground">No knowledge base yet.</p></div>
       ) : showAll ? (
-        <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} onItemSelect={setSelectedSlug} />
+        <KbAllCategoriesView categories={categories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} collapsedCategories={collapsedCategories} toggleCategory={toggleCategory} baseHref={baseHref} onItemSelect={handleSelect} />
       ) : selectedCat ? (
-        <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} baseHref={baseHref} onItemSelect={setSelectedSlug} />
+        <KbSpecificCategoryView subcategories={selectedCat.subcategories} organizationId={organization?.id ?? ""} teamId={activeTeamId ?? ""} baseHref={baseHref} onItemSelect={handleSelect} />
       ) : null}
 
       {selectedSlug && (
-        <KbDetailOverlay slug={selectedSlug} onClose={() => setSelectedSlug(null)} />
+        <KbDetailOverlay slug={selectedSlug} onClose={handleClose} />
       )}
     </div>
   )

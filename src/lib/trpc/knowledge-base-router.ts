@@ -422,12 +422,14 @@ export const knowledgeBaseRouter = router({
       if (input.title !== undefined) updateData.title = input.title
       if (input.description !== undefined) updateData.description = input.description
       if (input.attachments !== undefined) {
-        // Delete old attachments from R2
+        // Delete removed attachments from R2 (compare URLs)
         const oldAtts = await prisma.kbAttachment.findMany({
           where: { kbItemId: input.id },
           select: { url: true },
         })
-        for (const att of oldAtts) await deleteFromR2(att.url)
+        const newUrls = new Set(input.attachments.map((a) => a.url))
+        const removed = oldAtts.filter((a) => !newUrls.has(a.url))
+        for (const att of removed) await deleteFromR2(att.url)
         updateData.attachments = { deleteMany: {}, create: input.attachments }
       }
       if (input.links !== undefined) {
