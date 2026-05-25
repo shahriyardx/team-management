@@ -239,6 +239,74 @@ export const taskRouter = router({
     return { members: filtered }
   }),
 
+  getSidebarCounts: protectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        teamId: z.string().nullable().optional(),
+        dashboard: z.enum(["owner", "leader", "member"]),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) {
+        return { myTasks: 0, orgTasks: 0, teamTasks: 0, assignedTasks: 0 }
+      }
+
+      const isOwner = input.dashboard === "owner"
+      const isLeader = input.dashboard === "leader"
+      const teamId = input.teamId ?? undefined
+
+      const [myTasks, orgTasks, teamTasks, assignedTasks] = await Promise.all([
+        // My tasks: todo status, assigned to me, scoped to dashboard
+        prisma.task.count({
+          where: {
+            organizationId: input.organizationId,
+            status: "todo",
+            assignees: { some: { memberId: member.id } },
+            ...(isOwner ? { teamId: null } : teamId ? { teamId } : {}),
+          },
+        }),
+        // Organization Tasks: teamId null, todo status
+        prisma.task.count({
+          where: {
+            organizationId: input.organizationId,
+            status: "todo",
+            teamId: null,
+            ...(isLeader
+              ? { assignees: { some: { memberId: member.id } } }
+              : {}),
+          },
+        }),
+        // Team Tasks: scoped to active team, todo status
+        prisma.task.count({
+          where: {
+            organizationId: input.organizationId,
+            status: "todo",
+            ...(teamId ? { teamId } : { teamId: null }),
+          },
+        }),
+        // Assigned Tasks: created by me, todo status
+        prisma.task.count({
+          where: {
+            organizationId: input.organizationId,
+            status: "todo",
+            createdById: ctx.session.user.id,
+            ...(isOwner ? { teamId: null } : teamId ? { teamId } : {}),
+          },
+        }),
+      ])
+
+      return { myTasks, orgTasks, teamTasks, assignedTasks }
+    }),
+
   getTodoCount: protectedProcedure
     .input(
       z.object({

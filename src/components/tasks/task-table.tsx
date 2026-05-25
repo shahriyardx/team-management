@@ -179,13 +179,22 @@ export function TaskTable({
 
   // Create/edit mutation
   const createMutation = api.task.create.useMutation({
-    onSuccess: () => listUtilsRef.current.invalidate(listInputRef.current),
+    onSuccess: () => {
+      listUtilsRef.current.invalidate(listInputRef.current)
+      utils.task.getSidebarCounts.invalidate()
+    },
   })
   const updateMutation = api.task.update.useMutation({
-    onSuccess: () => listUtilsRef.current.invalidate(listInputRef.current),
+    onSuccess: () => {
+      listUtilsRef.current.invalidate(listInputRef.current)
+      utils.task.getSidebarCounts.invalidate()
+    },
   })
   const deleteMutation = api.task.delete.useMutation({
-    onSuccess: () => listUtilsRef.current.invalidate(listInputRef.current),
+    onSuccess: () => {
+      listUtilsRef.current.invalidate(listInputRef.current)
+      utils.task.getSidebarCounts.invalidate()
+    },
   })
   const reorderMutation = api.task.reorder.useMutation({
     onMutate: async ({ items }) => {
@@ -214,6 +223,7 @@ export function TaskTable({
     },
     onSettled: () => {
       listUtilsRef.current.invalidate(listInputRef.current)
+      utils.task.getSidebarCounts.invalidate()
     },
   })
 
@@ -328,6 +338,7 @@ export function TaskTable({
     },
     onSettled: () => {
       listUtilsRef.current.invalidate(listInputRef.current)
+      utils.task.getSidebarCounts.invalidate()
     },
   })
 

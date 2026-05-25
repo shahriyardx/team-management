@@ -28,7 +28,10 @@ import type { authClient } from "@/lib/auth-client"
 
 type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 
-function memberItems(slug: string, todoCount: number): NavItem[] {
+function memberItems(
+  slug: string,
+  counts: { myTasks?: number; assignedTasks?: number },
+): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}/team`, icon: House },
     {
@@ -54,8 +57,12 @@ function memberItems(slug: string, todoCount: number): NavItem[] {
       title: "Tasks",
       icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/team/tasks`, badge: todoCount },
-        { title: "Assigned Tasks", url: `/${slug}/team/tasks/assigned` },
+        { title: "My tasks", url: `/${slug}/team/tasks`, badge: counts.myTasks },
+        {
+          title: "Assigned Tasks",
+          url: `/${slug}/team/tasks/assigned`,
+          badge: counts.assignedTasks,
+        },
       ],
     },
     { title: "Members", url: `/${slug}/team/members`, icon: Users },
@@ -72,20 +79,23 @@ export function MemberSidebar({
   const { role } = useMemberRole()
   const activeTeamId = _session?.session?.activeTeamId ?? null
 
-  const { data: todoCountData } = api.task.getTodoCount.useQuery(
-    { organizationId: organization?.id ?? "", teamId: activeTeamId },
+  const { data: counts } = api.task.getSidebarCounts.useQuery(
+    {
+      organizationId: organization?.id ?? "",
+      teamId: activeTeamId,
+      dashboard: "member",
+    },
     { enabled: !!organization },
   )
-  const todoCount = todoCountData?.count ?? 0
 
   const items = useMemo(() => {
     if (!slug) return []
-    const base = memberItems(slug, todoCount)
+    const base = memberItems(slug, counts ?? {})
     if (role === "owner" || role === "admin") {
       base.unshift({ title: "Organization", url: `/${slug}`, icon: ArrowLeft })
     }
     return base
-  }, [slug, todoCount, role])
+  }, [slug, counts, role])
 
   return (
     <Sidebar collapsible="icon" {...props}>

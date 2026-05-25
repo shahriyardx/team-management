@@ -28,7 +28,10 @@ import type { authClient } from "@/lib/auth-client"
 
 type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 
-function ownerItems(slug: string, todoCount: number): NavItem[] {
+function ownerItems(
+  slug: string,
+  counts: { myTasks?: number; orgTasks?: number; assignedTasks?: number },
+): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}`, icon: House },
     { title: "Announcements", url: `/${slug}/announcements`, icon: Megaphone },
@@ -45,9 +48,17 @@ function ownerItems(slug: string, todoCount: number): NavItem[] {
       title: "Tasks",
       icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/tasks`, badge: todoCount },
-        { title: "Organization Tasks", url: `/${slug}/tasks/all` },
-        { title: "Assigned Tasks", url: `/${slug}/tasks/assigned` },
+        { title: "My tasks", url: `/${slug}/tasks`, badge: counts.myTasks },
+        {
+          title: "Organization Tasks",
+          url: `/${slug}/tasks/all`,
+          badge: counts.orgTasks,
+        },
+        {
+          title: "Assigned Tasks",
+          url: `/${slug}/tasks/assigned`,
+          badge: counts.assignedTasks,
+        },
       ],
     },
     {
@@ -79,17 +90,19 @@ export function OwnerSidebar({
   const params = useParams()
   const slug = params.companySlug as string | undefined
   const { organization } = useOrganization()
-  const activeTeamId = _session?.session?.activeTeamId ?? null
 
-  const { data: todoCountData } = api.task.getTodoCount.useQuery(
-    { organizationId: organization?.id ?? "", teamId: activeTeamId },
+  const { data: counts } = api.task.getSidebarCounts.useQuery(
+    {
+      organizationId: organization?.id ?? "",
+      teamId: null,
+      dashboard: "owner",
+    },
     { enabled: !!organization },
   )
-  const todoCount = todoCountData?.count ?? 0
 
   const items = useMemo(
-    () => (slug ? ownerItems(slug, todoCount) : []),
-    [slug, todoCount],
+    () => (slug ? ownerItems(slug, counts ?? {}) : []),
+    [slug, counts],
   )
 
   return (

@@ -28,7 +28,15 @@ import type { authClient } from "@/lib/auth-client"
 
 type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 
-function leaderItems(slug: string, todoCount: number): NavItem[] {
+function leaderItems(
+  slug: string,
+  counts: {
+    myTasks?: number
+    orgTasks?: number
+    teamTasks?: number
+    assignedTasks?: number
+  },
+): NavItem[] {
   return [
     { title: "Dashboard", url: `/${slug}/manage-team`, icon: House },
     {
@@ -67,11 +75,23 @@ function leaderItems(slug: string, todoCount: number): NavItem[] {
         {
           title: "My tasks",
           url: `/${slug}/manage-team/tasks`,
-          badge: todoCount,
+          badge: counts.myTasks,
         },
-        { title: "Organization Tasks", url: `/${slug}/manage-team/tasks/org` },
-        { title: "Team Tasks", url: `/${slug}/manage-team/tasks/all` },
-        { title: "Assigned Tasks", url: `/${slug}/manage-team/tasks/assigned` },
+        {
+          title: "Organization Tasks",
+          url: `/${slug}/manage-team/tasks/org`,
+          badge: counts.orgTasks,
+        },
+        {
+          title: "Team Tasks",
+          url: `/${slug}/manage-team/tasks/all`,
+          badge: counts.teamTasks,
+        },
+        {
+          title: "Assigned Tasks",
+          url: `/${slug}/manage-team/tasks/assigned`,
+          badge: counts.assignedTasks,
+        },
       ],
     },
     { title: "Members", url: `/${slug}/manage-team/members`, icon: Users },
@@ -88,20 +108,23 @@ export function LeaderSidebar({
   const { role } = useMemberRole()
   const activeTeamId = _session?.session?.activeTeamId ?? null
 
-  const { data: todoCountData } = api.task.getTodoCount.useQuery(
-    { organizationId: organization?.id ?? "", teamId: activeTeamId },
+  const { data: counts } = api.task.getSidebarCounts.useQuery(
+    {
+      organizationId: organization?.id ?? "",
+      teamId: activeTeamId,
+      dashboard: "leader",
+    },
     { enabled: !!organization },
   )
-  const todoCount = todoCountData?.count ?? 0
 
   const items = useMemo(() => {
     if (!slug) return []
-    const base = leaderItems(slug, todoCount)
+    const base = leaderItems(slug, counts ?? {})
     if (role === "owner" || role === "admin") {
       base.unshift({ title: "Organization", url: `/${slug}`, icon: ArrowLeft })
     }
     return base
-  }, [slug, todoCount, role])
+  }, [slug, counts, role])
 
   return (
     <Sidebar collapsible="icon" {...props}>
