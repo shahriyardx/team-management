@@ -1,11 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { PencilSimple, TrashSimple, Paperclip, Link as LinkIcon, CalendarDots, User } from "@phosphor-icons/react"
+import {
+  PencilSimple,
+  TrashSimple,
+  Paperclip,
+  Link as LinkIcon,
+  CalendarDots,
+  User,
+  XIcon,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { KbDetailShell } from "@/components/knowledge-base/kb-detail-shell"
 import { KbCommentSection } from "@/components/knowledge-base/kb-comment-section"
@@ -45,7 +58,12 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
 
   return (
     <>
-      <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose()
+        }}
+      >
         <DialogContent
           showCloseButton={false}
           className="fixed inset-0 z-50 flex flex-col max-w-none w-full h-full translate-x-0 translate-y-0 rounded-none border-0 bg-background p-0 shadow-none sm:max-w-none sm:w-full"
@@ -55,24 +73,24 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
             <span className="text-sm font-medium truncate">
               {organization?.name ?? "Knowledge Base"}
             </span>
-            <button
+            <Button
               onClick={onClose}
-              className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              variant={"outline"}
+              size={"icon-sm"}
+              className="fixed top-4 right-4"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
+              <XIcon />
+            </Button>
           </div>
           {/* Desktop close button */}
-          <button
+          <Button
             onClick={onClose}
-            className="fixed right-4 top-4 z-10 hidden size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors lg:flex"
+            variant={"outline"}
+            size={"icon-sm"}
+            className="fixed top-4 right-4"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
+            <XIcon />
+          </Button>
           <div className="flex-1 overflow-auto">
             <OverlayContent
               data={data}
@@ -83,13 +101,22 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
           {item && (canEdit || canDelete) && (
             <DialogFooter className="border-t border-border px-6 py-4 sm:px-6">
               {canEdit && (
-                <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEdit(true)}
+                >
                   <PencilSimple className="mr-1.5 size-3.5" />
                   Edit
                 </Button>
               )}
               {canDelete && (
-                <Button variant="destructive" size="sm" onClick={() => setShowDelete(true)} disabled={deleteItem.isPending}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDelete(true)}
+                  disabled={deleteItem.isPending}
+                >
                   <TrashSimple className="mr-1.5 size-3.5" />
                   Delete
                 </Button>
@@ -105,12 +132,18 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
           <DialogHeader>
             <DialogTitle>Delete Knowledge</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <strong>{data?.item?.title}</strong>?
-              This item will be moved to trash.
+              Are you sure you want to delete{" "}
+              <strong>{data?.item?.title}</strong>? This item will be moved to
+              trash.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" size="sm" onClick={() => setShowDelete(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDelete(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -128,7 +161,11 @@ export function KbDetailOverlay({ slug, onClose }: KbDetailOverlayProps) {
 
       {/* Edit sheet */}
       {data?.item && (
-        <KbEditSheet open={showEdit} onOpenChange={setShowEdit} item={data.item} />
+        <KbEditSheet
+          open={showEdit}
+          onOpenChange={setShowEdit}
+          item={data.item}
+        />
       )}
     </>
   )
@@ -155,7 +192,9 @@ function OverlayContent({
   if (!data?.item) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20">
-        <p className="text-xs text-muted-foreground">Knowledge item not found.</p>
+        <p className="text-xs text-muted-foreground">
+          Knowledge item not found.
+        </p>
         <Button variant="outline" size="sm" onClick={onClose}>
           Close
         </Button>
@@ -184,7 +223,13 @@ interface OverlayItem {
   createdAt: string
   author: { id: string; name: string | null; email: string | null }
   subcategory: { name: string; category: { name: string } }
-  attachments: Array<{ id: string; name: string; url: string; type: string; size: number }>
+  attachments: Array<{
+    id: string
+    name: string
+    url: string
+    type: string
+    size: number
+  }>
   links: Array<{ id: string; url: string; title: string }>
 }
 
@@ -201,12 +246,18 @@ function ItemContent({ item }: { item: OverlayItem }) {
         <div className="flex items-center gap-1.5">
           <User className="size-3.5" />
           <span>{item.author.name}</span>
-          {item.author.email && <span className="text-muted-foreground/60">({item.author.email})</span>}
+          {item.author.email && (
+            <span className="text-muted-foreground/60">
+              ({item.author.email})
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <CalendarDots className="size-3.5" />
           {new Date(item.createdAt).toLocaleDateString("en-US", {
-            year: "numeric", month: "long", day: "numeric",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </div>
       </div>
@@ -225,7 +276,11 @@ function ItemContent({ item }: { item: OverlayItem }) {
           </h2>
           <div className="space-y-1">
             {item.attachments.map((att) => (
-              <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer"
+              <a
+                key={att.id}
+                href={att.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-none border border-border px-3 py-2 text-xs transition-colors hover:bg-accent"
               >
                 <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
@@ -251,11 +306,17 @@ function ItemContent({ item }: { item: OverlayItem }) {
           </h2>
           <div className="space-y-1">
             {item.links.map((link) => (
-              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-none border border-border px-3 py-2 text-xs transition-colors hover:bg-accent"
               >
                 <LinkIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="flex-1 truncate">{link.title || link.url}</span>
+                <span className="flex-1 truncate">
+                  {link.title || link.url}
+                </span>
               </a>
             ))}
           </div>
