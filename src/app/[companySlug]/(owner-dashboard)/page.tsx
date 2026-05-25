@@ -3,7 +3,7 @@
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Buildings, UsersThree, ListChecks } from "@phosphor-icons/react"
+import { Buildings, UsersThree } from "@phosphor-icons/react"
 import { StorageChart } from "@/components/dashboard/storage-chart"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -60,7 +60,7 @@ export default function OwnerDashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <StatCard
           icon={UsersThree}
           label="Members"
@@ -72,12 +72,6 @@ export default function OwnerDashboard() {
           label="Teams"
           value={stats?.teamCount ?? "—"}
           color="text-amber-500"
-        />
-        <StatCard
-          icon={ListChecks}
-          label="Total Tasks"
-          value={stats?.taskCount ?? "—"}
-          color="text-violet-500"
         />
         {stats && (
           <StorageChart
