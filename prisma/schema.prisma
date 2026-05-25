@@ -122,6 +122,7 @@ model Member {
 
 model Task {
   id             String         @id @default(cuid())
+  sortOrder      Int            @default(0)
   title          String
   description    String?
   status         String         @default("todo")

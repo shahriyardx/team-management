@@ -89,7 +89,7 @@ export const taskRouter = router({
               select: { id: true, name: true, email: true, image: true },
             },
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
           skip: input.skip,
           take: input.take,
         })
@@ -104,6 +104,101 @@ export const taskRouter = router({
 
       return { tasks, total }
     }),
+
+  listAssignableMembers: protectedProcedure.query(async ({ ctx }) => {
+    const orgId = ctx.session.session.activeOrganizationId
+    if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
+
+    const member = await prisma.member.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: orgId,
+          userId: ctx.session.user.id,
+        },
+      },
+    })
+    if (
+      !member ||
+      (member.role !== "admin" && member.role !== "owner")
+    ) {
+      throw new TRPCError({ code: "FORBIDDEN" })
+    }
+
+    const members = await prisma.member.findMany({
+      where: {
+        organizationId: orgId,
+        OR: [
+          { role: "owner" },
+          { role: "admin" },
+          { teamsLed: { some: {} } },
+        ],
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    })
+
+    return { members }
+  }),
+
+  listTeamAssignees: protectedProcedure.query(async ({ ctx }) => {
+    const teamId = ctx.session.session.activeTeamId
+    if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
+
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      select: { organizationId: true },
+    })
+    if (!team) throw new TRPCError({ code: "NOT_FOUND" })
+
+    const member = await prisma.member.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: team.organizationId,
+          userId: ctx.session.user.id,
+        },
+      },
+    })
+    if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+    const teamMember = await prisma.teamMember.findUnique({
+      where: {
+        teamId_userId: {
+          teamId,
+          userId: ctx.session.user.id,
+        },
+      },
+    })
+    if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
+
+    const allTeamMembers = await prisma.teamMember.findMany({
+      where: { teamId },
+      select: { userId: true, role: true },
+    })
+
+    const memberUserIds = allTeamMembers.map((tm) => tm.userId)
+    const leaderUserId = allTeamMembers.find(
+      (tm) => tm.role === "leader",
+    )?.userId
+
+    const orgMembers = await prisma.member.findMany({
+      where: {
+        organizationId: team.organizationId,
+        userId: { in: memberUserIds },
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    })
+
+    const isLeader = teamMember.role === "leader"
+    const filtered = isLeader
+      ? orgMembers
+      : orgMembers.filter((m) => m.userId !== leaderUserId)
+
+    return { members: filtered }
+  }),
 
   getTodoCount: protectedProcedure
     .input(
@@ -385,6 +480,7 @@ export const taskRouter = router({
       z.object({
         id: z.string(),
         status: z.enum(["todo", "in_progress", "done"]),
+        sortOrder: z.number().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -438,7 +534,10 @@ export const taskRouter = router({
 
       const task = await prisma.task.update({
         where: { id: input.id },
-        data: { status: input.status },
+        data: {
+          status: input.status,
+          ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+        },
         include: {
           assignees: assigneesInclude,
           createdBy: {
@@ -483,6 +582,43 @@ export const taskRouter = router({
       }
 
       return { task }
+    }),
+
+  reorder: protectedProcedure
+    .input(
+      z.object({
+        items: z.array(
+          z.object({ id: z.string(), sortOrder: z.number() }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const first = await prisma.task.findUnique({
+        where: { id: input.items[0]?.id ?? "" },
+        select: { organizationId: true },
+      })
+      if (!first) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const member = await prisma.member.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: first.organizationId,
+            userId: ctx.session.user.id,
+          },
+        },
+      })
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      await prisma.$transaction(
+        input.items.map((item) =>
+          prisma.task.update({
+            where: { id: item.id },
+            data: { sortOrder: item.sortOrder },
+          }),
+        ),
+      )
+
+      return { success: true }
     }),
 
   delete: protectedProcedure

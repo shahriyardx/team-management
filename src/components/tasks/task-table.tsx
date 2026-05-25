@@ -1,17 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import {
-  Eye,
-  MagnifyingGlassIcon,
-  PencilSimple,
-  Plus,
-  Trash,
-  WarningCircle,
-} from "@phosphor-icons/react"
+import { PencilSimple, Plus, Trash } from "@phosphor-icons/react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -39,17 +32,10 @@ import {
   MultiSelectTrigger,
   MultiSelectValue,
 } from "@/components/ui/multi-select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
+import { KanbanBoard } from "./kanban/kanban-board"
 
 type Member = {
   id: string
@@ -65,6 +51,7 @@ type Member = {
 
 type Task = {
   id: string
+  sortOrder: number
   title: string
   description: string | null
   status: string
@@ -124,10 +111,6 @@ type CommentForm = z.infer<typeof commentSchema>
 export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   const { session, organization } = useOrganization()
 
-  const [page, setPage] = useState(0)
-  const [showDone, setShowDone] = useState(false)
-  const PAGE_SIZE = 10
-
   const activeTeamId = session?.session?.activeTeamId
 
   const { data, isLoading } = api.task.list.useQuery(
@@ -160,89 +143,41 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       .catch(() => setOrgMembersLoading(false))
   }, [organization])
 
-  // Team members for scoped assignee dropdown
-  const [teamUserIds, setTeamUserIds] = useState<Set<string>>(new Set())
-  const [teamLoading, setTeamLoading] = useState(false)
-  useEffect(() => {
-    if (!activeTeamId || !organization) {
-      setTeamUserIds(new Set())
-      setTeamLoading(false)
-      return
-    }
-    setTeamLoading(true)
-    authClient.organization
-      .listTeamMembers({ query: { teamId: activeTeamId } })
-      .then((res) => {
-        const ids = (res.data ?? []).map((m: { userId: string }) => m.userId)
-        setTeamUserIds(new Set(ids))
-        setTeamLoading(false)
-      })
-      .catch(() => setTeamLoading(false))
-  }, [activeTeamId, organization])
-
-  const assigneeMembers = activeTeamId
-    ? orgMembers.filter((m) => teamUserIds.has(m.userId))
-    : orgMembers.filter((m) => m.role === "owner" || m.role === "admin")
-
-  const membersLoading = activeTeamId
-    ? orgMembersLoading || teamLoading
-    : orgMembersLoading
-
   const currentMember = orgMembers.find((m) => m.userId === session?.user?.id)
   const canEditAll =
     currentMember?.role === "admin" || currentMember?.role === "owner"
 
-  const visibleTasks = currentMember
-    ? tasks.filter((t) => {
-        if (!showDone && t.status === "done") return false
-        if (mode === "assigned") return t.createdBy.id === currentMember.userId
-        if (mode === "all") return true
-        return t.assignees.some((a) => a.memberId === currentMember.id)
-      })
-    : []
+  const { data: assignableData, isLoading: assignableLoading } =
+    api.task.listAssignableMembers.useQuery(undefined, {
+      enabled: !!organization && canEditAll,
+    })
 
-  // Filters (client-side)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterPriority, setFilterPriority] = useState<string | null>(null)
-  const [filterStatus, setFilterStatus] = useState<string | null>(null)
-  const [filterAssignee, setFilterAssignee] = useState<string | null>(null)
+  // Team members for scoped assignee dropdown
+  const { data: teamAssigneesData, isLoading: teamAssigneesLoading } =
+    api.task.listTeamAssignees.useQuery(undefined, {
+      enabled: !!organization && !!activeTeamId && !canEditAll,
+    })
 
-  const filteredTasks = visibleTasks.filter((t) => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      if (
-        !t.title.toLowerCase().includes(q) &&
-        !(t.description ?? "").toLowerCase().includes(q)
-      ) {
-        return false
-      }
-    }
-    if (filterPriority && t.priority !== filterPriority) return false
-    if (filterStatus && t.status !== filterStatus) return false
-    if (
-      filterAssignee &&
-      !t.assignees.some((a) => a.member.id === filterAssignee)
-    )
-      return false
-    return true
-  })
+  const assigneeMembers = canEditAll
+    ? (assignableData?.members ?? [])
+    : activeTeamId
+      ? (teamAssigneesData?.members ?? [])
+      : []
 
-  const hasActiveFilters =
-    searchQuery || filterPriority || filterStatus || filterAssignee
+  const membersLoading = canEditAll
+    ? orgMembersLoading || assignableLoading
+    : activeTeamId
+      ? orgMembersLoading || teamAssigneesLoading
+      : orgMembersLoading
 
-  // Client-side pagination of filtered results
-  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages - 1)
-  const paginatedTasks = filteredTasks.slice(
-    safePage * PAGE_SIZE,
-    (safePage + 1) * PAGE_SIZE,
-  )
-
-  // Reset to first page when filters change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps trigger reset, not used inside
-  useEffect(() => {
-    setPage(0)
-  }, [searchQuery, filterPriority, filterStatus, filterAssignee])
+  const filteredTasks = useMemo(() => {
+    if (!currentMember) return []
+    return tasks.filter((t) => {
+      if (mode === "assigned") return t.createdBy.id === currentMember.userId
+      if (mode === "all") return true
+      return t.assignees.some((a) => a.memberId === currentMember.id)
+    })
+  }, [tasks, currentMember, mode])
 
   // Create/edit mutation
   const createMutation = api.task.create.useMutation({
@@ -253,6 +188,41 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   })
   const deleteMutation = api.task.delete.useMutation({
     onSuccess: () => utils.task.list.invalidate(),
+  })
+  const reorderMutation = api.task.reorder.useMutation({
+    onMutate: async ({ items }) => {
+      const queryInput = {
+        organizationId: organization?.id ?? "",
+        teamId: activeTeamId ?? null,
+        skip: 0,
+        take: 100,
+      }
+
+      await utils.task.list.cancel(queryInput)
+
+      const previousData = utils.task.list.getData(queryInput)
+
+      utils.task.list.setData(queryInput, (old) => {
+        if (!old) return old
+        const sortMap = new Map(items.map((i) => [i.id, i.sortOrder]))
+        const updated = old.tasks.map((t) => {
+          const s = sortMap.get(t.id)
+          return s !== undefined ? { ...t, sortOrder: s } : t
+        })
+        updated.sort((a, b) => a.sortOrder - b.sortOrder)
+        return { ...old, tasks: updated }
+      })
+
+      return { previousData, queryInput }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        utils.task.list.setData(context.queryInput, context.previousData)
+      }
+    },
+    onSettled: () => {
+      utils.task.list.invalidate()
+    },
   })
 
   // Dialog state
@@ -273,11 +243,21 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
     },
   })
 
-  const openCreate = useCallback(() => {
-    setEditTask(null)
-    form.reset()
-    setCreateOpen(true)
-  }, [form])
+  const openCreate = useCallback(
+    (defaultStatus?: string) => {
+      setEditTask(null)
+      form.reset({
+        title: "",
+        description: "",
+        status: (defaultStatus as TaskForm["status"]) ?? "todo",
+        priority: "medium",
+        assigneeIds: [],
+        dueDate: "",
+      })
+      setCreateOpen(true)
+    },
+    [form],
+  )
 
   const openEdit = useCallback(
     (task: Task) => {
@@ -330,14 +310,51 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
   )
 
   const changeStatusMutation = api.task.changeStatus.useMutation({
-    onSuccess: () => utils.task.list.invalidate(),
+    onMutate: async ({ id, status, sortOrder }) => {
+      const queryInput = {
+        organizationId: organization?.id ?? "",
+        teamId: activeTeamId ?? null,
+        skip: 0,
+        take: 100,
+      }
+
+      await utils.task.list.cancel(queryInput)
+
+      const previousData = utils.task.list.getData(queryInput)
+
+      utils.task.list.setData(queryInput, (old) => {
+        if (!old) return old
+        const updated = old.tasks.map((t) =>
+          t.id === id
+            ? {
+                ...t,
+                status,
+                ...(sortOrder !== undefined ? { sortOrder } : {}),
+              }
+            : t,
+        )
+        updated.sort((a, b) => a.sortOrder - b.sortOrder)
+        return { ...old, tasks: updated }
+      })
+
+      return { previousData, queryInput }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        utils.task.list.setData(context.queryInput, context.previousData)
+      }
+    },
+    onSettled: () => {
+      utils.task.list.invalidate()
+    },
   })
 
   const handleStatusChange = useCallback(
-    (taskId: string, status: string) => {
+    (taskId: string, status: string, sortOrder?: number) => {
       changeStatusMutation.mutate({
         id: taskId,
         status: status as "todo" | "in_progress" | "done",
+        ...(sortOrder !== undefined ? { sortOrder } : {}),
       })
     },
     [changeStatusMutation],
@@ -399,82 +416,24 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={openCreate}>
+          <Button onClick={() => openCreate()}>
             <Plus className="size-3.5" />
             Add task
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-50 flex-1">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 w-full rounded-none border border-input bg-transparent pl-8 pr-2.5 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
-          />
-        </div>
-        <select
-          value={filterStatus ?? ""}
-          onChange={(e) => setFilterStatus(e.target.value || null)}
-          className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
-        >
-          <option value="">All statuses</option>
-          <option value="todo">Todo</option>
-          <option value="in_progress">In Progress</option>
-          <option value="done">Done</option>
-        </select>
-        <select
-          value={filterPriority ?? ""}
-          onChange={(e) => setFilterPriority(e.target.value || null)}
-          className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
-        >
-          <option value="">All priorities</option>
-          <option value="urgent">Urgent</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <select
-          value={filterAssignee ?? ""}
-          onChange={(e) => setFilterAssignee(e.target.value || null)}
-          className="h-8 rounded-none border border-input bg-transparent px-2 text-xs outline-hidden focus:border-ring focus:ring-1 focus:ring-ring/50"
-        >
-          <option value="">All assignees</option>
-          {assigneeMembers.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.user.name}
-            </option>
-          ))}
-        </select>
-        {hasActiveFilters && (
-          <button
-            onClick={() => {
-              setSearchQuery("")
-              setFilterPriority(null)
-              setFilterStatus(null)
-              setFilterAssignee(null)
-            }}
-            className="h-8 rounded-none border border-border px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Clear
-          </button>
-        )}
-        <button
-          onClick={() => setShowDone(!showDone)}
-          className={`h-8 rounded-none border px-2 text-xs transition-colors ${
-            showDone
-              ? "border-ring bg-accent text-foreground"
-              : "border-border text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Show done
-        </button>
-      </div>
+      {/* Kanban Board */}
+      <KanbanBoard
+        tasks={filteredTasks}
+        onStatusChange={handleStatusChange}
+        onReorder={(items) => reorderMutation.mutate({ items })}
+        onCardClick={(id) => {
+          const task = tasks.find((t) => t.id === id)
+          if (task) setViewTask(task)
+        }}
+        onAddClick={(status) => openCreate(status)}
+      />
 
       {/* Create/Edit Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -512,34 +471,27 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
             </Field>
 
             <div className="grid grid-cols-2 gap-4">
-              {editTask ? (
-                <Field>
-                  <FieldLabel>Status</FieldLabel>
-                  <Controller
-                    name="status"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className="h-9 w-full rounded-none text-xs">
-                          {field.value
-                            ? statusLabels[field.value]
-                            : "Select status"}
-                        </SelectTrigger>
-                        <SelectContent position="popper">
-                          <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="in_progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="done">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-              ) : null}
+              <Field>
+                <FieldLabel>Status</FieldLabel>
+                <Controller
+                  name="status"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="h-9 w-full rounded-none text-xs">
+                        {field.value
+                          ? statusLabels[field.value]
+                          : "Select status"}
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        <SelectItem value="todo">Todo</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="done">Done</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </Field>
               <Field>
                 <FieldLabel>Priority</FieldLabel>
                 <Controller
@@ -552,7 +504,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
                           ? priorityLabels[field.value]
                           : "Select priority"}
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper">
                         <SelectItem value="low">Low</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="high">High</SelectItem>
@@ -771,13 +723,25 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           <DialogFooter>
             {viewTask &&
               (canEditAll || viewTask.createdBy.id === session?.user?.id) && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setConfirmDelete(viewTask)}
-                >
-                  <Trash className="size-3.5" />
-                  Delete
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      openEdit(viewTask)
+                      setViewTask(null)
+                    }}
+                  >
+                    <PencilSimple className="size-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setConfirmDelete(viewTask)}
+                  >
+                    <Trash className="size-3.5" />
+                    Delete
+                  </Button>
+                </>
               )}
             <Button variant="outline" onClick={() => setViewTask(null)}>
               Close
@@ -818,216 +782,6 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <div className="rounded-none border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Created by</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Due</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Assignee</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTasks.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-16 text-center text-muted-foreground"
-                >
-                  {hasActiveFilters
-                    ? "No tasks match your filters."
-                    : mode === "all"
-                      ? "No tasks yet."
-                      : "No assigned tasks."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedTasks.map((task) => {
-                const isAssignee = task.assignees.some(
-                  (a) => a.memberId === currentMember?.id,
-                )
-                const canEdit =
-                  canEditAll || task.createdById === session?.user?.id
-                const canChangeStatus = canEditAll || isAssignee
-
-                return (
-                  <TableRow key={task.id}>
-                    <TableCell>
-                      <span
-                        className={`truncate ${task.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}
-                      >
-                        {task.title}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        {task.createdBy.name}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                          task.priority === "urgent"
-                            ? "bg-red-50 text-red-700 ring-1 ring-red-200 dark:bg-red-950/30 dark:text-red-400 dark:ring-red-800"
-                            : task.priority === "high"
-                              ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:ring-orange-800"
-                              : "bg-muted text-muted-foreground ring-1 ring-border"
-                        }`}
-                      >
-                        {task.priority !== "medium" && (
-                          <WarningCircle className="size-2.5" weight="fill" />
-                        )}
-                        {priorityLabels[task.priority]}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {task.dueDate ? (
-                        <span className="text-muted-foreground">
-                          {new Date(task.dueDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={task.status}
-                        disabled={!canChangeStatus}
-                        onValueChange={(value: string) => {
-                          handleStatusChange(task.id, value)
-                        }}
-                      >
-                        <SelectTrigger
-                          size="sm"
-                          className={`${!canChangeStatus ? "opacity-70" : ""}`}
-                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        >
-                          {statusLabels[task.status]}
-                        </SelectTrigger>
-                        <SelectContent
-                          position="popper"
-                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        >
-                          <SelectItem value="todo">Todo</SelectItem>
-                          <SelectItem value="in_progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="done">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      {task.assignees.length > 0 ? (
-                        <div className="flex -space-x-1">
-                          {task.assignees.slice(0, 3).map((a) => (
-                            <Avatar
-                              key={a.member.id}
-                              size="sm"
-                              className="ring-1 ring-background"
-                            >
-                              {a.member.user.image ? (
-                                <AvatarImage
-                                  src={a.member.user.image}
-                                  alt={a.member.user.name}
-                                />
-                              ) : null}
-                              <AvatarFallback>
-                                {a.member.user.name?.charAt(0)?.toUpperCase() ??
-                                  "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                          {task.assignees.length > 3 && (
-                            <span className="flex size-5 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground ring-1 ring-background">
-                              +{task.assignees.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          onClick={() => setViewTask(task)}
-                        >
-                          <Eye className="size-3.5" />
-                        </Button>
-                        {canEdit && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            onClick={() => openEdit(task)}
-                          >
-                            <PencilSimple className="size-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {filteredTasks.length > 0 && (
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            Showing {Math.min(filteredTasks.length, safePage * PAGE_SIZE + 1)}
-            &ndash;
-            {Math.min((safePage + 1) * PAGE_SIZE, filteredTasks.length)} of{" "}
-            {filteredTasks.length} tasks
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              disabled={safePage === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              Previous
-            </Button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const pageNum = Math.max(
-                0,
-                Math.min(safePage - 2, totalPages - 5),
-              )
-              const actualPage = pageNum + i
-              if (actualPage >= totalPages) return null
-              return (
-                <Button
-                  key={actualPage}
-                  variant={actualPage === safePage ? "default" : "outline"}
-                  onClick={() => setPage(actualPage)}
-                  className="min-w-7"
-                >
-                  {actualPage + 1}
-                </Button>
-              )
-            })}
-            <Button
-              variant="outline"
-              disabled={safePage >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
