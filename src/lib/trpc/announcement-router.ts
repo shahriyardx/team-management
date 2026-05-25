@@ -278,7 +278,7 @@ export const announcementRouter = router({
         pinned: z.boolean().optional(),
         links: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
         attachments: z
-          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number() }))
+          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number(), isThumbnail: z.boolean().optional() }))
           .optional(),
       }),
     )
@@ -312,6 +312,18 @@ export const announcementRouter = router({
       }
 
       if (_newAttachments) {
+        // Delete old thumbnail attachments before creating new ones
+        const hasThumbnail = _newAttachments.some((a) => a.isThumbnail)
+        if (hasThumbnail) {
+          const oldThumbs = await prisma.announcementAttachment.findMany({
+            where: { announcementId: input.id, isThumbnail: true },
+            select: { url: true },
+          })
+          for (const t of oldThumbs) await deleteFromR2(t.url)
+          await prisma.announcementAttachment.deleteMany({
+            where: { announcementId: input.id, isThumbnail: true },
+          })
+        }
         updateData.attachments = { create: _newAttachments }
       }
 

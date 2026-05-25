@@ -112,7 +112,7 @@ export function AnnouncementForm({ announcementId }: Props) {
     }>
   >([])
   const [existingAttachments, setExistingAttachments] = useState<
-    Array<{ id: string; name: string; url: string; type: string; size: number }>
+    Array<{ id: string; name: string; url: string; type: string; size: number; isThumbnail?: boolean }>
   >([])
   const [uploadError, setUploadError] = useState("")
   const [isUploading, setIsUploading] = useState(false)
@@ -464,10 +464,10 @@ export function AnnouncementForm({ announcementId }: Props) {
           <FieldLabel>Attachments (optional)</FieldLabel>
 
           {/* Existing attachments (edit mode) */}
-          {isEdit && existingAttachments.length > 0 && (
+          {isEdit && existingAttachments.filter((a) => !a.isThumbnail).length > 0 && (
             <div className="mb-3 space-y-1">
               <p className="text-[11px] text-muted-foreground">Existing attachments</p>
-              {existingAttachments.map((att) => {
+              {existingAttachments.filter((a) => !a.isThumbnail).map((att) => {
                 const Icon = getFileIcon(att.type)
                 return (
                   <div
