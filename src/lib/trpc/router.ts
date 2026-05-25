@@ -12,8 +12,10 @@ import { dashboardRouter } from "./dashboard-router"
 import { knowledgeBaseRouter } from "./knowledge-base-router"
 import { announcementRouter } from "./announcement-router"
 import { contactRouter } from "./contact-router"
+import { orgRouter } from "./org-router"
 
 export const appRouter = router({
+  org: orgRouter,
   task: taskRouter,
   comment: commentRouter,
   notification: notificationRouter,

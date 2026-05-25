@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { WarningCircle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
@@ -16,8 +18,17 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useOrganization } from "@/lib/organization-context"
 import { authClient } from "@/lib/auth-client"
+import { api } from "@/lib/trpc/client"
 
 const TEAM_SIZES = ["1-10", "11-50", "51-200", "200+"] as const
 
@@ -36,10 +47,15 @@ const orgSchema = z.object({
 type OrgForm = z.infer<typeof orgSchema>
 
 export default function GeneralSettingsPage() {
-  const { organization, refetchOrganizations } = useOrganization()
+  const { organization, refetchOrganizations, refetchSession } = useOrganization()
   const [saving, setSaving] = useState(false)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoError, setLogoError] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [deleting, setDeleting] = useState(false)
+  const router = useRouter()
+  const deleteOrgMutation = api.org.deleteOrg.useMutation()
 
   const form = useForm<OrgForm>({
     resolver: zodResolver(orgSchema),
@@ -223,6 +239,84 @@ export default function GeneralSettingsPage() {
           Save
         </Button>
       </form>
+
+      <hr className="border-border" />
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-destructive">
+          <WarningCircle className="size-4" />
+          <h2 className="text-sm font-semibold">Danger Zone</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Permanently delete this organization and all its data. This action
+          cannot be undone.
+        </p>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setShowDeleteDialog(true)}
+        >
+          Delete Organization
+        </Button>
+      </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Organization</DialogTitle>
+            <DialogDescription>
+              This will permanently delete <strong>{organization.name}</strong>{" "}
+              and all associated data, including tasks, teams, announcements,
+              objectives, and files. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Type <strong>{organization.name}</strong> to confirm.
+            </p>
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder={organization.name}
+              className="text-xs"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowDeleteDialog(false)
+                setDeleteConfirm("")
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={deleteConfirm !== organization.name || deleting}
+              onClick={async () => {
+                setDeleting(true)
+                try {
+                  await deleteOrgMutation.mutateAsync({
+                    organizationId: organization.id,
+                  })
+                  await authClient.organization.setActive({
+                    organizationId: null,
+                  })
+                  await refetchSession()
+                  router.push("/")
+                } catch {
+                  setDeleting(false)
+                }
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete Organization"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
