@@ -99,27 +99,60 @@ export default function TeamLeaderDashboardPage() {
         />
       </div>
 
-      <div className="border border-border p-4">
-        <h2 className="text-sm font-medium mb-3">Team Members</h2>
+      <div className="border border-border">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-sm font-medium">Team Members</h2>
+        </div>
         {team?.team?.members && team.team.members.length > 0 ? (
-          <div className="space-y-2">
+          <div className="divide-y divide-border">
             {team.team.members.map(
-              (tm: { id: string; user: { id: string; name: string } }) => (
-                <div key={tm.id} className="flex items-center gap-2 text-xs">
-                  <span className="font-medium text-foreground">
-                    {tm.user.name}
-                  </span>
-                  {team.team?.leader?.user?.id === tm.user.id && (
-                    <span className="text-muted-foreground">(leader)</span>
-                  )}
-                </div>
-              ),
+              (tm: {
+                id: string
+                user: { id: string; name: string; email: string; image: string | null }
+              }) => {
+                const isLeader = team.team?.leader?.user?.id === tm.user.id
+                return (
+                  <div
+                    key={tm.id}
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <div className="size-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                      {tm.user.image ? (
+                        <img
+                          src={tm.user.image}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {tm.user.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground truncate">
+                          {tm.user.name}
+                        </span>
+                        {isLeader && (
+                          <span className="text-[10px] text-muted-foreground border border-border px-1.5 py-0.5">
+                            Leader
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {tm.user.email}
+                      </p>
+                    </div>
+                  </div>
+                )
+              },
             )}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">
+          <div className="px-4 py-8 text-center text-xs text-muted-foreground">
             No members in this team.
-          </p>
+          </div>
         )}
       </div>
     </div>
