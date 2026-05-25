@@ -1,7 +1,18 @@
 "use client"
 
+import { api } from "@/lib/trpc/client"
 import { TaskTable } from "@/components/tasks/task-table"
 
 export default function AssignedTasksPage() {
-  return <TaskTable mode="assigned" />
+  const utils = api.useUtils()
+  const { data, isLoading } = api.task.listTeamTasks.useQuery({ mode: "assigned" })
+
+  return (
+    <TaskTable
+      tasks={data?.tasks ?? []}
+      isLoading={isLoading}
+      listUtils={utils.task.listTeamTasks}
+      listInput={{ mode: "assigned" }}
+    />
+  )
 }

@@ -1,7 +1,21 @@
 "use client"
 
+import { api } from "@/lib/trpc/client"
 import { TaskTable } from "@/components/tasks/task-table"
 
 export default function MyTasksPage() {
-  return <TaskTable mode="mine" showOrgTasks />
+  const utils = api.useUtils()
+  const { data, isLoading } = api.task.listTeamTasks.useQuery({
+    mode: "mine",
+    includeOrgTasks: true,
+  })
+
+  return (
+    <TaskTable
+      tasks={data?.tasks ?? []}
+      isLoading={isLoading}
+      listUtils={utils.task.listTeamTasks}
+      listInput={{ mode: "mine", includeOrgTasks: true }}
+    />
+  )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -58,6 +58,10 @@ type Task = {
   priority: string
   dueDate: string | null
   createdAt: string
+  updatedAt: string
+  teamId: string | null
+  organizationId: string
+  createdById: string
   assignees: Array<{
     memberId: string
     member: {
@@ -109,28 +113,26 @@ const commentSchema = z.object({
 type CommentForm = z.infer<typeof commentSchema>
 
 export function TaskTable({
-  mode,
-  showOrgTasks,
+  tasks,
+  isLoading,
+  listUtils,
+  listInput,
 }: {
-  mode: "mine" | "all" | "assigned"
-  showOrgTasks?: boolean
+  tasks: Task[]
+  isLoading: boolean
+  listUtils: any
+  listInput: any
 }) {
   const { session, organization } = useOrganization()
 
   const activeTeamId = session?.session?.activeTeamId
-
-  const { data, isLoading } = api.task.list.useQuery(
-    {
-      organizationId: organization?.id ?? "",
-      teamId: activeTeamId ?? null,
-      includeOrgTasks: !!showOrgTasks,
-      skip: 0,
-      take: 100,
-    },
-    { enabled: !!organization },
-  )
-  const tasks = data?.tasks ?? []
   const utils = api.useUtils()
+
+  // Refs to avoid stale closures in mutation callbacks
+  const listUtilsRef = useRef(listUtils)
+  listUtilsRef.current = listUtils
+  const listInputRef = useRef<any>(listInput)
+  listInputRef.current = listInput
 
   // Org members for current member lookup + role check
   const [orgMembers, setOrgMembers] = useState<Member[]>([])
@@ -159,7 +161,6 @@ export function TaskTable({
       enabled: !!organization && canEditAll,
     })
 
-  // Team members for scoped assignee dropdown
   const { data: teamAssigneesData, isLoading: teamAssigneesLoading } =
     api.task.listTeamAssignees.useQuery(undefined, {
       enabled: !!organization && !!activeTeamId && !canEditAll,
@@ -177,59 +178,43 @@ export function TaskTable({
       ? orgMembersLoading || teamAssigneesLoading
       : orgMembersLoading
 
-  const filteredTasks = useMemo(() => {
-    if (!currentMember) return []
-    return tasks.filter((t) => {
-      if (mode === "assigned") return t.createdBy.id === currentMember.userId
-      if (mode === "all") return true
-      return t.assignees.some((a) => a.memberId === currentMember.id)
-    })
-  }, [tasks, currentMember, mode])
-
   // Create/edit mutation
   const createMutation = api.task.create.useMutation({
-    onSuccess: () => utils.task.list.invalidate(),
+    onSuccess: () => listUtilsRef.current.invalidate(listInputRef.current),
   })
   const updateMutation = api.task.update.useMutation({
-    onSuccess: () => utils.task.list.invalidate(),
+    onSuccess: () => listUtilsRef.current.invalidate(listInputRef.current),
   })
   const deleteMutation = api.task.delete.useMutation({
-    onSuccess: () => utils.task.list.invalidate(),
+    onSuccess: () => listUtilsRef.current.invalidate(listInputRef.current),
   })
   const reorderMutation = api.task.reorder.useMutation({
     onMutate: async ({ items }) => {
-      const queryInput = {
-        organizationId: organization?.id ?? "",
-        teamId: activeTeamId ?? null,
-        includeOrgTasks: !!showOrgTasks,
-        skip: 0,
-        take: 100,
-      }
-
-      await utils.task.list.cancel(queryInput)
-
-      const previousData = utils.task.list.getData(queryInput)
-
-      utils.task.list.setData(queryInput, (old) => {
+      const lu = listUtilsRef.current
+      const li = listInputRef.current
+      await lu.cancel(li)
+      const previousData = lu.getData(li)
+      lu.setData(li, (old: any) => {
         if (!old) return old
         const sortMap = new Map(items.map((i) => [i.id, i.sortOrder]))
-        const updated = old.tasks.map((t) => {
+        const updated = old.tasks.map((t: any) => {
           const s = sortMap.get(t.id)
           return s !== undefined ? { ...t, sortOrder: s } : t
         })
-        updated.sort((a, b) => a.sortOrder - b.sortOrder)
+        updated.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
         return { ...old, tasks: updated }
       })
-
-      return { previousData, queryInput }
+      return { previousData }
     },
     onError: (_err, _vars, context) => {
       if (context?.previousData) {
-        utils.task.list.setData(context.queryInput, context.previousData)
+        const lu = listUtilsRef.current
+        const li = listInputRef.current
+        lu.setData(li, context.previousData)
       }
     },
     onSettled: () => {
-      utils.task.list.invalidate()
+      listUtilsRef.current.invalidate(listInputRef.current)
     },
   })
 
@@ -307,7 +292,7 @@ export function TaskTable({
       }
       setCreateOpen(false)
     },
-    [editTask, organization, createMutation, updateMutation],
+    [editTask, organization, activeTeamId, createMutation, updateMutation],
   )
 
   const handleDelete = useCallback(
@@ -319,42 +304,31 @@ export function TaskTable({
 
   const changeStatusMutation = api.task.changeStatus.useMutation({
     onMutate: async ({ id, status, sortOrder }) => {
-      const queryInput = {
-        organizationId: organization?.id ?? "",
-        teamId: activeTeamId ?? null,
-        includeOrgTasks: !!showOrgTasks,
-        skip: 0,
-        take: 100,
-      }
-
-      await utils.task.list.cancel(queryInput)
-
-      const previousData = utils.task.list.getData(queryInput)
-
-      utils.task.list.setData(queryInput, (old) => {
+      const lu = listUtilsRef.current
+      const li = listInputRef.current
+      await lu.cancel(li)
+      const previousData = lu.getData(li)
+      lu.setData(li, (old: any) => {
         if (!old) return old
-        const updated = old.tasks.map((t) =>
+        const updated = old.tasks.map((t: any) =>
           t.id === id
-            ? {
-                ...t,
-                status,
-                ...(sortOrder !== undefined ? { sortOrder } : {}),
-              }
+            ? { ...t, status, ...(sortOrder !== undefined ? { sortOrder } : {}) }
             : t,
         )
-        updated.sort((a, b) => a.sortOrder - b.sortOrder)
+        updated.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
         return { ...old, tasks: updated }
       })
-
-      return { previousData, queryInput }
+      return { previousData }
     },
     onError: (_err, _vars, context) => {
       if (context?.previousData) {
-        utils.task.list.setData(context.queryInput, context.previousData)
+        const lu = listUtilsRef.current
+        const li = listInputRef.current
+        lu.setData(li, context.previousData)
       }
     },
     onSettled: () => {
-      utils.task.list.invalidate()
+      listUtilsRef.current.invalidate(listInputRef.current)
     },
   })
 
@@ -409,19 +383,9 @@ export function TaskTable({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-foreground">
-            {mode === "all"
-              ? "All Tasks"
-              : mode === "assigned"
-                ? "Assigned Tasks"
-                : "My tasks"}
-          </h1>
+          <h1 className="text-lg font-semibold text-foreground">Tasks</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {mode === "assigned"
-              ? "Tasks you assigned to others"
-              : mode === "mine"
-                ? "Tasks assigned to you"
-                : "All tasks in the team"}
+            Drag and drop cards to update status or reorder
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -434,7 +398,7 @@ export function TaskTable({
 
       {/* Kanban Board */}
       <KanbanBoard
-        tasks={filteredTasks}
+        tasks={tasks}
         onStatusChange={handleStatusChange}
         onReorder={(items) => reorderMutation.mutate({ items })}
         onCardClick={(id) => {
@@ -486,7 +450,10 @@ export function TaskTable({
                   name="status"
                   control={form.control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger className="h-9 w-full rounded-none text-xs">
                         {field.value
                           ? statusLabels[field.value]
@@ -494,7 +461,9 @@ export function TaskTable({
                       </SelectTrigger>
                       <SelectContent position="popper">
                         <SelectItem value="todo">Todo</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="in_progress">
+                          In Progress
+                        </SelectItem>
                         <SelectItem value="done">Done</SelectItem>
                       </SelectContent>
                     </Select>
@@ -513,7 +482,7 @@ export function TaskTable({
                           ? priorityLabels[field.value]
                           : "Select priority"}
                       </SelectTrigger>
-                      <SelectContent position="popper">
+                      <SelectContent>
                         <SelectItem value="low">Low</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="high">High</SelectItem>
