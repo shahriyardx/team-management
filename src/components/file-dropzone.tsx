@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import { Upload, X } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
@@ -12,6 +12,7 @@ interface FileDropzoneProps {
   accept?: Record<string, string[]>
   multiple?: boolean
   maxFiles?: number
+  maxSize?: number
   preview?: boolean
   label?: string
 }
@@ -23,14 +24,26 @@ export function FileDropzone({
   accept,
   multiple = true,
   maxFiles,
+  maxSize,
   preview = false,
   label,
 }: FileDropzoneProps) {
+  const [sizeError, setSizeError] = useState("")
+
   const onDropCallback = useCallback(
     (accepted: File[]) => {
+      setSizeError("")
+      if (maxSize) {
+        const oversized = accepted.filter((f) => f.size > maxSize)
+        if (oversized.length > 0) {
+          setSizeError("File size too big.")
+          onDrop(accepted.filter((f) => f.size <= maxSize))
+          return
+        }
+      }
       onDrop(accepted)
     },
-    [onDrop],
+    [onDrop, maxSize],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -38,6 +51,7 @@ export function FileDropzone({
     accept,
     multiple,
     maxFiles,
+    maxSize,
   })
 
   const firstFile = files[0]
@@ -95,6 +109,10 @@ export function FileDropzone({
             {isDragActive ? "Drop files here" : "Drag & drop or click to browse"}
           </p>
         </div>
+      )}
+
+      {sizeError && (
+        <p className="text-xs text-red-500">{sizeError}</p>
       )}
 
       {/* Non-preview file list */}

@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import { uploadToR2 } from "@/lib/r2"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { MAX_THUMBNAIL_SIZE, MAX_ATTACHMENT_SIZE } from "@/lib/constants"
 
 const ALLOWED_TYPES = [
   "image/",
@@ -43,6 +44,12 @@ export async function POST(req: NextRequest) {
 
   if (!file.name.includes(".")) {
     return NextResponse.json({ error: "File must have an extension." }, { status: 400 })
+  }
+
+  // File size validation
+  const maxSize = fileType === "thumbnail" ? MAX_THUMBNAIL_SIZE : MAX_ATTACHMENT_SIZE
+  if (file.size > maxSize) {
+    return NextResponse.json({ error: "File size too big." }, { status: 413 })
   }
 
   const allowed = ALLOWED_TYPES.some((t) => file.type.startsWith(t) || file.type === t)

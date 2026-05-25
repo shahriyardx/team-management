@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { uploadToR2 } from "@/lib/r2"
+import { MAX_UPLOAD_SIZE } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
@@ -8,6 +9,10 @@ export async function POST(req: NextRequest) {
 
   if (!file || !file.type.startsWith("image/")) {
     return NextResponse.json({ error: "Invalid image file." }, { status: 400 })
+  }
+
+  if (file.size > MAX_UPLOAD_SIZE) {
+    return NextResponse.json({ error: "File size too big." }, { status: 413 })
   }
 
   const url = await uploadToR2(file, { folder: imageType })

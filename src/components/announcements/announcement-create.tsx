@@ -9,6 +9,7 @@ import { ArrowLeft, Plus, X, File, FileImage, FilePdf, FileDoc, FileXls, FileCsv
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
+import { MAX_THUMBNAIL_SIZE, MAX_ATTACHMENT_SIZE } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -366,6 +367,7 @@ export function AnnouncementForm({ announcementId }: Props) {
             accept={{ "image/*": [] }}
             multiple={false}
             preview
+            maxSize={MAX_THUMBNAIL_SIZE}
           />
         </Field>
 
@@ -520,6 +522,7 @@ export function AnnouncementForm({ announcementId }: Props) {
               "application/json": [],
             }}
             multiple
+            maxSize={MAX_ATTACHMENT_SIZE}
           />
           {uploadError && (
             <p className="text-xs text-red-500 mt-1">{uploadError}</p>

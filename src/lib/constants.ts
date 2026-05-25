@@ -1,0 +1,3 @@
+export const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024 // 5MB
+export const MAX_ATTACHMENT_SIZE = 100 * 1024 * 1024 // 100MB
+export const MAX_UPLOAD_SIZE = 100 * 1024 * 1024 // 100MB
