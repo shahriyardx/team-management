@@ -13,6 +13,7 @@ export default function AllTasksPage() {
       isLoading={isLoading}
       listUtils={utils.task.listTeamTasks}
       listInput={undefined}
+      dashboard="team-leader-dashboard"
     />
   )
 }

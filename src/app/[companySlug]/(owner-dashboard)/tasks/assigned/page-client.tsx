@@ -13,6 +13,7 @@ export default function AssignedTasksPage() {
       isLoading={isLoading}
       listUtils={utils.task.listOrgTasks}
       listInput={{ mode: "assigned" }}
+      dashboard="owner-dashboard"
     />
   )
 }

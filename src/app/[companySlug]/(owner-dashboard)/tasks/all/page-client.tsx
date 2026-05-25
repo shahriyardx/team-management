@@ -13,6 +13,7 @@ export default function AllTasksPage() {
       isLoading={isLoading}
       listUtils={utils.task.listOrgTasks}
       listInput={undefined}
+      dashboard="owner-dashboard"
     />
   )
 }

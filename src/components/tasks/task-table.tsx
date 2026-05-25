@@ -117,15 +117,18 @@ export function TaskTable({
   isLoading,
   listUtils,
   listInput,
+  dashboard,
 }: {
   tasks: Task[]
   isLoading: boolean
   listUtils: any
   listInput: any
+  dashboard: "owner-dashboard" | "team-leader-dashboard" | "team-member-dashboard"
 }) {
   const { session, organization } = useOrganization()
 
   const activeTeamId = session?.session?.activeTeamId
+  const isTeamDashboard = dashboard !== "owner-dashboard"
   const utils = api.useUtils()
 
   // Refs to avoid stale closures in mutation callbacks
@@ -158,19 +161,19 @@ export function TaskTable({
 
   const { data: assignableData, isLoading: assignableLoading } =
     api.task.listOrgAssignableMembers.useQuery(undefined, {
-      enabled: !!organization && !activeTeamId,
+      enabled: !!organization && !isTeamDashboard,
     })
 
   const { data: teamAssigneesData, isLoading: teamAssigneesLoading } =
     api.task.listTeamAssignableMember.useQuery(undefined, {
-      enabled: !!organization && !!activeTeamId,
+      enabled: !!organization && isTeamDashboard,
     })
 
-  const assigneeMembers = activeTeamId
+  const assigneeMembers = isTeamDashboard
     ? (teamAssigneesData?.members ?? [])
     : (assignableData?.members ?? [])
 
-  const membersLoading = activeTeamId
+  const membersLoading = isTeamDashboard
     ? teamAssigneesLoading
     : assignableLoading
 

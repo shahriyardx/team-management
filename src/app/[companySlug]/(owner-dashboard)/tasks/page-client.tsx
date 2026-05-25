@@ -13,6 +13,7 @@ export default function MyTasksPage() {
       isLoading={isLoading}
       listUtils={utils.task.listMyTasks}
       listInput={undefined}
+      dashboard="owner-dashboard"
     />
   )
 }

@@ -13,6 +13,7 @@ export default function AssignedTasksPage() {
       isLoading={isLoading}
       listUtils={utils.task.listTeamTasks}
       listInput={{ mode: "assigned" }}
+      dashboard="team-member-dashboard"
     />
   )
 }
