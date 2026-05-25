@@ -4,6 +4,7 @@ import { organization } from "better-auth/plugins/organization"
 import { twoFactor } from "better-auth/plugins"
 import { passkey } from "@better-auth/passkey"
 import { haveIBeenPwned } from "better-auth/plugins/haveibeenpwned"
+import { sentinel, dash } from "@better-auth/infra"
 import { prisma } from "./prisma"
 import {
   sendInvitationEmail,
@@ -15,11 +16,13 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail({ to: user.email, url })
     },
   },
   emailVerification: {
+    sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmailFn({ to: user.email, url })
     },
@@ -31,6 +34,30 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    dash(),
+    sentinel({
+      security: {
+        credentialStuffing: {
+          enabled: true,
+          thresholds: { challenge: 3, block: 5 },
+        },
+        velocity: {
+          enabled: true,
+          thresholds: { challenge: 10, block: 20 },
+          action: "block",
+        },
+        compromisedPassword: {
+          enabled: true,
+          action: "block",
+        },
+        emailValidation: {
+          enabled: true,
+          strictness: "low",
+          action: "block",
+        },
+        emailNormalization: { enabled: true },
+      },
+    }),
     haveIBeenPwned(),
     passkey(),
     twoFactor({ allowPasswordless: true }),

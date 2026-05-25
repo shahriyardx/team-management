@@ -57,6 +57,7 @@ model Passkey {
   aaguid       String?
 
   @@index([userId])
+  @@index([credentialID])
   @@map("passkey")
 }
 
@@ -69,6 +70,7 @@ model TwoFactor {
   verified    Boolean @default(true)
 
   @@index([userId])
+  @@index([secret])
   @@map("two_factor")
 }
 
@@ -97,6 +99,8 @@ model Organization {
   kbItems         KbItem[]
   announcements   Announcement[]
 
+  metadata String?
+
   @@map("organization")
 }
 
@@ -117,6 +121,7 @@ model Member {
 
   @@unique([organizationId, userId])
   @@index([userId])
+  @@index([organizationId])
   @@map("member")
 }
 
@@ -173,6 +178,7 @@ model Invitation {
   team           Team?        @relation(fields: [teamId], references: [id])
 
   @@index([organizationId])
+  @@index([email])
   @@map("invitation")
 }
 

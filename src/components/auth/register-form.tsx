@@ -10,6 +10,7 @@ import { Camera } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 
@@ -72,6 +73,7 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [registered, setRegistered] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -118,14 +120,37 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
           setLoading(false)
           return
         }
-        router.push(callbackURL || "/onboard")
+        setRegistered(true)
+        setLoading(false)
       } catch {
         setError("Registration failed.")
         setLoading(false)
       }
     },
-    [router, avatarFile, callbackURL],
+    [avatarFile],
   )
+
+  if (registered) {
+    return (
+      <div className="w-full max-w-sm mx-auto">
+        <h2 className="text-lg font-semibold text-foreground">Check your email</h2>
+        <p className="mb-8 mt-1 text-sm text-muted-foreground">
+          A verification link has been sent to <strong>{form.getValues("email")}</strong>.
+        </p>
+        <div className="border border-border bg-accent/30 p-4 text-xs text-muted-foreground space-y-2">
+          <p>Click the link in the email to verify your account, then sign in.</p>
+          <p>Didn&apos;t receive it? Check your spam folder.</p>
+        </div>
+        <Button
+          className="mt-6 w-full"
+          variant="outline"
+          onClick={() => router.push("/auth/login")}
+        >
+          Continue to sign in
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full max-w-sm mx-auto">
@@ -135,9 +160,7 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
       </p>
 
       <div className="mb-6">
-        <label className="mb-2 block text-xs font-medium text-foreground">
-          Profile photo
-        </label>
+        <Label>Profile photo</Label>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}

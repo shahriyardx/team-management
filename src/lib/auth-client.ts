@@ -5,10 +5,12 @@ import {
   inferOrgAdditionalFields,
 } from "better-auth/client/plugins"
 import { passkeyClient } from "@better-auth/passkey/client"
+import { sentinelClient } from "@better-auth/infra/client"
 import type { auth } from "./auth"
 
 export const authClient = createAuthClient({
   plugins: [
+    sentinelClient(),
     passkeyClient(),
     twoFactorClient({
       twoFactorPage: "/auth/two-factor",

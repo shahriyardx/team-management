@@ -36,6 +36,15 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       setLoading(true)
       const res = await authClient.signIn.email(data)
       if (res.error) {
+        console.log("[login] signIn.email error:", res.error)
+        if (
+          res.error?.message?.toLowerCase().includes("verify") ||
+          res.error?.statusText?.toLowerCase().includes("verify") ||
+          (res.error as any)?.code === "EMAIL_NOT_VERIFIED"
+        ) {
+          router.replace(`/auth/email-verification?email=${encodeURIComponent(data.email)}`)
+          return
+        }
         setError(
           res.error.message ||
             res.error.statusText ||
@@ -55,11 +64,11 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true)
-    await authClient.signIn.social({
+    const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: callbackURL || "/onboard",
     })
-  }, [callbackURL])
+    if (!error) redirectToFirstOrg("/onboard")
+  }, [redirectToFirstOrg])
 
   const handlePasskeySignIn = useCallback(async () => {
     setLoading(true)

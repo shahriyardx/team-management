@@ -29,8 +29,11 @@ export function useOrgRedirect() {
         member && typeof member === "object" && "role" in member
           ? (member as { role: string }).role
           : "member"
-      if (role === "owner" || role === "admin") router.replace(`/${org.slug}`)
-      else router.replace(`/${org.slug}/team`)
+      if (role === "owner" || role === "admin") {
+        router.replace(`/${org.slug}`)
+      } else {
+        router.replace(`/${org.slug}/team`)
+      }
     },
     [router],
   )
