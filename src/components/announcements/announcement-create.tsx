@@ -63,7 +63,6 @@ const formSchema = z.object({
   pinned: z.boolean(),
   enableComments: z.boolean(),
   enableLikes: z.boolean(),
-  thumbnail: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -93,7 +92,6 @@ export function AnnouncementForm({ announcementId }: Props) {
       pinned: false,
       enableComments: true,
       enableLikes: true,
-      thumbnail: "",
     },
   })
 
@@ -137,10 +135,10 @@ export function AnnouncementForm({ announcementId }: Props) {
       pinned: a.pinned,
       enableComments: a.enableComments,
       enableLikes: a.enableLikes,
-      thumbnail: a.thumbnail ?? "",
     })
-    if (a.thumbnail) {
-      setThumbnailFile([{ name: "Thumbnail", url: a.thumbnail }])
+    const thumb = a.attachments?.find((att: { isThumbnail?: boolean }) => att.isThumbnail)
+    if (thumb) {
+      setThumbnailFile([{ name: "Thumbnail", url: thumb.url }])
     }
     if (a.links?.length) {
       const existing = a.links.map((l: { url: string; title: string }) => ({ url: l.url, title: l.title }))
@@ -203,7 +201,6 @@ export function AnnouncementForm({ announcementId }: Props) {
       thumbnailBlobUrlRef.current = blobUrl
       thumbnailFileRef.current = file
       setThumbnailFile([{ name: file.name, url: blobUrl }])
-      form.setValue("thumbnail", "")
     },
     [form],
   )
@@ -230,60 +227,77 @@ export function AnnouncementForm({ announcementId }: Props) {
     setIsUploading(true)
     setUploadError("")
 
-    // Upload thumbnail if a new file was selected
-    let thumbnailUrl = values.thumbnail
+    // Collect all files to upload (regular attachments + optional thumbnail)
+    const filesToUpload: Array<{ file: File; isThumbnail: boolean }> = [
+      ...selectedFiles.map((f) => ({ file: f.file, isThumbnail: false })),
+    ]
     if (thumbnailFileRef.current) {
-      setIsThumbnailUploading(true)
-      try {
-        thumbnailUrl = await uploadFile(thumbnailFileRef.current)
-        thumbnailFileRef.current = null
-        setThumbnailFile([{ name: "Thumbnail", url: thumbnailUrl }])
-        form.setValue("thumbnail", thumbnailUrl)
-      } catch (e) {
-        setUploadError("Failed to upload thumbnail")
-        setIsUploading(false)
-        setIsThumbnailUploading(false)
-        return
-      }
-      setIsThumbnailUploading(false)
+      filesToUpload.push({ file: thumbnailFileRef.current, isThumbnail: true })
     }
 
-    let attachments:
-      | Array<{ name: string; url: string; type: string; size: number }>
-      | undefined
+    let attachments: Array<{ name: string; url: string; type: string; size: number; isThumbnail?: boolean }> | undefined
 
-    if (selectedFiles.length > 0) {
-      const uploading = selectedFiles.map((f) => ({ ...f, uploading: true }))
-      setSelectedFiles(uploading)
+    if (filesToUpload.length > 0) {
+      // Show uploading state for selected files
+      if (selectedFiles.length > 0) {
+        setSelectedFiles(selectedFiles.map((f) => ({ ...f, uploading: true })))
+      }
+      if (thumbnailFileRef.current) {
+        setIsThumbnailUploading(true)
+      }
 
       const results = await Promise.all(
-        selectedFiles.map(async (f) => {
+        filesToUpload.map(async ({ file, isThumbnail }) => {
           try {
-            const url = await uploadFile(f.file)
-            return { ...f, url, uploading: false, error: undefined }
+            const url = await uploadFile(file)
+            return { file, url, isThumbnail, error: undefined }
           } catch (e) {
-            return { ...f, uploading: false, error: (e as Error).message }
+            return { file, url: "", isThumbnail, error: (e as Error).message }
           }
         }),
       )
 
-      setSelectedFiles(results)
       const failed = results.find((r) => r.error)
       if (failed) {
-        setUploadError(`Failed to upload: ${failed.name}`)
+        // Separate error reporting for thumbnail vs attachment
+        if (failed.isThumbnail) {
+          setUploadError("Failed to upload thumbnail")
+        } else {
+          const failedFile = selectedFiles.find((sf) => sf.file === failed.file)
+          setUploadError(`Failed to upload: ${failedFile?.name ?? "file"}`)
+        }
         setIsUploading(false)
+        setIsThumbnailUploading(false)
         return
       }
 
+      // Update local state with results
+      const attachmentResults = results.filter((r) => !r.isThumbnail)
+      const thumbResult = results.find((r) => r.isThumbnail)
+
+      setSelectedFiles(
+        attachmentResults.map((r) => {
+          const orig = selectedFiles.find((sf) => sf.file === r.file)!
+          return { ...orig, url: r.url, uploading: false, error: undefined }
+        }),
+      )
+
+      if (thumbResult) {
+        thumbnailFileRef.current = null
+        setThumbnailFile([{ name: "Thumbnail", url: thumbResult.url }])
+      }
+
       attachments = results.map((r) => ({
-        name: r.name,
+        name: r.file.name,
         url: r.url!,
         type: r.file.type,
         size: r.file.size,
+        isThumbnail: r.isThumbnail,
       }))
     }
 
     setIsUploading(false)
+    setIsThumbnailUploading(false)
 
     if (isEdit && announcementId) {
       updateMutation.mutate({
@@ -294,7 +308,6 @@ export function AnnouncementForm({ announcementId }: Props) {
         pinned: values.pinned,
         enableComments: values.enableComments,
         enableLikes: values.enableLikes,
-        thumbnail: thumbnailUrl || null,
         links: links.length > 0 ? links : [],
         attachments,
       })
@@ -309,7 +322,6 @@ export function AnnouncementForm({ announcementId }: Props) {
         pinned: values.pinned,
         enableComments: values.enableComments,
         enableLikes: values.enableLikes,
-        thumbnail: thumbnailUrl || undefined,
         links: links.length > 0 ? links : undefined,
         attachments,
       })
@@ -348,7 +360,6 @@ export function AnnouncementForm({ announcementId }: Props) {
               }
               thumbnailFileRef.current = null
               setThumbnailFile([])
-              form.setValue("thumbnail", "")
             }}
             files={thumbnailFile}
             accept={{ "image/*": [] }}

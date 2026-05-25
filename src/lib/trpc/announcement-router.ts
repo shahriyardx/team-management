@@ -69,6 +69,7 @@ export const announcementRouter = router({
           where,
           include: {
             author: { select: { id: true, name: true, image: true } },
+            attachments: { where: { isThumbnail: true }, select: { url: true }, take: 1 },
             _count: { select: { comments: true, likes: true } },
           },
           orderBy: input.scope === "team"
@@ -97,9 +98,10 @@ export const announcementRouter = router({
       )
 
       return {
-        announcements: announcements.map((a) => ({
+        announcements: announcements.map(({ attachments: _atts, ...a }) => ({
           ...a,
           liked: likedSet.has(a.id),
+          thumbnailUrl: _atts?.[0]?.url ?? undefined,
         })),
         total,
         hasMore,
@@ -124,7 +126,7 @@ export const announcementRouter = router({
         include: {
           author: { select: { id: true, name: true, image: true } },
           team: { select: { id: true, name: true } },
-          attachments: { select: { id: true, name: true, url: true, type: true, size: true } },
+          attachments: { select: { id: true, name: true, url: true, type: true, size: true, isThumbnail: true } },
           links: { select: { id: true, url: true, title: true } },
           comments: {
             include: {
@@ -162,14 +164,13 @@ export const announcementRouter = router({
         organizationId: z.string(),
         title: z.string().min(1, "Title is required."),
         content: z.string().min(1, "Content is required."),
-        thumbnail: z.string().optional(),
         teamId: z.string().optional(),
         enableComments: z.boolean().optional(),
         enableLikes: z.boolean().optional(),
         pinned: z.boolean().optional(),
         links: z.array(z.object({ url: z.string(), title: z.string() })).optional(),
         attachments: z
-          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number() }))
+          .array(z.object({ name: z.string(), url: z.string(), type: z.string(), size: z.number(), isThumbnail: z.boolean().optional() }))
           .optional(),
       }),
     )
@@ -203,7 +204,6 @@ export const announcementRouter = router({
         data: {
           title: input.title,
           content: input.content,
-          thumbnail: input.thumbnail ?? null,
           teamId: input.teamId ?? null,
           enableComments: input.enableComments ?? true,
           enableLikes: input.enableLikes ?? true,
@@ -217,7 +217,13 @@ export const announcementRouter = router({
             : undefined,
           attachments: input.attachments?.length
             ? {
-                create: input.attachments,
+                create: input.attachments.map((a) => ({
+                  name: a.name,
+                  url: a.url,
+                  type: a.type,
+                  size: a.size,
+                  isThumbnail: a.isThumbnail ?? false,
+                })),
               }
             : undefined,
         },
@@ -267,7 +273,6 @@ export const announcementRouter = router({
         organizationId: z.string(),
         title: z.string().min(1).optional(),
         content: z.string().min(1).optional(),
-        thumbnail: z.string().optional().nullable(),
         enableComments: z.boolean().optional(),
         enableLikes: z.boolean().optional(),
         pinned: z.boolean().optional(),
@@ -341,7 +346,7 @@ export const announcementRouter = router({
 
       const existing = await prisma.announcement.findUnique({
         where: { id: input.id },
-        include: { attachments: { select: { url: true } } },
+        include: { attachments: { select: { url: true, size: true } } },
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
@@ -357,10 +362,12 @@ export const announcementRouter = router({
         await deleteFromR2(att.url)
       }
 
-      // Delete thumbnail from R2
-      if (existing.thumbnail) {
-        await deleteFromR2(existing.thumbnail)
-      }
+      // Decrement storage
+      const totalBytes = existing.attachments.reduce((sum, a) => sum + Number(a.size), 0)
+      await prisma.organization.update({
+        where: { id: input.organizationId },
+        data: { storageUsed: { decrement: totalBytes } },
+      })
 
       await prisma.announcement.delete({ where: { id: input.id } })
       return { success: true }
@@ -390,6 +397,12 @@ export const announcementRouter = router({
       if (!isOrgAdmin && !isAuthor) throw new TRPCError({ code: "FORBIDDEN" })
 
       await deleteFromR2(attachment.url)
+
+      await prisma.organization.update({
+        where: { id: input.organizationId },
+        data: { storageUsed: { decrement: attachment.size } },
+      })
+
       await prisma.announcementAttachment.delete({ where: { id: input.id } })
       return { success: true }
     }),

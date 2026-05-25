@@ -138,9 +138,9 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
               className="w-full text-left border border-border p-4 hover:bg-accent/50 transition-colors"
             >
               <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                {a.thumbnail && (
+                {a.thumbnailUrl && (
                   <img
-                    src={a.thumbnail}
+                    src={a.thumbnailUrl}
                     alt=""
                     className="w-full sm:w-24 h-48 sm:h-16 object-cover rounded-none shrink-0"
                   />

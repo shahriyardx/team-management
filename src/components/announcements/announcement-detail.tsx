@@ -128,13 +128,16 @@ export function AnnouncementDetail({ announcementId }: Props) {
       </button>
 
       <div>
-        {announcement.thumbnail && (
-          <img
-            src={announcement.thumbnail}
-            alt=""
-            className="w-full aspect-video object-cover mb-4"
-          />
-        )}
+        {(() => {
+          const thumb = announcement.attachments.find((a) => a.type?.startsWith("image/"))
+          return thumb ? (
+            <img
+              src={thumb.url}
+              alt=""
+              className="w-full aspect-video object-cover mb-4"
+            />
+          ) : null
+        })()}
         <div className="flex items-center gap-2">
           {announcement.pinned && (
             <Badge variant="outline" className="text-[10px]">Pinned</Badge>

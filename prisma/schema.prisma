@@ -80,6 +80,7 @@ model Organization {
   websiteUrl    String?
   department    String?
   teamSize      String?
+  storageUsed   BigInt         @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   members       Member[]
@@ -387,7 +388,6 @@ model Announcement {
   id              String       @id @default(cuid())
   title           String
   content         String
-  thumbnail       String?
   enableComments  Boolean      @default(true)
   enableLikes     Boolean      @default(true)
   pinned          Boolean      @default(false)
@@ -588,6 +588,7 @@ model AnnouncementAttachment {
   url            String
   type           String
   size           Int
+  isThumbnail    Boolean      @default(false)
   announcementId String
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
