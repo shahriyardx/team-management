@@ -53,7 +53,7 @@ export function KanbanColumn({
   }, [isDragOverThisColumn, isCrossColumn, dragOverId, tasks, status])
 
   return (
-    <div className="flex flex-1 flex-col min-w-0">
+    <div className="flex flex-1 flex-col min-w-[280px]">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
