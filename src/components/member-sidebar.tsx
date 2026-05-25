@@ -55,7 +55,7 @@ function memberItems(slug: string, todoCount: number): NavItem[] {
       icon: ListChecks,
       items: [
         { title: "My tasks", url: `/${slug}/team/tasks`, badge: todoCount },
-        { title: "Assigned", url: `/${slug}/team/tasks/assigned` },
+        { title: "Assigned Tasks", url: `/${slug}/team/tasks/assigned` },
       ],
     },
     { title: "Members", url: `/${slug}/team/members`, icon: Users },

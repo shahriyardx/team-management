@@ -46,8 +46,8 @@ function ownerItems(slug: string, todoCount: number): NavItem[] {
       icon: ListChecks,
       items: [
         { title: "My tasks", url: `/${slug}/tasks`, badge: todoCount },
-        { title: "All Tasks", url: `/${slug}/tasks/all` },
-        { title: "Assigned", url: `/${slug}/tasks/assigned` },
+        { title: "Organization Tasks", url: `/${slug}/tasks/all` },
+        { title: "Assigned Tasks", url: `/${slug}/tasks/assigned` },
       ],
     },
     {
