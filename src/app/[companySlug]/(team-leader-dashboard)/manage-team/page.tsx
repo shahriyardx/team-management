@@ -105,7 +105,13 @@ export default function TeamLeaderDashboardPage() {
         </div>
         {team?.team?.members && team.team.members.length > 0 ? (
           <div className="divide-y divide-border">
-            {team.team.members.map(
+            {[...team.team.members].sort((a, b) => {
+              const aIsLeader = team.team?.leader?.user?.id === a.user.id
+              const bIsLeader = team.team?.leader?.user?.id === b.user.id
+              if (aIsLeader) return -1
+              if (bIsLeader) return 1
+              return 0
+            }).map(
               (tm: {
                 id: string
                 user: { id: string; name: string; email: string; image: string | null }
