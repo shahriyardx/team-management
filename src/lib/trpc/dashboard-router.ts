@@ -20,7 +20,9 @@ export const dashboardRouter = router({
       }
 
       const [memberCount, teamCount, taskCount] = await Promise.all([
-        prisma.member.count({ where: { organizationId: input.organizationId } }),
+        prisma.member.count({
+          where: { organizationId: input.organizationId },
+        }),
         prisma.team.count({ where: { organizationId: input.organizationId } }),
         prisma.task.count({ where: { organizationId: input.organizationId } }),
       ])
@@ -37,7 +39,9 @@ export const dashboardRouter = router({
         }),
       ])
 
-      const storageUsed = Number(announcementBytes._sum.size ?? 0) + Number(kbBytes._sum.size ?? 0)
+      const storageUsed =
+        Number(announcementBytes._sum.size ?? 0) +
+        Number(kbBytes._sum.size ?? 0)
       const storageLimit = 1073741824
 
       return { memberCount, teamCount, taskCount, storageUsed, storageLimit }
@@ -62,40 +66,56 @@ export const dashboardRouter = router({
         select: { userId: true },
       })
       const memberRecords = await prisma.member.findMany({
-        where: { userId: { in: teamMembers.map((tm) => tm.userId) }, organizationId: input.organizationId },
+        where: {
+          userId: { in: teamMembers.map((tm) => tm.userId) },
+          organizationId: input.organizationId,
+        },
         select: { id: true },
       })
       const memberIds = memberRecords.map((m) => m.id)
 
       // Find active cycle covering today, else first active
       const now = new Date()
-      const activeCycle = await prisma.okrCycle.findFirst({
-        where: {
-          organizationId: input.organizationId,
-          status: "active",
-          startDate: { lte: now },
-          endDate: { gte: now },
-        },
-        orderBy: { startDate: "desc" },
-      }) || await prisma.okrCycle.findFirst({
-        where: { organizationId: input.organizationId, status: "active" },
-        orderBy: { startDate: "desc" },
-      })
+      const activeCycle =
+        (await prisma.okrCycle.findFirst({
+          where: {
+            organizationId: input.organizationId,
+            status: "active",
+            startDate: { lte: now },
+            endDate: { gte: now },
+          },
+          orderBy: { startDate: "desc" },
+        })) ||
+        (await prisma.okrCycle.findFirst({
+          where: { organizationId: input.organizationId, status: "active" },
+          orderBy: { startDate: "desc" },
+        }))
 
       let okrProgress = 0
       if (activeCycle) {
         const objectives = await prisma.objective.findMany({
-          where: { cycleId: activeCycle.id, teamId: input.teamId, ownerId: null },
+          where: {
+            cycleId: activeCycle.id,
+            teamId: input.teamId,
+            ownerId: null,
+          },
           select: { progress: true },
         })
-        okrProgress = objectives.length > 0
-          ? Math.round(objectives.reduce((sum, o) => sum + o.progress, 0) / objectives.length)
-          : 0
+        okrProgress =
+          objectives.length > 0
+            ? Math.round(
+                objectives.reduce((sum, o) => sum + o.progress, 0) /
+                  objectives.length,
+              )
+            : 0
       }
 
       // Get team member task count (excluding done)
       const taskCount = await prisma.taskAssignee.count({
-        where: { memberId: { in: memberIds }, task: { status: { not: "done" } } },
+        where: {
+          memberId: { in: memberIds },
+          task: { status: { not: "done" } },
+        },
       })
 
       return { okrProgress, taskCount }
@@ -116,18 +136,20 @@ export const dashboardRouter = router({
 
       // Find active cycle covering today, else first active
       const now = new Date()
-      const activeCycle = await prisma.okrCycle.findFirst({
-        where: {
-          organizationId: input.organizationId,
-          status: "active",
-          startDate: { lte: now },
-          endDate: { gte: now },
-        },
-        orderBy: { startDate: "desc" },
-      }) || await prisma.okrCycle.findFirst({
-        where: { organizationId: input.organizationId, status: "active" },
-        orderBy: { startDate: "desc" },
-      })
+      const activeCycle =
+        (await prisma.okrCycle.findFirst({
+          where: {
+            organizationId: input.organizationId,
+            status: "active",
+            startDate: { lte: now },
+            endDate: { gte: now },
+          },
+          orderBy: { startDate: "desc" },
+        })) ||
+        (await prisma.okrCycle.findFirst({
+          where: { organizationId: input.organizationId, status: "active" },
+          orderBy: { startDate: "desc" },
+        }))
 
       let okrProgress = 0
       if (activeCycle) {
@@ -135,9 +157,13 @@ export const dashboardRouter = router({
           where: { cycleId: activeCycle.id, ownerId: member.id },
           select: { progress: true },
         })
-        okrProgress = objectives.length > 0
-          ? Math.round(objectives.reduce((sum, o) => sum + o.progress, 0) / objectives.length)
-          : 0
+        okrProgress =
+          objectives.length > 0
+            ? Math.round(
+                objectives.reduce((sum, o) => sum + o.progress, 0) /
+                  objectives.length,
+              )
+            : 0
       }
 
       const taskCount = await prisma.taskAssignee.count({

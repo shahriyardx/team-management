@@ -13,28 +13,28 @@ datasource db {
 }
 
 model User {
-  id              String         @id
-  name            String
-  email           String
-  emailVerified   Boolean        @default(false)
-  image           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  sessions        Session[]
-  accounts        Account[]
-  members         Member[]
-  invitations     Invitation[]
-  createdTasks    Task[]         @relation("CreatedTasks")
-  comments        Comment[]
-  notifications   Notification[]
-  teamMemberships TeamMember[]
-  passkeys        Passkey[]
-  twoFactor       TwoFactor?
-  twoFactorEnabled Boolean      @default(false)
-  kbItems         KbItem[]
-  kbEditHistories KbEditHistory[]
-  kbComments      KbComment[]
-  announcements   Announcement[]     @relation("AuthoredAnnouncements")
+  id                   String                @id
+  name                 String
+  email                String
+  emailVerified        Boolean               @default(false)
+  image                String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  sessions             Session[]
+  accounts             Account[]
+  members              Member[]
+  invitations          Invitation[]
+  createdTasks         Task[]                @relation("CreatedTasks")
+  comments             Comment[]
+  notifications        Notification[]
+  teamMemberships      TeamMember[]
+  passkeys             Passkey[]
+  twoFactor            TwoFactor?
+  twoFactorEnabled     Boolean               @default(false)
+  kbItems              KbItem[]
+  kbEditHistories      KbEditHistory[]
+  kbComments           KbComment[]
+  announcements        Announcement[]        @relation("AuthoredAnnouncements")
   announcementComments AnnouncementComment[]
   announcementLikes    AnnouncementLike[]
 
@@ -61,41 +61,41 @@ model Passkey {
 }
 
 model TwoFactor {
-  id         String   @id
-  secret     String
+  id          String  @id
+  secret      String
   backupCodes String
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verified   Boolean  @default(true)
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified    Boolean @default(true)
 
   @@index([userId])
   @@map("two_factor")
 }
 
 model Organization {
-  id            String         @id
-  name          String
-  slug          String         @unique
-  logo          String?
-  websiteUrl    String?
-  department    String?
-  teamSize      String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  members       Member[]
-  invitations   Invitation[]
-  tasks         Task[]
-  labels        Label[]
-  notifications Notification[]
-  okrCycles     OkrCycle[]
-  objectives    Objective[]
-  keyResults    KeyResult[]
-  checkIns      CheckIn[]
-  teams         Team[]
-  kbCategories  KbCategory[]
+  id              String          @id
+  name            String
+  slug            String          @unique
+  logo            String?
+  websiteUrl      String?
+  department      String?
+  teamSize        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  members         Member[]
+  invitations     Invitation[]
+  tasks           Task[]
+  labels          Label[]
+  notifications   Notification[]
+  okrCycles       OkrCycle[]
+  objectives      Objective[]
+  keyResults      KeyResult[]
+  checkIns        CheckIn[]
+  teams           Team[]
+  kbCategories    KbCategory[]
   kbSubcategories KbSubcategory[]
-  kbItems       KbItem[]
-  announcements Announcement[]
+  kbItems         KbItem[]
+  announcements   Announcement[]
 
   @@map("organization")
 }
@@ -113,7 +113,7 @@ model Member {
   ownedObjectives  Objective[]
   ownedKeyResults  KeyResult[]
   authoredCheckIns CheckIn[]
-  teamsLed         Team[]      @relation("TeamLeader")
+  teamsLed         Team[]         @relation("TeamLeader")
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -266,20 +266,20 @@ model Comment {
 }
 
 model Notification {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   type           String
   title          String
   body           String?
-  read           Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  read           Boolean       @default(false)
+  createdAt      DateTime      @default(now())
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   taskId         String?
-  task           Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task           Task?         @relation(fields: [taskId], references: [id], onDelete: Cascade)
   kbItemId       String?
-  kbItem         KbItem?      @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+  kbItem         KbItem?       @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
   announcementId String?
   announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
@@ -363,14 +363,14 @@ model KeyResult {
 }
 
 model Team {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
   leaderId       String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  leader         Member?       @relation("TeamLeader", fields: [leaderId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  leader         Member?        @relation("TeamLeader", fields: [leaderId], references: [id])
   members        TeamMember[]
   invitations    Invitation[]
   tasks          Task[]
@@ -384,25 +384,25 @@ model Team {
 }
 
 model Announcement {
-  id              String       @id @default(cuid())
-  title           String
-  content         String
-  enableComments  Boolean      @default(true)
-  enableLikes     Boolean      @default(true)
-  pinned          Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  teamId          String?
-  team            Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  authorId        String
-  author          User         @relation("AuthoredAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
-  comments        AnnouncementComment[]
-  likes           AnnouncementLike[]
-  attachments     AnnouncementAttachment[]
-  links           AnnouncementLink[]
-  notifications   Notification[]
+  id             String                   @id @default(cuid())
+  title          String
+  content        String
+  enableComments Boolean                  @default(true)
+  enableLikes    Boolean                  @default(true)
+  pinned         Boolean                  @default(false)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  organizationId String
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User                     @relation("AuthoredAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  comments       AnnouncementComment[]
+  likes          AnnouncementLike[]
+  attachments    AnnouncementAttachment[]
+  links          AnnouncementLink[]
+  notifications  Notification[]
 
   @@index([organizationId])
   @@index([teamId])
@@ -501,13 +501,13 @@ model KbItem {
 }
 
 model KbAttachment {
-  id      String @id @default(cuid())
-  name    String
-  url     String
-  type    String
-  size    Int
+  id       String @id @default(cuid())
+  name     String
+  url      String
+  type     String
+  size     Int
   kbItemId String
-  kbItem  KbItem @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
+  kbItem   KbItem @relation(fields: [kbItemId], references: [id], onDelete: Cascade)
 
   @@index([kbItemId])
   @@map("kb_attachment")

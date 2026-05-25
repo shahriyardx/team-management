@@ -312,19 +312,15 @@ export const announcementRouter = router({
       }
 
       if (_newAttachments) {
-        // Delete old thumbnail attachments before creating new ones
-        const hasThumbnail = _newAttachments.some((a) => a.isThumbnail)
-        if (hasThumbnail) {
-          const oldThumbs = await prisma.announcementAttachment.findMany({
-            where: { announcementId: input.id, isThumbnail: true },
-            select: { url: true },
-          })
-          for (const t of oldThumbs) await deleteFromR2(t.url)
-          await prisma.announcementAttachment.deleteMany({
-            where: { announcementId: input.id, isThumbnail: true },
-          })
-        }
-        updateData.attachments = { create: _newAttachments }
+        // Delete removed attachments from R2 (compare URLs)
+        const oldAtts = await prisma.announcementAttachment.findMany({
+          where: { announcementId: input.id },
+          select: { url: true },
+        })
+        const newUrls = new Set(_newAttachments.map((a) => a.url))
+        const removed = oldAtts.filter((a) => !newUrls.has(a.url))
+        for (const att of removed) await deleteFromR2(att.url)
+        updateData.attachments = { deleteMany: {}, create: _newAttachments }
       }
 
       const announcement = await prisma.announcement.update({

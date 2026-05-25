@@ -179,7 +179,6 @@ export function AnnouncementForm({ announcementId }: Props) {
       router.back()
     },
   })
-  const deleteAttachmentMutation = api.announcement.deleteAttachment.useMutation()
 
   const uploadFile = async (file: File): Promise<string> => {
     const body = new FormData()
@@ -302,6 +301,15 @@ export function AnnouncementForm({ announcementId }: Props) {
     setIsThumbnailUploading(false)
 
     if (isEdit && announcementId) {
+      // Build attachments from kept existing + new uploads
+      const keptAttachments = existingAttachments
+        .filter((a) => !a.isThumbnail)
+        .map((a) => ({ name: a.name, url: a.url, type: a.type, size: a.size }))
+      const finalAttachments = [
+        ...keptAttachments,
+        ...(attachments ?? []),
+      ]
+
       updateMutation.mutate({
         id: announcementId,
         organizationId: organization?.id ?? "",
@@ -311,7 +319,7 @@ export function AnnouncementForm({ announcementId }: Props) {
         enableComments: values.enableComments,
         enableLikes: values.enableLikes,
         links: links.length > 0 ? links : [],
-        attachments,
+        attachments: finalAttachments.length > 0 ? finalAttachments : [],
       })
     } else {
       createMutation.mutate({
@@ -481,17 +489,11 @@ export function AnnouncementForm({ announcementId }: Props) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        deleteAttachmentMutation.mutate(
-                          { id: att.id, organizationId: organization?.id ?? "" },
-                          {
-                            onSuccess: () =>
-                              setExistingAttachments((prev) =>
-                                prev.filter((a) => a.id !== att.id),
-                              ),
-                          },
+                      onClick={() =>
+                        setExistingAttachments((prev) =>
+                          prev.filter((a) => a.id !== att.id),
                         )
-                      }}
+                      }
                       className="text-muted-foreground/50 hover:text-red-500 transition-colors shrink-0"
                     >
                       <X className="size-3.5" />
