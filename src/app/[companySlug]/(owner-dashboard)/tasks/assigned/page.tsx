@@ -1,11 +1,19 @@
-import type { Metadata } from "next"
-import AssignedTasksPage from "./page-client"
+"use client"
 
-export const metadata: Metadata = {
-  title: "Assigned Tasks",
-  description: "Tasks assigned to me.",
-}
+import { api } from "@/lib/trpc/client"
+import { TaskTable } from "@/components/tasks/task-table"
 
-export default function Page() {
-  return <AssignedTasksPage />
+export default function AssignedTasksPage() {
+  const utils = api.useUtils()
+  const { data, isLoading } = api.task.listOrgTasks.useQuery({ mode: "assigned" })
+
+  return (
+    <TaskTable
+      tasks={data?.tasks ?? []}
+      isLoading={isLoading}
+      listUtils={utils.task.listOrgTasks}
+      listInput={{ mode: "assigned" }}
+      dashboard="owner-dashboard"
+    />
+  )
 }

@@ -34,30 +34,30 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    dash(),
-    sentinel({
-      security: {
-        credentialStuffing: {
-          enabled: true,
-          thresholds: { challenge: 3, block: 5 },
-        },
-        velocity: {
-          enabled: true,
-          thresholds: { challenge: 10, block: 20 },
-          action: "block",
-        },
-        compromisedPassword: {
-          enabled: true,
-          action: "block",
-        },
-        emailValidation: {
-          enabled: true,
-          strictness: "low",
-          action: "block",
-        },
-        emailNormalization: { enabled: true },
-      },
-    }),
+    // dash(),
+    // sentinel({
+    //   security: {
+    //     credentialStuffing: {
+    //       enabled: true,
+    //       thresholds: { challenge: 3, block: 5 },
+    //     },
+    //     velocity: {
+    //       enabled: true,
+    //       thresholds: { challenge: 10, block: 20 },
+    //       action: "block",
+    //     },
+    //     compromisedPassword: {
+    //       enabled: true,
+    //       action: "block",
+    //     },
+    //     emailValidation: {
+    //       enabled: true,
+    //       strictness: "low",
+    //       action: "block",
+    //     },
+    //     emailNormalization: { enabled: true },
+    //   },
+    // }),
     haveIBeenPwned(),
     passkey(),
     twoFactor({ allowPasswordless: true }),

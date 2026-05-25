@@ -25,10 +25,9 @@ export function useOrgRedirect() {
       const org = orgs[0]
       await authClient.organization.setActive({ organizationId: org.id })
       const { data: member } = await authClient.organization.getActiveMember()
-      const role =
-        member && typeof member === "object" && "role" in member
-          ? (member as { role: string }).role
-          : "member"
+      if (!member) return
+      const role = member.role
+
       if (role === "owner" || role === "admin") {
         router.replace(`/${org.slug}`)
       } else {

@@ -10,7 +10,7 @@ import type { auth } from "./auth"
 
 export const authClient = createAuthClient({
   plugins: [
-    sentinelClient(),
+    // sentinelClient(),
     passkeyClient(),
     twoFactorClient({
       twoFactorPage: "/auth/two-factor",

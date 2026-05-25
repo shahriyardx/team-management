@@ -1,12 +1,10 @@
-"use client"
-
-import { Pie, PieChart } from "recharts"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { HardDrives } from "@phosphor-icons/react"
+
+interface Props {
+  storageUsed: number
+  storageLimit: number
+}
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
@@ -14,69 +12,33 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-interface Props {
-  storageUsed: number
-  storageLimit: number
-}
-
-const chartConfig = {
-  used: {
-    label: "Used",
-    color: "hsl(var(--foreground))",
-  },
-  remaining: {
-    label: "Remaining",
-    color: "hsl(var(--muted))",
-  },
-}
-
 export function StorageChart({ storageUsed, storageLimit }: Props) {
-  const remaining = Math.max(0, storageLimit - storageUsed)
-  const usedPct = ((storageUsed / storageLimit) * 100).toFixed(1)
-
-  const data = [
-    { name: "used", value: storageUsed, fill: "hsl(var(--foreground))" },
-    { name: "remaining", value: remaining, fill: "hsl(var(--muted))" },
-  ]
-
-  const empty = storageUsed === 0
+  const usedPct = Math.min((storageUsed / storageLimit) * 100, 100)
 
   return (
     <Card size="sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground">
+        <CardTitle className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <HardDrives className="size-4 text-muted-foreground" />
           Storage
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[180px]"
-        >
-          <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="dot" />}
+        <div className="flex flex-col gap-2">
+          <div className="h-2 w-full overflow-hidden bg-muted">
+            <div
+              className="h-full bg-foreground transition-all"
+              style={{ width: `${usedPct}%` }}
             />
-            <Pie
-              data={
-                empty
-                  ? [{ name: "remaining", value: 1, fill: "hsl(var(--muted))" }]
-                  : data
-              }
-              dataKey="value"
-              nameKey="name"
-              innerRadius={55}
-              outerRadius={75}
-              strokeWidth={0}
-            />
-          </PieChart>
-        </ChartContainer>
-        <div className="text-center mt-1">
-          <p className="text-lg font-semibold tabular-nums">{usedPct}%</p>
-          <p className="text-[11px] text-muted-foreground">
-            {formatBytes(storageUsed)} / {formatBytes(storageLimit)}
-          </p>
+          </div>
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-medium tabular-nums">
+              {usedPct.toFixed(1)}% used
+            </span>
+            <span className="text-muted-foreground tabular-nums">
+              {formatBytes(storageUsed)} / {formatBytes(storageLimit)}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

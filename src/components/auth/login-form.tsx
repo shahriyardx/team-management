@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -35,14 +35,16 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       setError(null)
       setLoading(true)
       const res = await authClient.signIn.email(data)
+
       if (res.error) {
-        console.log("[login] signIn.email error:", res.error)
         if (
           res.error?.message?.toLowerCase().includes("verify") ||
           res.error?.statusText?.toLowerCase().includes("verify") ||
           (res.error as any)?.code === "EMAIL_NOT_VERIFIED"
         ) {
-          router.replace(`/auth/email-verification?email=${encodeURIComponent(data.email)}`)
+          router.replace(
+            `/auth/email-verification?email=${encodeURIComponent(data.email)}`,
+          )
           return
         }
         setError(
@@ -53,22 +55,20 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
         setLoading(false)
         return
       }
-      if (callbackURL) {
-        router.replace(callbackURL)
-      } else {
-        redirectToFirstOrg("/onboard")
-      }
+
+      redirectToFirstOrg(callbackURL ?? "/onboard")
     },
     [router, callbackURL, redirectToFirstOrg],
   )
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true)
-    const { error } = await authClient.signIn.social({
+    await authClient.signIn.social({
       provider: "google",
+      callbackURL: "/auth/login",
+      errorCallbackURL: "/auth/login",
     })
-    if (!error) redirectToFirstOrg("/onboard")
-  }, [redirectToFirstOrg])
+  }, [])
 
   const handlePasskeySignIn = useCallback(async () => {
     setLoading(true)
@@ -79,8 +79,8 @@ export function LoginForm({ callbackURL }: { callbackURL?: string }) {
       setLoading(false)
       return
     }
-    redirectToFirstOrg("/onboard")
-  }, [redirectToFirstOrg])
+    redirectToFirstOrg(callbackURL ?? "/onboard")
+  }, [callbackURL, redirectToFirstOrg])
 
   return (
     <div className="w-full max-w-sm mx-auto">

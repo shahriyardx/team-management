@@ -1,11 +1,19 @@
-import type { Metadata } from "next"
-import OrgTasksPage from "./page-client"
+"use client"
 
-export const metadata: Metadata = {
-  title: "Organization Tasks",
-  description: "Org-level tasks assigned to me.",
-}
+import { api } from "@/lib/trpc/client"
+import { TaskTable } from "@/components/tasks/task-table"
 
-export default function Page() {
-  return <OrgTasksPage />
+export default function OrgTasksPage() {
+  const utils = api.useUtils()
+  const { data, isLoading } = api.task.listMyOrgTasks.useQuery()
+
+  return (
+    <TaskTable
+      tasks={data?.tasks ?? []}
+      isLoading={isLoading}
+      listUtils={utils.task.listMyOrgTasks}
+      listInput={undefined}
+      dashboard="team-leader-dashboard"
+    />
+  )
 }

@@ -14,8 +14,23 @@ export async function generateMetadata({
     where: { slug: companySlug },
   })
   const name = org?.name ?? "WeirdTeams"
+
+  const hdrs = await headers()
+  const session = await auth.api.getSession({ headers: hdrs })
+  let teamName: string | undefined
+  if (session?.session.activeTeamId) {
+    const team = await prisma.team.findUnique({
+      where: { id: session.session.activeTeamId },
+      select: { name: true },
+    })
+    teamName = team?.name
+  }
+
   return {
-    title: `Manage Team — ${name} — WeirdTeams`,
+    title: {
+      template: `%s — ${teamName || name}`,
+      default: `Manage Team — ${name}`,
+    },
     description: `Team leader dashboard for ${name}. Manage your team's tasks, knowledge base, OKRs, and members.`,
   }
 }

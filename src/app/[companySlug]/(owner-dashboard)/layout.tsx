@@ -15,7 +15,10 @@ export async function generateMetadata({
   })
   const name = org?.name ?? "WeirdTeams"
   return {
-    title: `Dashboard — ${name} — WeirdTeams`,
+    title: {
+      template: `%s — ${name}`,
+      default: `Dashboard — ${name}`,
+    },
     description: `Owner dashboard for ${name}. Manage teams, tasks, OKRs, and settings.`,
   }
 }

@@ -1,11 +1,19 @@
-import type { Metadata } from "next"
-import MyTasksPage from "./page-client"
+"use client"
 
-export const metadata: Metadata = {
-  title: "My Tasks",
-  description: "My tasks.",
-}
+import { api } from "@/lib/trpc/client"
+import { TaskTable } from "@/components/tasks/task-table"
 
-export default function Page() {
-  return <MyTasksPage />
+export default function MyTasksPage() {
+  const utils = api.useUtils()
+  const { data, isLoading } = api.task.listMyTeamTasks.useQuery()
+
+  return (
+    <TaskTable
+      tasks={data?.tasks ?? []}
+      isLoading={isLoading}
+      listUtils={utils.task.listMyTeamTasks}
+      listInput={undefined}
+      dashboard="team-leader-dashboard"
+    />
+  )
 }
