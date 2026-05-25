@@ -286,7 +286,7 @@ export function TaskTable({
         createMutation.mutate({
           ...input,
           organizationId: organization.id,
-          teamId: activeTeamId ?? undefined,
+          teamId: dashboard === "owner-dashboard" ? undefined : (activeTeamId ?? undefined),
         })
       }
       setCreateOpen(false)
