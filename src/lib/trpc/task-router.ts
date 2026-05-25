@@ -101,7 +101,35 @@ export const taskRouter = router({
     return { tasks, total: tasks.length }
   }),
 
-  listMyTasks: protectedProcedure.query(async ({ ctx }) => {
+  listMyTeamTasks: protectedProcedure.query(async ({ ctx }) => {
+    const orgId = ctx.session.session.activeOrganizationId
+    if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
+
+    const teamId = ctx.session.session.activeTeamId
+    if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
+
+    const member = await prisma.member.findUnique({
+      where: { organizationId_userId: { organizationId: orgId, userId: ctx.session.user.id } },
+    })
+    if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        organizationId: orgId,
+        teamId,
+        assignees: { some: { memberId: member.id } },
+      },
+      include: {
+        assignees: assigneesInclude,
+        createdBy: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    })
+
+    return { tasks, total: tasks.length }
+  }),
+
+  listMyOrgTasks: protectedProcedure.query(async ({ ctx }) => {
     const orgId = ctx.session.session.activeOrganizationId
     if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
 
@@ -110,38 +138,12 @@ export const taskRouter = router({
     })
     if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-    const where: Prisma.TaskWhereInput = {
-      organizationId: orgId,
-      assignees: { some: { memberId: member.id } },
-    }
-
-    if (member.role !== "owner" && member.role !== "admin") {
-      const teamId = ctx.session.session.activeTeamId
-      if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
-
-      const teamMember = await prisma.teamMember.findUnique({
-        where: { teamId_userId: { teamId, userId: ctx.session.user.id } },
-      })
-      if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
-
-      const team = await prisma.team.findUnique({
-        where: { id: teamId },
-        select: { leaderId: true },
-      })
-
-      if (team?.leaderId === member.id) {
-        // Team leader: include org-level tasks too
-        where.OR = [{ teamId }, { teamId: null }]
-      } else {
-        where.teamId = teamId
-      }
-    } else {
-      // Owner/admin: only org-scoped tasks (no team)
-      where.teamId = null
-    }
-
     const tasks = await prisma.task.findMany({
-      where,
+      where: {
+        organizationId: orgId,
+        teamId: null,
+        assignees: { some: { memberId: member.id } },
+      },
       include: {
         assignees: assigneesInclude,
         createdBy: { select: { id: true, name: true, email: true, image: true } },

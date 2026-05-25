@@ -69,6 +69,7 @@ function leaderItems(slug: string, todoCount: number): NavItem[] {
           url: `/${slug}/manage-team/tasks`,
           badge: todoCount,
         },
+        { title: "Organization Tasks", url: `/${slug}/manage-team/tasks/org` },
         { title: "All Tasks", url: `/${slug}/manage-team/tasks/all` },
         { title: "Assigned", url: `/${slug}/manage-team/tasks/assigned` },
       ],
