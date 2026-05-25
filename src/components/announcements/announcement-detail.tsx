@@ -175,11 +175,11 @@ export function AnnouncementDetail({ announcementId }: Props) {
         </div>
       )}
 
-      {announcement.attachments.length > 0 && (
+      {announcement.attachments.some((a) => !a.isThumbnail) && (
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Attachments</p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {announcement.attachments.map((att) => {
+            {announcement.attachments.filter((a) => !a.isThumbnail).map((att) => {
               const isImage = att.type?.startsWith("image/")
               const Icon = getFileIcon(att.type)
               return (

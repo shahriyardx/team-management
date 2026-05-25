@@ -19,13 +19,20 @@ export const dashboardRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const [memberCount, teamCount, taskCount] = await Promise.all([
+      const [memberCount, teamCount, taskCount, org] = await Promise.all([
         prisma.member.count({ where: { organizationId: input.organizationId } }),
         prisma.team.count({ where: { organizationId: input.organizationId } }),
         prisma.task.count({ where: { organizationId: input.organizationId } }),
+        prisma.organization.findUnique({
+          where: { id: input.organizationId },
+          select: { storageUsed: true },
+        }),
       ])
 
-      return { memberCount, teamCount, taskCount }
+      const storageUsed = Number(org?.storageUsed ?? 0)
+      const storageLimit = 1073741824
+
+      return { memberCount, teamCount, taskCount, storageUsed, storageLimit }
     }),
 
   teamStats: protectedProcedure

@@ -4,6 +4,7 @@ import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Buildings, UsersThree, ListChecks } from "@phosphor-icons/react"
+import { StorageChart } from "@/components/dashboard/storage-chart"
 
 function StatCard({ icon: Icon, label, value, color }: {
   icon: React.ComponentType<{ className?: string }>
@@ -45,10 +46,13 @@ export default function OwnerDashboard() {
         <p className="text-xs text-muted-foreground mt-0.5">Organization overview.</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon={UsersThree} label="Members" value={stats?.memberCount ?? "—"} color="text-emerald-500" />
         <StatCard icon={Buildings} label="Teams" value={stats?.teamCount ?? "—"} color="text-amber-500" />
         <StatCard icon={ListChecks} label="Total Tasks" value={stats?.taskCount ?? "—"} color="text-violet-500" />
+        {stats && (
+          <StorageChart storageUsed={stats.storageUsed} storageLimit={stats.storageLimit} />
+        )}
       </div>
     </div>
   )
