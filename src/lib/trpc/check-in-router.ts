@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
-import { router, protectedProcedure } from "./server"
+import { router, protectedProcedure, getMember } from "./server"
 
 export const checkInRouter = router({
   list: protectedProcedure
@@ -14,14 +14,7 @@ export const checkInRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const [checkIns, total] = await prisma.$transaction(async (tx) => {
@@ -58,14 +51,7 @@ export const checkInRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"

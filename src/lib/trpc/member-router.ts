@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
-import { router, protectedProcedure } from "./server"
+import { router, protectedProcedure, getMember } from "./server"
 
 export const memberRouter = router({
   listByUserIds: protectedProcedure
@@ -24,14 +24,7 @@ export const memberRouter = router({
   getMyRole: protectedProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       if (member.role === "owner" || member.role === "admin") {
@@ -50,26 +43,12 @@ export const memberRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const caller = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const caller = await getMember(input.organizationId, ctx.session.user.id)
       if (!caller || (caller.role !== "owner" && caller.role !== "admin")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const target = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: input.userId,
-          },
-        },
-      })
+      const target = await getMember(input.organizationId, input.userId)
       if (!target)
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -93,14 +72,7 @@ export const memberRouter = router({
   listWithStatus: protectedProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const caller = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const caller = await getMember(input.organizationId, ctx.session.user.id)
       if (!caller) throw new TRPCError({ code: "FORBIDDEN" })
 
       const members = await prisma.member.findMany({

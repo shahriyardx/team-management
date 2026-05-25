@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
-import { router, protectedProcedure } from "./server"
+import { router, protectedProcedure, getMember } from "./server"
 
 export const objectiveRouter = router({
   listOrgLevel: protectedProcedure
@@ -10,14 +10,7 @@ export const objectiveRouter = router({
       const orgId = ctx.session.session.activeOrganizationId
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(orgId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const objectives = await prisma.objective.findMany({
@@ -62,14 +55,7 @@ export const objectiveRouter = router({
       const activeTeamId = ctx.session.session.activeTeamId
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(orgId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"
@@ -163,14 +149,7 @@ export const objectiveRouter = router({
       const activeTeamId = ctx.session.session.activeTeamId
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(orgId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"
@@ -256,14 +235,7 @@ export const objectiveRouter = router({
       const orgId = ctx.session.session.activeOrganizationId
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(orgId, ctx.session.user.id)
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -309,14 +281,7 @@ export const objectiveRouter = router({
       const orgId = ctx.session.session.activeOrganizationId
       if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(orgId, ctx.session.user.id)
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -369,14 +334,7 @@ export const objectiveRouter = router({
       const activeTeamId = ctx.session.session.activeTeamId
       if (!orgId || !activeTeamId) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: orgId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(orgId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const cycle = await prisma.okrCycle.findUnique({
@@ -450,14 +408,7 @@ export const objectiveRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: existing.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(existing.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"
@@ -548,14 +499,7 @@ export const objectiveRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: existing.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(existing.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"

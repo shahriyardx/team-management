@@ -1,20 +1,13 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
-import { router, protectedProcedure } from "./server"
+import { router, protectedProcedure, getMember } from "./server"
 
 export const teamRouter = router({
   list: protectedProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const teams = await prisma.team.findMany({
@@ -45,14 +38,7 @@ export const teamRouter = router({
   getById: protectedProcedure
     .input(z.object({ teamId: z.string(), organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const team = await prisma.team.findFirst({
@@ -83,14 +69,7 @@ export const teamRouter = router({
   getMyTeams: protectedProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isOwnerAdmin = member.role === "owner" || member.role === "admin"
@@ -134,14 +113,7 @@ export const teamRouter = router({
   setActiveTeam: protectedProcedure
     .input(z.object({ teamId: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member || (member.role !== "owner" && member.role !== "admin")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -168,14 +140,7 @@ export const teamRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const team = await prisma.team.findFirst({
@@ -187,14 +152,7 @@ export const teamRouter = router({
       const isLeader = team.leaderId === member.id
       if (!isOwnerAdmin && !isLeader) throw new TRPCError({ code: "FORBIDDEN" })
 
-      const targetMember = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: input.userId,
-          },
-        },
-      })
+      const targetMember = await getMember(input.organizationId, input.userId)
       if (!targetMember)
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -228,14 +186,7 @@ export const teamRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const team = await prisma.team.findFirst({
@@ -277,14 +228,7 @@ export const teamRouter = router({
   delete: protectedProcedure
     .input(z.object({ teamId: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const team = await prisma.team.findFirst({
@@ -315,14 +259,7 @@ export const teamRouter = router({
       const team = await prisma.team.findUnique({ where: { id: input.teamId } })
       if (!team) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: team.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(team.organizationId, ctx.session.user.id)
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -401,14 +338,7 @@ export const teamRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const caller = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const caller = await getMember(input.organizationId, ctx.session.user.id)
       if (!caller) throw new TRPCError({ code: "FORBIDDEN" })
 
       const team = await prisma.team.findFirst({

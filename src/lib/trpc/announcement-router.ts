@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
-import { router, protectedProcedure } from "./server"
+import { router, protectedProcedure, getMember } from "./server"
 import { deleteFromR2 } from "@/lib/r2"
 
 export const announcementRouter = router({
@@ -17,14 +17,7 @@ export const announcementRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
@@ -115,14 +108,7 @@ export const announcementRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.string(), organizationId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const announcement = await prisma.announcement.findUnique({
@@ -198,14 +184,7 @@ export const announcementRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
@@ -318,14 +297,7 @@ export const announcementRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const existing = await prisma.announcement.findUnique({
@@ -390,14 +362,7 @@ export const announcementRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const existing = await prisma.announcement.findUnique({
@@ -425,14 +390,7 @@ export const announcementRouter = router({
   deleteAttachment: protectedProcedure
     .input(z.object({ id: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const attachment = await prisma.announcementAttachment.findUnique({
@@ -464,14 +422,7 @@ export const announcementRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const announcement = await prisma.announcement.findUnique({
@@ -538,14 +489,7 @@ export const announcementRouter = router({
   commentDelete: protectedProcedure
     .input(z.object({ id: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const existing = await prisma.announcementComment.findUnique({
@@ -572,14 +516,7 @@ export const announcementRouter = router({
   likeToggle: protectedProcedure
     .input(z.object({ announcementId: z.string(), organizationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const member = await prisma.member.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: ctx.session.user.id,
-          },
-        },
-      })
+      const member = await getMember(input.organizationId, ctx.session.user.id)
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const announcement = await prisma.announcement.findUnique({
