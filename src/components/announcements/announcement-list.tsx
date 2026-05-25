@@ -22,6 +22,7 @@ import type { AnnouncementItem } from "./types"
 interface Props {
   scope?: "org" | "team"
   showScopeToggle?: boolean
+  defaultScope?: "org" | "team"
 }
 
 const PAGE_SIZE = 20
@@ -35,7 +36,7 @@ export function AnnouncementList({ scope, showScopeToggle }: Props) {
   const basePath = pathname.replace(/\/+$/, "")
   const isMemberView = pathname.startsWith(`/${slug}/team`)
 
-  const [scopeFilter, setScopeFilter] = useState<"org" | "team">(scope ?? "org")
+  const [scopeFilter, setScopeFilter] = useState<"org" | "team">(defaultScope ?? "org")
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
 

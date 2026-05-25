@@ -3,5 +3,5 @@
 import { AnnouncementList } from "@/components/announcements/announcement-list"
 
 export default function Page() {
-  return <AnnouncementList showScopeToggle />
+  return <AnnouncementList showScopeToggle defaultScope="team" />
 }
