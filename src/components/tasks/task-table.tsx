@@ -117,6 +117,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
     {
       organizationId: organization?.id ?? "",
       teamId: activeTeamId ?? null,
+      includeOrgTasks: mode === "mine" && !!activeTeamId,
       skip: 0,
       take: 100,
     },
@@ -194,6 +195,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       const queryInput = {
         organizationId: organization?.id ?? "",
         teamId: activeTeamId ?? null,
+        includeOrgTasks: mode === "mine" && !!activeTeamId,
         skip: 0,
         take: 100,
       }
@@ -314,6 +316,7 @@ export function TaskTable({ mode }: { mode: "mine" | "all" | "assigned" }) {
       const queryInput = {
         organizationId: organization?.id ?? "",
         teamId: activeTeamId ?? null,
+        includeOrgTasks: mode === "mine" && !!activeTeamId,
         skip: 0,
         take: 100,
       }

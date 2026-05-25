@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "../../generated/prisma/client"
 import { router, protectedProcedure } from "./server"
 
 const assigneesInclude = {
@@ -40,6 +41,7 @@ export const taskRouter = router({
       z.object({
         organizationId: z.string(),
         teamId: z.string().nullable().optional(),
+        includeOrgTasks: z.boolean().optional(),
         skip: z.number().int().min(0).default(0),
         take: z.number().int().min(1).max(100).default(25),
       }),
@@ -77,12 +79,21 @@ export const taskRouter = router({
 
       const whereTeamId = input.teamId !== undefined ? input.teamId : undefined
 
+      const taskWhere: Prisma.TaskWhereInput = {
+        organizationId: input.organizationId,
+      }
+
+      if (whereTeamId !== undefined) {
+        if (input.includeOrgTasks && whereTeamId !== null) {
+          taskWhere.OR = [{ teamId: whereTeamId }, { teamId: null }]
+        } else {
+          taskWhere.teamId = whereTeamId
+        }
+      }
+
       const [tasks, total] = await prisma.$transaction(async (tx) => {
         const items = await tx.task.findMany({
-          where: {
-            organizationId: input.organizationId,
-            ...(whereTeamId !== undefined ? { teamId: whereTeamId } : {}),
-          },
+          where: taskWhere,
           include: {
             assignees: assigneesInclude,
             createdBy: {
@@ -93,12 +104,7 @@ export const taskRouter = router({
           skip: input.skip,
           take: input.take,
         })
-        const count = await tx.task.count({
-          where: {
-            organizationId: input.organizationId,
-            ...(whereTeamId !== undefined ? { teamId: whereTeamId } : {}),
-          },
-        })
+        const count = await tx.task.count({ where: taskWhere })
         return [items, count] as const
       })
 
