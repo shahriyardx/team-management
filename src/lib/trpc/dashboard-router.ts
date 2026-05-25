@@ -60,45 +60,21 @@ export const dashboardRouter = router({
       })
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
-      // Get team member IDs
       const teamMembers = await prisma.teamMember.findMany({
         where: { teamId: input.teamId },
-        select: { userId: true },
+        select: { memberId: true },
       })
-      const memberRecords = await prisma.member.findMany({
-        where: {
-          userId: { in: teamMembers.map((tm) => tm.userId) },
-          organizationId: input.organizationId,
-        },
-        select: { id: true },
-      })
-      const memberIds = memberRecords.map((m) => m.id)
+      const memberIds = teamMembers.map((tm) => tm.memberId)
 
-      // Find active cycle covering today, else first active
-      const now = new Date()
-      const activeCycle =
-        (await prisma.okrCycle.findFirst({
-          where: {
-            organizationId: input.organizationId,
-            status: "active",
-            startDate: { lte: now },
-            endDate: { gte: now },
-          },
-          orderBy: { startDate: "desc" },
-        })) ||
-        (await prisma.okrCycle.findFirst({
-          where: { organizationId: input.organizationId, status: "active" },
-          orderBy: { startDate: "desc" },
-        }))
+      const activeCycle = await prisma.okrCycle.findFirst({
+        where: { organizationId: input.organizationId, status: "active" },
+        orderBy: { startDate: "desc" },
+      })
 
       let okrProgress = 0
       if (activeCycle) {
         const objectives = await prisma.objective.findMany({
-          where: {
-            cycleId: activeCycle.id,
-            teamId: input.teamId,
-            ownerId: null,
-          },
+          where: { cycleId: activeCycle.id, teamId: input.teamId, ownerId: null },
           select: { progress: true },
         })
         okrProgress =
@@ -110,7 +86,6 @@ export const dashboardRouter = router({
             : 0
       }
 
-      // Get team member task count (excluding done)
       const taskCount = await prisma.taskAssignee.count({
         where: {
           memberId: { in: memberIds },
