@@ -49,7 +49,7 @@ export const taskRouter = router({
       throw new TRPCError({ code: "FORBIDDEN" })
     }
 
-    const where: Prisma.TaskWhereInput = { organizationId: orgId }
+    const where: Prisma.TaskWhereInput = { organizationId: orgId, teamId: null }
     if (input?.mode === "assigned") {
       where.createdById = ctx.session.user.id
     }
@@ -135,6 +135,9 @@ export const taskRouter = router({
       } else {
         where.teamId = teamId
       }
+    } else {
+      // Owner/admin: only org-scoped tasks (no team)
+      where.teamId = null
     }
 
     const tasks = await prisma.task.findMany({
@@ -149,7 +152,7 @@ export const taskRouter = router({
     return { tasks, total: tasks.length }
   }),
 
-  listAssignableMembers: protectedProcedure.query(async ({ ctx }) => {
+  listOrgAssignableMembers: protectedProcedure.query(async ({ ctx }) => {
     const orgId = ctx.session.session.activeOrganizationId
     if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
 
@@ -161,12 +164,7 @@ export const taskRouter = router({
         },
       },
     })
-    if (
-      !member ||
-      (member.role !== "admin" && member.role !== "owner")
-    ) {
-      throw new TRPCError({ code: "FORBIDDEN" })
-    }
+    if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
     const members = await prisma.member.findMany({
       where: {
@@ -186,7 +184,7 @@ export const taskRouter = router({
     return { members }
   }),
 
-  listTeamAssignees: protectedProcedure.query(async ({ ctx }) => {
+  listTeamAssignableMember: protectedProcedure.query(async ({ ctx }) => {
     const teamId = ctx.session.session.activeTeamId
     if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
 
@@ -207,12 +205,7 @@ export const taskRouter = router({
     if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
     const teamMember = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: {
-          teamId,
-          userId: ctx.session.user.id,
-        },
-      },
+      where: { teamId_userId: { teamId, userId: ctx.session.user.id } },
     })
     if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
 

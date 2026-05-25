@@ -157,26 +157,22 @@ export function TaskTable({
     currentMember?.role === "admin" || currentMember?.role === "owner"
 
   const { data: assignableData, isLoading: assignableLoading } =
-    api.task.listAssignableMembers.useQuery(undefined, {
-      enabled: !!organization && canEditAll,
+    api.task.listOrgAssignableMembers.useQuery(undefined, {
+      enabled: !!organization && !activeTeamId,
     })
 
   const { data: teamAssigneesData, isLoading: teamAssigneesLoading } =
-    api.task.listTeamAssignees.useQuery(undefined, {
-      enabled: !!organization && !!activeTeamId && !canEditAll,
+    api.task.listTeamAssignableMember.useQuery(undefined, {
+      enabled: !!organization && !!activeTeamId,
     })
 
-  const assigneeMembers = canEditAll
-    ? (assignableData?.members ?? [])
-    : activeTeamId
-      ? (teamAssigneesData?.members ?? [])
-      : []
+  const assigneeMembers = activeTeamId
+    ? (teamAssigneesData?.members ?? [])
+    : (assignableData?.members ?? [])
 
-  const membersLoading = canEditAll
-    ? orgMembersLoading || assignableLoading
-    : activeTeamId
-      ? orgMembersLoading || teamAssigneesLoading
-      : orgMembersLoading
+  const membersLoading = activeTeamId
+    ? teamAssigneesLoading
+    : assignableLoading
 
   // Create/edit mutation
   const createMutation = api.task.create.useMutation({

@@ -136,17 +136,6 @@
   }
 }
 
-/* nprogress bar color matches theme */
-#nprogress .bar {
-  background: var(--primary);
-  height: 2px;
-}
-#nprogress .peg {
-  box-shadow:
-    0 0 10px var(--primary),
-    0 0 5px var(--primary);
-}
-
 .contains-task-list {
   list-style: none;
   padding-left: 0;
