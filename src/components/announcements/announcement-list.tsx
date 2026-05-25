@@ -20,14 +20,13 @@ import { Input } from "@/components/ui/input"
 import type { AnnouncementItem } from "./types"
 
 interface Props {
-  scope?: "org" | "team"
   showScopeToggle?: boolean
   defaultScope?: "org" | "team"
 }
 
 const PAGE_SIZE = 20
 
-export function AnnouncementList({ scope, showScopeToggle, defaultScope }: Props) {
+export function AnnouncementList({ showScopeToggle, defaultScope }: Props) {
   const { organization } = useOrganization()
   const router = useRouter()
   const params = useParams()
@@ -45,8 +44,6 @@ export function AnnouncementList({ scope, showScopeToggle, defaultScope }: Props
     return () => clearTimeout(timer)
   }, [search])
 
-  const activeScope = scope ?? scopeFilter
-
   const {
     data,
     isLoading,
@@ -57,7 +54,7 @@ export function AnnouncementList({ scope, showScopeToggle, defaultScope }: Props
   } = api.announcement.list.useInfiniteQuery(
     {
       organizationId: organization?.id ?? "",
-      scope: activeScope,
+      scope: scopeFilter,
       search: debouncedSearch || undefined,
       take: PAGE_SIZE,
     },
