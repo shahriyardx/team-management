@@ -99,6 +99,9 @@ export function TeamManager() {
   })
 
   const setActiveTeamMutation = api.team.setActiveTeam.useMutation()
+  const deleteTeam = api.team.delete.useMutation({
+    onSuccess: () => refetch(),
+  })
 
   const loadOrgMembers = useCallback(async () => {
     if (!organization) return
@@ -369,14 +372,14 @@ export function TeamManager() {
                             </Button>
                             <Button
                               variant="destructive"
-                              onClick={async () => {
-                                try {
-                                  await authClient.organization.removeTeam({
+                              onClick={() => {
+                                deleteTeam.mutate(
+                                  {
                                     teamId: team.id,
-                                  })
-                                  setDeleteConfirmId(null)
-                                  refetch()
-                                } catch {}
+                                    organizationId: organization?.id ?? "",
+                                  },
+                                  { onSettled: () => setDeleteConfirmId(null) },
+                                )
                               }}
                             >
                               Delete
