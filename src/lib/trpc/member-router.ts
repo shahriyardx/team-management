@@ -92,7 +92,27 @@ export const memberRouter = router({
 
   listActiveOrganizations: protectedProcedure.query(async ({ ctx }) => {
     const memberships = await prisma.member.findMany({
-      where: { userId: ctx.session.user.id, status: "active" },
+      where: {
+        userId: ctx.session.user.id,
+        status: "active",
+        OR: [
+          { role: { in: ["owner", "admin"] } },
+          {
+            organization: {
+              teams: {
+                some: {
+                  members: {
+                    some: {
+                      userId: ctx.session.user.id,
+                      status: "active",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
       include: {
         organization: {
           select: {

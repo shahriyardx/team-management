@@ -9,32 +9,17 @@ export function useOrgRedirect() {
 
   const redirectToFirstOrg = useCallback(
     async (fallbackPath = "/onboard") => {
-      let orgs: Array<{ id: string; slug: string }> = []
-      try {
-        const { organizations } =
-          await utils.member.listActiveOrganizations.fetch()
-        orgs = organizations
-      } catch {
-        const { data } = await authClient.organization.list()
-        orgs = (data ?? []) as Array<{ id: string; slug: string }>
-      }
-      if (!orgs.length) {
+      const { organizations } =
+        await utils.member.listActiveOrganizations.fetch()
+      if (!organizations.length) {
         router.replace(fallbackPath)
         return
       }
-      const org = orgs[0]
+      const org = organizations[0]
       await authClient.organization.setActive({ organizationId: org.id })
-      const { data: member } = await authClient.organization.getActiveMember()
-      if (!member) return
-      const role = member.role
-
-      if (role === "owner" || role === "admin") {
-        router.replace(`/${org.slug}`)
-      } else {
-        router.replace(`/${org.slug}/team`)
-      }
+      router.replace(`/${org.slug}`)
     },
-    [router],
+    [router, utils],
   )
 
   return { redirectToFirstOrg }

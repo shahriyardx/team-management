@@ -17,11 +17,30 @@ export default async function LoginPage(props: {
     }
 
     const member = await prisma.member.findFirst({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+        status: "active",
+        OR: [
+          { role: { in: ["owner", "admin"] } },
+          {
+            organization: {
+              teams: {
+                some: {
+                  members: {
+                    some: {
+                      userId: session.user.id,
+                      status: "active",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
-        role: true,
         organizationId: true,
         organization: { select: { slug: true } },
       },
@@ -32,11 +51,7 @@ export default async function LoginPage(props: {
         body: { organizationId: member.organizationId },
         headers: h,
       })
-
-      if (member.role === "owner" || member.role === "admin") {
-        redirect(`/${member.organization.slug}`)
-      }
-      redirect(`/${member.organization.slug}/team`)
+      redirect(`/${member.organization.slug}`)
     }
 
     redirect("/onboard")
