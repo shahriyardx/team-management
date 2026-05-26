@@ -55,14 +55,14 @@ export default async function ManageTeamLayout({
 
   if (!activeTeamId || !member) redirect(`/${companySlug}`)
 
-  const team = await prisma.team.findFirst({
+  const teamMember = await prisma.teamMember.findFirst({
     where: {
-      id: activeTeamId,
-      organizationId: session.session.activeOrganizationId,
-      leaderId: member.id,
+      userId: session.user.id,
+      teamId: activeTeamId,
+      role: "leader",
     },
   })
-  if (!team) redirect(`/${companySlug}`)
+  if (!teamMember) redirect(`/${companySlug}`)
 
   return (
     <DashboardLayout sidebar={<LeaderSidebar />}>{children}</DashboardLayout>
