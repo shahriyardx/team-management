@@ -1,10 +1,7 @@
 FROM oven/bun:1 AS build
-
 WORKDIR /app
-
 COPY package.json bun.lock prisma.config.ts ./
 RUN bun install --frozen-lockfile
-
 COPY prisma ./prisma
 RUN bun prisma generate
 COPY . .
@@ -12,7 +9,6 @@ ENV SKIP_ENV_VALIDATION=true
 RUN bun run build
 
 FROM oven/bun:1 AS runner
-
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -22,9 +18,9 @@ COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 
+COPY --from=build /app/node_modules/.bin ./node_modules/.bin
 COPY --from=build /app/node_modules/prisma ./node_modules/prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
