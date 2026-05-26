@@ -21,6 +21,7 @@ import {
 } from "@/lib/organization-context"
 import { OwnerSidebar } from "@/components/owner-sidebar"
 import { LeaderSidebar } from "@/components/leader-sidebar"
+import { CoLeaderSidebar } from "@/components/co-leader-sidebar"
 import { MemberSidebar } from "@/components/member-sidebar"
 import { authClient } from "@/lib/auth-client"
 import { api } from "@/lib/trpc/client"
@@ -251,12 +252,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const isTeamBranch =
     !!slug &&
     (pathname.startsWith(`/${s}/manage-team`) ||
+      pathname.startsWith(`/${s}/co-leader`) ||
       pathname === `/${s}/team` ||
       pathname.startsWith(`/${s}/team/`))
 
-  let branch: "owner" | "leader" | "member" = "owner"
+  let branch: "owner" | "leader" | "co-leader" | "member" = "owner"
   if (slug) {
-    if (pathname.startsWith(`/${slug}/manage-team`)) branch = "leader"
+    if (pathname.startsWith(`/${slug}/co-leader`)) branch = "co-leader"
+    else if (pathname.startsWith(`/${slug}/manage-team`)) branch = "leader"
     else if (
       pathname === `/${slug}/team` ||
       pathname.startsWith(`/${slug}/team/`)
@@ -309,6 +312,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <OwnerSidebar session={session} />
       ) : branch === "leader" ? (
         <LeaderSidebar session={session} />
+      ) : branch === "co-leader" ? (
+        <CoLeaderSidebar session={session} />
       ) : (
         <MemberSidebar session={session} />
       )}

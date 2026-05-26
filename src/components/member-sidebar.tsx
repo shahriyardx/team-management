@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { useParams } from "next/navigation"
 import {
   ArrowLeft,
+  ArrowsLeftRight,
   BookBookmark,
   House,
   ListChecks,
@@ -16,6 +17,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { TeamSwitcher } from "@/components/team-switcher"
@@ -87,6 +91,12 @@ export function MemberSidebar({
     { enabled: !!organization },
   )
 
+  const { data: teamRole } = api.team.getMyTeamRole.useQuery(
+    { teamId: activeTeamId ?? "" },
+    { enabled: !!activeTeamId },
+  )
+  const isCoLeader = teamRole?.role === "co-leader"
+
   const items = useMemo(() => {
     if (!slug) return []
     const base = memberItems(slug, counts ?? {})
@@ -102,6 +112,22 @@ export function MemberSidebar({
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
+        {isCoLeader && (
+          <SidebarMenu className="px-1.5 pb-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="Co-leader Dashboard"
+                className="border border-dashed border-blue-400/40 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 data-[active=true]:bg-blue-50 dark:data-[active=true]:bg-blue-950/40 text-xs"
+              >
+                <a href={`/${slug}/co-leader`}>
+                  <ArrowsLeftRight className="size-3.5" />
+                  <span>Co-leader Dashboard</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         <SidebarNavItems items={items} />
       </SidebarContent>
       <SidebarFooter>

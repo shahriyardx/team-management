@@ -189,12 +189,19 @@ export const announcementRouter = router({
 
       const isOrgAdmin = member.role === "owner" || member.role === "admin"
 
-      // Team-scoped: must be team leader or org admin
+      // Team-scoped: must be team leader, co-leader, or org admin
       if (input.teamId && !isOrgAdmin) {
         const team = await prisma.team.findUnique({
           where: { id: input.teamId },
         })
-        if (!team || team.leaderId !== member.id) {
+        const isCoLeader = await prisma.teamMember.findFirst({
+          where: {
+            teamId: input.teamId,
+            userId: ctx.session.user.id,
+            role: "co-leader",
+          },
+        })
+        if (!team || (team.leaderId !== member.id && !isCoLeader)) {
           throw new TRPCError({ code: "FORBIDDEN" })
         }
       }
@@ -309,7 +316,16 @@ export const announcementRouter = router({
       const isAuthor = existing.authorId === ctx.session.user.id
 
       if (!isOrgAdmin && !isAuthor) {
-        throw new TRPCError({ code: "FORBIDDEN" })
+        const isCoLeader =
+          existing.teamId &&
+          (await prisma.teamMember.findFirst({
+            where: {
+              teamId: existing.teamId,
+              userId: ctx.session.user.id,
+              role: "co-leader",
+            },
+          }))
+        if (!isCoLeader) throw new TRPCError({ code: "FORBIDDEN" })
       }
 
       const {
@@ -375,7 +391,16 @@ export const announcementRouter = router({
       const isAuthor = existing.authorId === ctx.session.user.id
 
       if (!isOrgAdmin && !isAuthor) {
-        throw new TRPCError({ code: "FORBIDDEN" })
+        const isCoLeader =
+          existing.teamId &&
+          (await prisma.teamMember.findFirst({
+            where: {
+              teamId: existing.teamId,
+              userId: ctx.session.user.id,
+              role: "co-leader",
+            },
+          }))
+        if (!isCoLeader) throw new TRPCError({ code: "FORBIDDEN" })
       }
 
       // Delete attachments from R2

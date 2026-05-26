@@ -36,6 +36,9 @@ export default function TeamMembersPage() {
   const addMemberMutation = api.team.addTeamMember.useMutation({
     onSuccess: () => refetch(),
   })
+  const setCoLeaderMutation = api.team.setCoLeader.useMutation({
+    onSuccess: () => refetch(),
+  })
   const team = data?.team
   const isLeader = team?.leader?.user?.id === session?.user?.id
   const canManage = isLeader || role === "owner" || role === "admin"
@@ -200,6 +203,11 @@ export default function TeamMembersPage() {
                     Leader
                   </Badge>
                 )}
+                {tm.role === "co-leader" && (
+                  <Badge variant="secondary" className="text-[9px]">
+                    Co-leader
+                  </Badge>
+                )}
                 {tm.status === "inactive" && (
                   <Badge variant="secondary" className="text-[9px]">
                     Inactive
@@ -212,6 +220,25 @@ export default function TeamMembersPage() {
             </div>
             {canManage && team.leader?.user?.id !== tm.user.id && (
               <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    if (!activeTeamId || !organization) return
+                    setCoLeaderMutation.mutate({
+                      teamId: activeTeamId,
+                      organizationId: organization.id,
+                      userId: tm.user.id,
+                      isCoLeader: tm.role !== "co-leader",
+                    })
+                  }}
+                  disabled={setCoLeaderMutation.isPending}
+                >
+                  {tm.role === "co-leader"
+                    ? "Remove Co-leader"
+                    : "Make Co-leader"}
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

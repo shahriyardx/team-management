@@ -97,7 +97,7 @@ export function AnnouncementForm({ announcementId }: Props) {
   const _slug = params.companySlug as string
   const utils = api.useUtils()
   const { data: sessionData } = authClient.useSession()
-  const isManageTeam = pathname.includes("/manage-team/")
+  const isTeamScoped = pathname.includes("/manage-team/") || pathname.includes("/co-leader/")
   const activeTeamId = sessionData?.session?.activeTeamId ?? null
   const isEdit = !!announcementId
 
@@ -374,7 +374,7 @@ export function AnnouncementForm({ announcementId }: Props) {
         title: values.title.trim(),
         content: values.content.trim(),
         organizationId: organization?.id ?? "",
-        teamId: isManageTeam
+        teamId: isTeamScoped
           ? (activeTeamId ?? undefined)
           : values.teamId || undefined,
         pinned: values.pinned,
@@ -455,7 +455,7 @@ export function AnnouncementForm({ announcementId }: Props) {
           )}
         />
 
-        {!isManageTeam && !isEdit && (
+        {!isTeamScoped && !isEdit && (
           <Controller
             control={form.control}
             name="teamId"

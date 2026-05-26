@@ -4,6 +4,68 @@ import { prisma } from "@/lib/prisma"
 import { router, protectedProcedure, getMember } from "./server"
 
 export const teamRouter = router({
+  getMyTeamRole: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tm = await prisma.teamMember.findUnique({
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: ctx.session.user.id },
+        },
+        select: { role: true },
+      })
+      return { role: tm?.role ?? "member" }
+    }),
+
+  setCoLeader: protectedProcedure
+    .input(
+      z.object({
+        teamId: z.string(),
+        organizationId: z.string(),
+        userId: z.string(),
+        isCoLeader: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const member = await getMember(input.organizationId, ctx.session.user.id)
+      if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const team = await prisma.team.findFirst({
+        where: { id: input.teamId, organizationId: input.organizationId },
+      })
+      if (!team) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const isOwnerAdmin = member.role === "owner" || member.role === "admin"
+      const isTeamLeader = team.leaderId === member.id
+      if (!isOwnerAdmin && !isTeamLeader)
+        throw new TRPCError({ code: "FORBIDDEN" })
+
+      // Can't make the primary leader a co-leader
+      const targetTeamMember = await prisma.teamMember.findUnique({
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
+      })
+      if (!targetTeamMember)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Not a team member",
+        })
+      if (targetTeamMember.role === "leader")
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot change role of team leader",
+        })
+
+      await prisma.teamMember.update({
+        where: {
+          teamId_userId: { teamId: input.teamId, userId: input.userId },
+        },
+        data: { role: input.isCoLeader ? "co-leader" : "member" },
+      })
+
+      return { success: true }
+    }),
+
   list: protectedProcedure
     .input(z.object({ organizationId: z.string() }))
     .query(async ({ ctx, input }) => {

@@ -64,12 +64,11 @@ export default function TeamMembersPage() {
                     Leader
                   </Badge>
                 )}
-                {tm.role === "leader" &&
-                  team.leader?.user?.id !== tm.user.id && (
-                    <Badge variant="secondary" className="text-[9px]">
-                      Co-leader
-                    </Badge>
-                  )}
+                {tm.role === "co-leader" && (
+                  <Badge variant="secondary" className="text-[9px]">
+                    Co-leader
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground truncate">
                 {tm.user.email}
