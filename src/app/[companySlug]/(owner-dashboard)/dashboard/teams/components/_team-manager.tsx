@@ -268,7 +268,6 @@ export function TeamManager() {
                 companySlug={companySlug}
                 sessionUserId={session?.user?.id}
                 organizationId={organization?.id ?? ""}
-                canDelete={canManage}
                 onDeleted={refetch}
               />
             ))}

@@ -55,7 +55,6 @@ interface TeamCardProps {
   companySlug: string
   sessionUserId: string | undefined
   organizationId: string
-  canDelete: boolean
   onDeleted: () => void
 }
 
@@ -64,7 +63,6 @@ export function TeamCard({
   companySlug,
   sessionUserId,
   organizationId,
-  canDelete,
   onDeleted,
 }: TeamCardProps) {
   const router = useRouter()
@@ -128,91 +126,87 @@ export function TeamCard({
               organizationId,
             })
             const isLeader = team.leader?.user?.id === sessionUserId
-            if (isLeader) window.location.href = `/${companySlug}/manage-team`
+            if (isLeader) router.push(`/${companySlug}/manage-team`)
             else router.push(`/${companySlug}/team`)
           }}
         >
           Manage
         </Button>
-        {canDelete && (
-          <>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="text-xs"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash className="size-3" />
-              Delete
-            </Button>
-            <Dialog
-              open={deleteOpen}
-              onOpenChange={(o) => {
-                if (!o) {
+        <Button
+          size="sm"
+          variant="destructive"
+          className="text-xs"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash className="size-3" />
+          Delete
+        </Button>
+        <Dialog
+          open={deleteOpen}
+          onOpenChange={(o) => {
+            if (!o) {
+              setDeleteOpen(false)
+              setConfirmName("")
+              setDeleteError("")
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete team</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. Type{" "}
+                <span className="font-medium text-foreground">
+                  {team.name}
+                </span>{" "}
+                to confirm.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-3 px-2">
+              <Input
+                value={confirmName}
+                onChange={(e) => {
+                  setConfirmName(e.target.value)
+                  setDeleteError("")
+                }}
+                placeholder={team.name}
+                className="text-xs"
+              />
+              {deleteError && (
+                <p className="text-xs text-destructive">{deleteError}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
                   setDeleteOpen(false)
                   setConfirmName("")
-                  setDeleteError("")
-                }
-              }}
-            >
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete team</DialogTitle>
-                  <DialogDescription>
-                    This action cannot be undone. Type{" "}
-                    <span className="font-medium text-foreground">
-                      {team.name}
-                    </span>{" "}
-                    to confirm.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-3 px-2">
-                  <Input
-                    value={confirmName}
-                    onChange={(e) => {
-                      setConfirmName(e.target.value)
-                      setDeleteError("")
-                    }}
-                    placeholder={team.name}
-                    className="text-xs"
-                  />
-                  {deleteError && (
-                    <p className="text-xs text-destructive">{deleteError}</p>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setDeleteOpen(false)
-                      setConfirmName("")
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={confirmName !== team.name}
-                    onClick={async () => {
-                      const { error } =
-                        await authClient.organization.removeTeam({
-                          teamId: team.id,
-                          organizationId,
-                        })
-                      if (error) {
-                        setDeleteError(error.message ?? "Failed to delete team")
-                      } else {
-                        onDeleted()
-                      }
-                    }}
-                  >
-                    Delete team
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={confirmName !== team.name}
+                onClick={async () => {
+                  const { error } =
+                    await authClient.organization.removeTeam({
+                      teamId: team.id,
+                      organizationId,
+                    })
+                  if (error) {
+                    setDeleteError(error.message ?? "Failed to delete team")
+                  } else {
+                    onDeleted()
+                  }
+                }}
+              >
+                Delete team
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
