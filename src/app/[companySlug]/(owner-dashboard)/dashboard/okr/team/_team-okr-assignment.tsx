@@ -125,7 +125,7 @@ export default function TeamOkrAssignment() {
 
   // Objectives for selected cycle (all teams)
   const { data: objectivesData, isLoading } =
-    api.objective.listTeamLevel.useQuery(
+    api.objective.listTeamLevelAdmin.useQuery(
       { cycleId: selectedCycleId ?? "" },
       { enabled: !!selectedCycleId && !!organization },
     )
@@ -139,7 +139,7 @@ export default function TeamOkrAssignment() {
   })
   const createObjectiveMutation = api.objective.createTeamLevel.useMutation({
     onSuccess: () => {
-      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listTeamLevelAdmin.invalidate()
       setObjFormOpen(false)
       objectiveForm.reset()
     },
@@ -150,7 +150,7 @@ export default function TeamOkrAssignment() {
   const [krObjectiveId, setKrObjectiveId] = useState("")
   const createKrMutation = api.keyResult.createTeamLevel.useMutation({
     onSuccess: () => {
-      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listTeamLevelAdmin.invalidate()
       setKrFormOpen(false)
     },
   })
@@ -164,7 +164,7 @@ export default function TeamOkrAssignment() {
   const [deleteObj, setDeleteObj] = useState<string | null>(null)
   const deleteObjectiveMutation = api.objective.delete.useMutation({
     onSuccess: () => {
-      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listTeamLevelAdmin.invalidate()
       setDeleteObj(null)
     },
   })
@@ -172,7 +172,7 @@ export default function TeamOkrAssignment() {
   // Update objective
   const updateObjectiveMutation = api.objective.update.useMutation({
     onSuccess: () => {
-      utils.objective.listTeamLevel.invalidate()
+      utils.objective.listTeamLevelAdmin.invalidate()
     },
   })
 
@@ -366,7 +366,7 @@ export default function TeamOkrAssignment() {
                                   )
                                 }
                               }
-                              utils.objective.listTeamLevel.invalidate()
+                              utils.objective.listTeamLevelAdmin.invalidate()
                             } catch (e) {
                               console.error("Import failed:", e)
                             }

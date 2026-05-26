@@ -142,6 +142,52 @@ export const objectiveRouter = router({
       return { objectives }
     }),
 
+  listTeamLevelAdmin: protectedProcedure
+    .input(z.object({ cycleId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const orgId = ctx.session.session.activeOrganizationId
+      if (!orgId) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const member = await getMember(orgId, ctx.session.user.id)
+      if (!member || (member.role !== "admin" && member.role !== "owner")) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const objectives = await prisma.objective.findMany({
+        where: {
+          cycleId: input.cycleId,
+          organizationId: orgId,
+          teamId: { not: null },
+          ownerId: null,
+        },
+        include: {
+          owner: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, image: true },
+              },
+            },
+          },
+          keyResults: {
+            include: {
+              owner: {
+                include: {
+                  user: {
+                    select: { id: true, name: true, email: true, image: true },
+                  },
+                },
+              },
+              checkIns: { orderBy: { createdAt: "desc" }, take: 5 },
+            },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      })
+
+      return { objectives }
+    }),
+
   listMemberLevel: protectedProcedure
     .input(z.object({ cycleId: z.string() }))
     .query(async ({ ctx, input }) => {
