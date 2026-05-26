@@ -2,9 +2,9 @@ import { redirect } from "next/navigation"
 import { getOrgSession, getMember } from "@/lib/server-utils"
 import { prisma } from "@/lib/prisma"
 
-async function hasAccessToTeam(userId: string, teamId: string) {
+async function hasAccessToTeam(userId: string, teamId: string, orgId: string) {
   const tm = await prisma.teamMember.findFirst({
-    where: { userId, teamId, status: "active" },
+    where: { userId, teamId, team: { organizationId: orgId }, status: "active" },
     select: { role: true },
   })
   if (!tm) return null
@@ -53,6 +53,7 @@ export default async function CompanyHub({
     const hasAccess = await hasAccessToTeam(
       session.user.id,
       session.session.activeTeamId,
+      session.session.activeOrganizationId,
     )
     const firstTeamWithAccess = await getFirstTeamWithAccess(
       session.user.id,
