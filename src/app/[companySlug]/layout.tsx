@@ -51,7 +51,6 @@ export default async function CompanyLayout({
     : null
 
   if (!org || !member) {
-    // User doesn't have access to this org — find first org they belong to
     const userOrgs = await prisma.member.findMany({
       where: { userId: session.user.id },
       include: { organization: { select: { slug: true } } },

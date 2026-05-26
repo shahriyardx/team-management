@@ -24,39 +24,37 @@ import { NavUser } from "@/components/nav-user"
 import { SidebarNavItems, type NavItem } from "@/components/sidebar-nav-items"
 import { useOrganization } from "@/lib/organization-context"
 import { api } from "@/lib/trpc/client"
-import type { authClient } from "@/lib/auth-client"
-
-type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 
 function ownerItems(
   slug: string,
   counts: { myTasks?: number; orgTasks?: number; assignedTasks?: number },
 ): NavItem[] {
+  const d = (path: string) => `/${slug}/dashboard${path}`
   return [
-    { title: "Dashboard", url: `/${slug}`, icon: House },
-    { title: "Announcements", url: `/${slug}/announcements`, icon: Megaphone },
+    { title: "Dashboard", url: d(""), icon: House },
+    { title: "Announcements", url: d("/announcements"), icon: Megaphone },
     {
       title: "OKRs",
       icon: Target,
       items: [
-        { title: "Org OKRs", url: `/${slug}/okr` },
-        { title: "Team OKRs", url: `/${slug}/okr/team` },
-        { title: "Cycles", url: `/${slug}/okr/cycles` },
+        { title: "Org OKRs", url: d("/okr") },
+        { title: "Team OKRs", url: d("/okr/team") },
+        { title: "Cycles", url: d("/okr/cycles") },
       ],
     },
     {
       title: "Tasks",
       icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/tasks`, badge: counts.myTasks },
+        { title: "My tasks", url: d("/tasks"), badge: counts.myTasks },
         {
           title: "Organization Tasks",
-          url: `/${slug}/tasks/all`,
+          url: d("/tasks/all"),
           badge: counts.orgTasks,
         },
         {
           title: "Assigned Tasks",
-          url: `/${slug}/tasks/assigned`,
+          url: d("/tasks/assigned"),
         },
       ],
     },
@@ -64,18 +62,18 @@ function ownerItems(
       title: "Knowledge Base",
       icon: BookBookmark,
       items: [
-        { title: "View", url: `/${slug}/knowledge-base` },
-        { title: "Add Knowledge", url: `/${slug}/knowledge-base/add` },
-        { title: "Categories", url: `/${slug}/knowledge-base/categories` },
+        { title: "View", url: d("/knowledge-base") },
+        { title: "Add Knowledge", url: d("/knowledge-base/add") },
+        { title: "Categories", url: d("/knowledge-base/categories") },
       ],
     },
-    { title: "Teams", url: `/${slug}/teams`, icon: UsersThree },
-    { title: "Members", url: `/${slug}/members`, icon: Users },
+    { title: "Teams", url: d("/teams"), icon: UsersThree },
+    { title: "Members", url: d("/members"), icon: Users },
     {
       title: "Settings",
       icon: Gear,
       items: [
-        { title: "General", url: `/${slug}/settings/general` },
+        { title: "General", url: d("/settings/general") },
         { title: "Billing", url: "#" },
       ],
     },
@@ -83,9 +81,8 @@ function ownerItems(
 }
 
 export function OwnerSidebar({
-  session: _session,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { session: Session }) {
+}: React.ComponentProps<typeof Sidebar>) {
   const params = useParams()
   const slug = params.companySlug as string | undefined
   const { organization } = useOrganization()

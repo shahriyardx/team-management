@@ -3,6 +3,9 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getOrgSession, getMember } from "@/lib/server-utils"
+import { DashboardLayout } from "@/components/dashboard-layout"
+import { LeaderSidebar } from "@/components/leader-sidebar"
 
 export async function generateMetadata({
   params,
@@ -43,40 +46,18 @@ export default async function ManageTeamLayout({
   params: Promise<{ companySlug: string }>
 }) {
   const { companySlug } = await params
-  const hdrs = await headers()
-  const session = await auth.api.getSession({ headers: hdrs })
-  if (!session) redirect("/auth/login")
-
-  const orgId = session.session.activeOrganizationId
-  if (!orgId) redirect("/onboard")
-
-  const member = await prisma.member.findUnique({
-    where: {
-      organizationId_userId: { organizationId: orgId, userId: session.user.id },
-    },
-  })
-
-  if (!member) redirect("/onboard")
-
+  const session = await getOrgSession()
+  const member = await getMember(session.session.activeOrganizationId, session.user.id)
   const activeTeamId = session.session.activeTeamId
 
-  if (member.role === "owner" || member.role === "admin") {
-    if (!activeTeamId) redirect(`/${companySlug}`)
-  } else {
-    const ledTeam = await prisma.team.findFirst({
-      where: { organizationId: orgId, leaderId: member.id },
-    })
-    if (!ledTeam) redirect(`/${companySlug}/team`)
+  if (!activeTeamId || !member) redirect(`/${companySlug}`)
 
-    if (activeTeamId) {
-      const validTeam = await prisma.team.findFirst({
-        where: { id: activeTeamId, organizationId: orgId, leaderId: member.id },
-      })
-      if (!validTeam) {
-        redirect(`/${companySlug}/team`)
-      }
-    }
-  }
+  const team = await prisma.team.findFirst({
+    where: { id: activeTeamId, organizationId: session.session.activeOrganizationId, leaderId: member.id },
+  })
+  if (!team) redirect(`/${companySlug}`)
 
-  return <>{children}</>
+  return (
+    <DashboardLayout sidebar={<LeaderSidebar />}>{children}</DashboardLayout>
+  )
 }

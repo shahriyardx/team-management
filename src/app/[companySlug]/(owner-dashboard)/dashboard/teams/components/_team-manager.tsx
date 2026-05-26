@@ -309,7 +309,7 @@ export function TeamManager() {
                     variant="outline"
                     className="text-xs"
                     onClick={() =>
-                      router.push(`/${companySlug}/teams/${team.id}`)
+                      router.push(`/${companySlug}/dashboard/teams/${team.id}`)
                     }
                   >
                     View

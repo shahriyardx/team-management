@@ -98,7 +98,7 @@ export function TeamDetail({ teamId }: { teamId: string }) {
   })
 
   const deleteTeam = api.team.delete.useMutation({
-    onSuccess: () => router.push(`/${companySlug}/teams`),
+    onSuccess: () => router.push(`/${companySlug}/dashboard/teams`),
   })
 
   const removeMember = api.team.removeTeamMember.useMutation({
@@ -192,7 +192,7 @@ export function TeamDetail({ teamId }: { teamId: string }) {
             variant="outline"
             size="sm"
             className="mt-4"
-            onClick={() => router.push(`/${companySlug}/teams`)}
+            onClick={() => router.push(`/${companySlug}/dashboard/teams`)}
           >
             Back to teams
           </Button>
@@ -205,7 +205,7 @@ export function TeamDetail({ teamId }: { teamId: string }) {
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
         <button
-          onClick={() => router.push(`/${companySlug}/teams`)}
+          onClick={() => router.push(`/${companySlug}/dashboard/teams`)}
           className="text-xs text-muted-foreground hover:text-foreground mb-2"
         >
           &larr; Back to teams

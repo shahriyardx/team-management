@@ -24,9 +24,6 @@ import { SidebarNavItems, type NavItem } from "@/components/sidebar-nav-items"
 import { useOrganization } from "@/lib/organization-context"
 import { useMemberRole } from "@/lib/use-member-role"
 import { api } from "@/lib/trpc/client"
-import type { authClient } from "@/lib/auth-client"
-
-type Session = Awaited<ReturnType<typeof authClient.useSession>>["data"]
 
 function leaderItems(
   slug: string,
@@ -98,14 +95,13 @@ function leaderItems(
 }
 
 export function LeaderSidebar({
-  session: _session,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { session: Session }) {
+}: React.ComponentProps<typeof Sidebar>) {
   const params = useParams()
   const slug = params.companySlug as string | undefined
-  const { organization } = useOrganization()
+  const { organization, session } = useOrganization()
   const { role } = useMemberRole()
-  const activeTeamId = _session?.session?.activeTeamId ?? null
+  const activeTeamId = session?.session?.activeTeamId ?? null
 
   const { data: counts } = api.task.getSidebarCounts.useQuery(
     {

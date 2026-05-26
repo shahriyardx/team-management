@@ -1,8 +1,9 @@
-import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getOrgSession, getMember } from "@/lib/server-utils"
+import { DashboardLayout } from "@/components/dashboard-layout"
+import { OwnerSidebar } from "@/components/owner-sidebar"
 
 export async function generateMetadata({
   params,
@@ -31,27 +32,13 @@ export default async function OwnerLayout({
   params: Promise<{ companySlug: string }>
 }) {
   const { companySlug } = await params
-  const hdrs = await headers()
-  const session = await auth.api.getSession({ headers: hdrs })
-  if (!session) redirect("/auth/login")
+  const session = await getOrgSession()
+  const member = await getMember(session.session.activeOrganizationId, session.user.id)
 
-  const orgId = session.session.activeOrganizationId
-  if (!orgId) redirect("/onboard")
+  if (member?.role === "owner" || member?.role === "admin")
+    return (
+      <DashboardLayout sidebar={<OwnerSidebar />}>{children}</DashboardLayout>
+    )
 
-  const member = await prisma.member.findUnique({
-    where: {
-      organizationId_userId: { organizationId: orgId, userId: session.user.id },
-    },
-  })
-
-  if (!member) redirect("/onboard")
-
-  if (member.role === "owner" || member.role === "admin") return <>{children}</>
-
-  const ledTeam = await prisma.team.findFirst({
-    where: { organizationId: orgId, leaderId: member.id },
-  })
-
-  if (ledTeam) redirect(`/${companySlug}/manage-team`)
-  else redirect(`/${companySlug}/team`)
+  redirect(`/${companySlug}`)
 }

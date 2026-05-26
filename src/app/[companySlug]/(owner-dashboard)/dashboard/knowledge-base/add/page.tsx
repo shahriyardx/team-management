@@ -159,7 +159,7 @@ export default function AddKnowledgePage() {
         })),
       })
 
-      router.push(`/${companySlug}/knowledge-base`)
+      router.push(`/${companySlug}/dashboard/knowledge-base`)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to create knowledge item.",

@@ -3,6 +3,9 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getOrgSession } from "@/lib/server-utils"
+import { DashboardLayout } from "@/components/dashboard-layout"
+import { CoLeaderSidebar } from "@/components/co-leader-sidebar"
 
 export async function generateMetadata({
   params,
@@ -43,36 +46,18 @@ export default async function CoLeaderLayout({
   params: Promise<{ companySlug: string }>
 }) {
   const { companySlug } = await params
-  const hdrs = await headers()
-  const session = await auth.api.getSession({ headers: hdrs })
-  if (!session) redirect("/auth/login")
-
-  const orgId = session.session.activeOrganizationId
-  if (!orgId) redirect("/onboard")
-
-  const member = await prisma.member.findUnique({
-    where: {
-      organizationId_userId: { organizationId: orgId, userId: session.user.id },
-    },
-  })
-  if (!member) redirect("/onboard")
-
-  // Org admin can access any dashboard
-  if (member.role === "owner" || member.role === "admin") {
-    return <>{children}</>
-  }
+  const session = await getOrgSession()
 
   const activeTeamId = session.session.activeTeamId
   if (!activeTeamId) redirect(`/${companySlug}`)
 
   const tm = await prisma.teamMember.findUnique({
-    where: {
-      teamId_userId: { teamId: activeTeamId, userId: session.user.id },
-    },
+    where: { teamId_userId: { teamId: activeTeamId, userId: session.user.id } },
     select: { role: true },
   })
-  // Not a co-leader — redirect to team dashboard (team layout handles leader/admin redirect)
-  if (tm?.role !== "co-leader") redirect(`/${companySlug}/team`)
+  if (tm?.role !== "co-leader") redirect(`/${companySlug}`)
 
-  return <>{children}</>
+  return (
+    <DashboardLayout sidebar={<CoLeaderSidebar />}>{children}</DashboardLayout>
+  )
 }

@@ -202,13 +202,14 @@ export default function OrgMembersPage() {
           organizationId: organization.id,
         })
         loadData()
+        utils.member.listWithStatus.invalidate()
       } catch {
         /* silently handle */
       } finally {
         setRemovingMember(null)
       }
     },
-    [organization, loadData],
+    [organization, loadData, utils],
   )
 
   const handleUpdateRole = useCallback(
