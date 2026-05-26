@@ -138,7 +138,7 @@ model Task {
   organizationId String
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   teamId         String?
-  team           Team?          @relation(fields: [teamId], references: [id])
+  team           Team?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   assignees      TaskAssignee[]
   createdById    String
   createdBy      User           @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
@@ -175,7 +175,7 @@ model Invitation {
   inviterId      String
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
   teamId         String?
-  team           Team?        @relation(fields: [teamId], references: [id])
+  team           Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([email])
@@ -329,7 +329,7 @@ model Objective {
   ownerId        String?
   owner          Member?      @relation(fields: [ownerId], references: [id])
   teamId         String?
-  team           Team?        @relation(fields: [teamId], references: [id])
+  team           Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   keyResults     KeyResult[]
