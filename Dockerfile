@@ -22,7 +22,9 @@ COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 
-RUN bun add prisma
+COPY --from=build /app/node_modules/prisma ./node_modules/prisma
+COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=build /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
