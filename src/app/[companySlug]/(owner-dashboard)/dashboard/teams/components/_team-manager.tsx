@@ -4,10 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Plus, Trash, Users as UsersIcon } from "@phosphor-icons/react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Plus, Users as UsersIcon } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -31,6 +29,7 @@ import { useMemberRole } from "@/lib/use-member-role"
 import { api } from "@/lib/trpc/client"
 import { authClient } from "@/lib/auth-client"
 import { useRouter, useParams } from "next/navigation"
+import { TeamCard } from "./_team-card"
 
 type OrgMember = {
   id: string
@@ -82,8 +81,6 @@ export function TeamManager() {
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-
   const {
     data: teamsData,
     isLoading,
@@ -95,11 +92,6 @@ export function TeamManager() {
   const teams = (teamsData?.teams ?? []) as Team[]
 
   const setLeader = api.team.setLeader.useMutation({
-    onSuccess: () => refetch(),
-  })
-
-  const setActiveTeamMutation = api.team.setActiveTeam.useMutation()
-  const deleteTeam = api.team.delete.useMutation({
     onSuccess: () => refetch(),
   })
 
@@ -270,127 +262,15 @@ export function TeamManager() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team) => (
-              <div
+              <TeamCard
                 key={team.id}
-                className="flex flex-col h-full border border-border p-4"
-              >
-                <div className="flex-1 pb-3">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium text-foreground truncate">
-                      {team.name}
-                    </h3>
-                  </div>
-                  {team.leader && (
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <Avatar size="sm">
-                        {team.leader.user.image ? (
-                          <AvatarImage
-                            src={team.leader.user.image}
-                            alt={team.leader.user.name}
-                          />
-                        ) : null}
-                        <AvatarFallback className="text-[10px]">
-                          {team.leader.user.name?.charAt(0)?.toUpperCase() ??
-                            "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {team.leader.user.name}
-                      </span>
-                    </div>
-                  )}
-                  <div className="mt-2">
-                    <Badge variant="outline" className="text-[10px]">
-                      {team.members.length}{" "}
-                      {team.members.length === 1 ? "member" : "members"}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 border-t border-border pt-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() =>
-                      router.push(`/${companySlug}/dashboard/teams/${team.id}`)
-                    }
-                  >
-                    View
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="text-xs"
-                    onClick={async () => {
-                      await setActiveTeamMutation.mutateAsync({
-                        teamId: team.id,
-                        organizationId: organization?.id ?? "",
-                      })
-                      const isLeader =
-                        team.leader?.user?.id === session?.user?.id
-                      if (isLeader)
-                        window.location.href = `/${companySlug}/manage-team`
-                      else router.push(`/${companySlug}/team`)
-                    }}
-                  >
-                    Manage
-                  </Button>
-                  {canManage && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="text-xs"
-                        onClick={() => setDeleteConfirmId(team.id)}
-                      >
-                        <Trash className="size-3" />
-                        Delete
-                      </Button>
-                      <Dialog
-                        open={deleteConfirmId === team.id}
-                        onOpenChange={(o) => {
-                          if (!o) setDeleteConfirmId(null)
-                        }}
-                      >
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Delete team</DialogTitle>
-                            <DialogDescription>
-                              Are you sure you want to delete{" "}
-                              <span className="font-medium text-foreground">
-                                {team.name}
-                              </span>
-                              ? This action cannot be undone.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <Button
-                              variant="outline"
-                              onClick={() => setDeleteConfirmId(null)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              onClick={() => {
-                                deleteTeam.mutate(
-                                  {
-                                    teamId: team.id,
-                                    organizationId: organization?.id ?? "",
-                                  },
-                                  { onSettled: () => setDeleteConfirmId(null) },
-                                )
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </>
-                  )}
-                </div>
-              </div>
+                team={team}
+                companySlug={companySlug}
+                sessionUserId={session?.user?.id}
+                organizationId={organization?.id ?? ""}
+                canDelete={canManage}
+                onDeleted={refetch}
+              />
             ))}
           </div>
         )}
