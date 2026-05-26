@@ -55,7 +55,6 @@ interface TeamCardProps {
   companySlug: string
   sessionUserId: string | undefined
   organizationId: string
-  canManage: boolean
   canDelete: boolean
   onDeleted: () => void
 }
