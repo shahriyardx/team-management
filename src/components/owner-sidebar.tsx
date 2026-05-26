@@ -107,7 +107,7 @@ export function OwnerSidebar({
         <OrgSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarNavItems items={items} />
+        <SidebarNavItems items={items} label="Owner Dashboard" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

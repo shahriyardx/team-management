@@ -135,16 +135,6 @@ export function CoLeaderSidebar({
         <SidebarMenu className="px-1.5 pb-1">
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="cursor-default text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-wider opacity-80 hover:bg-transparent"
-              isActive={false}
-            >
-              Co-leader Dashboard
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu className="px-1.5 pb-1">
-          <SidebarMenuItem>
-            <SidebarMenuButton
               asChild
               tooltip="Team Dashboard"
               className="border border-dashed border-amber-400/40 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 data-[active=true]:bg-amber-50 dark:data-[active=true]:bg-amber-950/40 text-xs"
@@ -156,7 +146,7 @@ export function CoLeaderSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarNavItems items={items} />
+        <SidebarNavItems items={items} label="Co-leader Dashboard" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

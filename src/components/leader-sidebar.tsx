@@ -127,7 +127,7 @@ export function LeaderSidebar({
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarNavItems items={items} />
+        <SidebarNavItems items={items} label="Leader Dashboard" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

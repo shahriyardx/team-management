@@ -27,7 +27,13 @@ export interface NavItem {
   items?: { title: string; url: string; badge?: number }[]
 }
 
-export function SidebarNavItems({ items }: { items: NavItem[] }) {
+export function SidebarNavItems({
+  items,
+  label,
+}: {
+  items: NavItem[]
+  label?: string
+}) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -56,7 +62,7 @@ export function SidebarNavItems({ items }: { items: NavItem[] }) {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>{label ?? "Platform"}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const hasSubItems = !!item.items

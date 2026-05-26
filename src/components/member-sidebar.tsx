@@ -128,7 +128,7 @@ export function MemberSidebar({
             </SidebarMenuItem>
           </SidebarMenu>
         )}
-        <SidebarNavItems items={items} />
+        <SidebarNavItems items={items} label="Team Dashboard" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

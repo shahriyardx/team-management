@@ -79,7 +79,6 @@ export function OrgSwitcher() {
               />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{org.name}</span>
-                <span className="truncate text-xs">Organization</span>
               </div>
               <CaretUpDownIcon className="ml-auto" />
             </SidebarMenuButton>
