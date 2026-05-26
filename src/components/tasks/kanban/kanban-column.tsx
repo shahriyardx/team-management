@@ -110,9 +110,7 @@ export function KanbanColumn({
               </Fragment>
             ))
           )}
-          {tasks.length > 0 && dropIndex >= tasks.length && (
-            <DropIndicator />
-          )}
+          {tasks.length > 0 && dropIndex >= tasks.length && <DropIndicator />}
         </SortableContext>
       </div>
     </div>

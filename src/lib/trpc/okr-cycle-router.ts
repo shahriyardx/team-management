@@ -146,7 +146,10 @@ export const okrCycleRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
@@ -180,7 +183,10 @@ export const okrCycleRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member || (member.role !== "admin" && member.role !== "owner")) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }

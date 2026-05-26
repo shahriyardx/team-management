@@ -41,9 +41,7 @@ export function KanbanCard({ task, onClick }: Props) {
       style={style}
       onClick={onClick}
       className={`cursor-grab rounded-none border border-border bg-card px-3 py-2.5 text-xs transition-shadow hover:shadow-sm ${
-        isDragging
-          ? "z-50 shadow-lg opacity-50"
-          : "active:cursor-grabbing"
+        isDragging ? "z-50 shadow-lg opacity-50" : "active:cursor-grabbing"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -81,10 +79,15 @@ export function KanbanCard({ task, onClick }: Props) {
         {task.assignees.length > 0 && (
           <div className="flex -space-x-1">
             {task.assignees.slice(0, 3).map((a) => (
-              <Avatar key={a.memberId} className="size-5 border border-background">
+              <Avatar
+                key={a.memberId}
+                className="size-5 border border-background"
+              >
                 <AvatarImage src={a.member.user.image ?? undefined} />
                 <AvatarFallback className="text-[8px]">
-                  {a.member.user.name?.charAt(0)?.toUpperCase() ?? <User className="size-2.5" />}
+                  {a.member.user.name?.charAt(0)?.toUpperCase() ?? (
+                    <User className="size-2.5" />
+                  )}
                 </AvatarFallback>
               </Avatar>
             ))}

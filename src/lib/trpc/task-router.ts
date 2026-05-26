@@ -39,72 +39,92 @@ export const taskRouter = router({
   listOrgTasks: protectedProcedure
     .input(z.object({ mode: z.enum(["assigned"]).optional() }).optional())
     .query(async ({ ctx, input }) => {
-    const orgId = ctx.session.session.activeOrganizationId
-    if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
+      const orgId = ctx.session.session.activeOrganizationId
+      if (!orgId)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No active organization",
+        })
 
-    const member = await getMember(orgId, ctx.session.user.id)
-    if (!member || (member.role !== "owner" && member.role !== "admin")) {
-      throw new TRPCError({ code: "FORBIDDEN" })
-    }
+      const member = await getMember(orgId, ctx.session.user.id)
+      if (!member || (member.role !== "owner" && member.role !== "admin")) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
 
-    const where: Prisma.TaskWhereInput = { organizationId: orgId, teamId: null }
-    if (input?.mode === "assigned") {
-      where.createdById = ctx.session.user.id
-    }
+      const where: Prisma.TaskWhereInput = {
+        organizationId: orgId,
+        teamId: null,
+      }
+      if (input?.mode === "assigned") {
+        where.createdById = ctx.session.user.id
+      }
 
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        assignees: assigneesInclude,
-        createdBy: { select: { id: true, name: true, email: true, image: true } },
-      },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-    })
+      const tasks = await prisma.task.findMany({
+        where,
+        include: {
+          assignees: assigneesInclude,
+          createdBy: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      })
 
-    return { tasks, total: tasks.length }
-  }),
+      return { tasks, total: tasks.length }
+    }),
 
   listTeamTasks: protectedProcedure
     .input(z.object({ mode: z.enum(["assigned"]).optional() }).optional())
     .query(async ({ ctx, input }) => {
-    const teamId = ctx.session.session.activeTeamId
-    if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
+      const teamId = ctx.session.session.activeTeamId
+      if (!teamId)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
 
-    const teamMember = await prisma.teamMember.findUnique({
-      where: { teamId_userId: { teamId, userId: ctx.session.user.id } },
-    })
-    if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
+      const teamMember = await prisma.teamMember.findUnique({
+        where: { teamId_userId: { teamId, userId: ctx.session.user.id } },
+      })
+      if (!teamMember) throw new TRPCError({ code: "FORBIDDEN" })
 
-    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { organizationId: true } })
-    if (!team) throw new TRPCError({ code: "NOT_FOUND" })
+      const team = await prisma.team.findUnique({
+        where: { id: teamId },
+        select: { organizationId: true },
+      })
+      if (!team) throw new TRPCError({ code: "NOT_FOUND" })
 
-    const where: Prisma.TaskWhereInput = {
-      teamId,
-      organizationId: team.organizationId,
-    }
+      const where: Prisma.TaskWhereInput = {
+        teamId,
+        organizationId: team.organizationId,
+      }
 
-    if (input?.mode === "assigned") {
-      where.createdById = ctx.session.user.id
-    }
+      if (input?.mode === "assigned") {
+        where.createdById = ctx.session.user.id
+      }
 
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        assignees: assigneesInclude,
-        createdBy: { select: { id: true, name: true, email: true, image: true } },
-      },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-    })
+      const tasks = await prisma.task.findMany({
+        where,
+        include: {
+          assignees: assigneesInclude,
+          createdBy: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      })
 
-    return { tasks, total: tasks.length }
-  }),
+      return { tasks, total: tasks.length }
+    }),
 
   listMyTeamTasks: protectedProcedure.query(async ({ ctx }) => {
     const orgId = ctx.session.session.activeOrganizationId
-    if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
+    if (!orgId)
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "No active organization",
+      })
 
     const teamId = ctx.session.session.activeTeamId
-    if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
+    if (!teamId)
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
 
     const member = await getMember(orgId, ctx.session.user.id)
     if (!member) throw new TRPCError({ code: "FORBIDDEN" })
@@ -117,7 +137,9 @@ export const taskRouter = router({
       },
       include: {
         assignees: assigneesInclude,
-        createdBy: { select: { id: true, name: true, email: true, image: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, image: true },
+        },
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     })
@@ -127,7 +149,11 @@ export const taskRouter = router({
 
   listMyOrgTasks: protectedProcedure.query(async ({ ctx }) => {
     const orgId = ctx.session.session.activeOrganizationId
-    if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
+    if (!orgId)
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "No active organization",
+      })
 
     const member = await getMember(orgId, ctx.session.user.id)
     if (!member) throw new TRPCError({ code: "FORBIDDEN" })
@@ -140,7 +166,9 @@ export const taskRouter = router({
       },
       include: {
         assignees: assigneesInclude,
-        createdBy: { select: { id: true, name: true, email: true, image: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, image: true },
+        },
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     })
@@ -150,7 +178,11 @@ export const taskRouter = router({
 
   listOrgAssignableMembers: protectedProcedure.query(async ({ ctx }) => {
     const orgId = ctx.session.session.activeOrganizationId
-    if (!orgId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active organization" })
+    if (!orgId)
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "No active organization",
+      })
 
     const member = await getMember(orgId, ctx.session.user.id)
     if (!member) throw new TRPCError({ code: "FORBIDDEN" })
@@ -158,11 +190,7 @@ export const taskRouter = router({
     const members = await prisma.member.findMany({
       where: {
         organizationId: orgId,
-        OR: [
-          { role: "owner" },
-          { role: "admin" },
-          { teamsLed: { some: {} } },
-        ],
+        OR: [{ role: "owner" }, { role: "admin" }, { teamsLed: { some: {} } }],
       },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },
@@ -175,7 +203,8 @@ export const taskRouter = router({
 
   listTeamAssignableMember: protectedProcedure.query(async ({ ctx }) => {
     const teamId = ctx.session.session.activeTeamId
-    if (!teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
+    if (!teamId)
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No active team" })
 
     const team = await prisma.team.findUnique({
       where: { id: teamId },
@@ -416,7 +445,10 @@ export const taskRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       // Scope permission check
@@ -548,7 +580,10 @@ export const taskRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       // Allow creator, team leader, org admin/owner, or assignee to change status
@@ -587,7 +622,9 @@ export const taskRouter = router({
         where: { id: input.id },
         data: {
           status: input.status,
-          ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+          ...(input.sortOrder !== undefined
+            ? { sortOrder: input.sortOrder }
+            : {}),
         },
         include: {
           assignees: assigneesInclude,
@@ -638,9 +675,7 @@ export const taskRouter = router({
   reorder: protectedProcedure
     .input(
       z.object({
-        items: z.array(
-          z.object({ id: z.string(), sortOrder: z.number() }),
-        ),
+        items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -649,9 +684,13 @@ export const taskRouter = router({
         where: { id: { in: taskIds } },
         include: { assignees: assigneesInclude },
       })
-      if (tasks.length !== taskIds.length) throw new TRPCError({ code: "NOT_FOUND" })
+      if (tasks.length !== taskIds.length)
+        throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(tasks[0].organizationId, ctx.session.user.id)
+      const member = await getMember(
+        tasks[0].organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isOwnerAdmin = member.role === "owner" || member.role === "admin"
@@ -706,7 +745,10 @@ export const taskRouter = router({
       const existing = await prisma.task.findUnique({ where: { id: input.id } })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       // Scope permission check

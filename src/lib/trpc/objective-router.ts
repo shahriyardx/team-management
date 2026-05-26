@@ -408,7 +408,10 @@ export const objectiveRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"
@@ -499,7 +502,10 @@ export const objectiveRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isAdmin = member.role === "admin" || member.role === "owner"

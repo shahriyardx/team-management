@@ -35,7 +35,9 @@ export function AnnouncementList({ showScopeToggle, defaultScope }: Props) {
   const basePath = pathname.replace(/\/+$/, "")
   const isMemberView = pathname.startsWith(`/${slug}/team`)
 
-  const [scopeFilter, setScopeFilter] = useState<"org" | "team">(defaultScope ?? "org")
+  const [scopeFilter, setScopeFilter] = useState<"org" | "team">(
+    defaultScope ?? "org",
+  )
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
 

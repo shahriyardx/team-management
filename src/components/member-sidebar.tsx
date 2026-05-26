@@ -58,7 +58,11 @@ function memberItems(
       title: "Tasks",
       icon: ListChecks,
       items: [
-        { title: "My tasks", url: `/${slug}/team/tasks`, badge: counts.myTasks },
+        {
+          title: "My tasks",
+          url: `/${slug}/team/tasks`,
+          badge: counts.myTasks,
+        },
         {
           title: "Assigned Tasks",
           url: `/${slug}/team/tasks/assigned`,

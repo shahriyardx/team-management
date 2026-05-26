@@ -47,7 +47,10 @@ export default async function TeamLayout({
 }) {
   const { companySlug } = await params
   const session = await getOrgSession()
-  const member = await getMember(session.session.activeOrganizationId, session.user.id)
+  const member = await getMember(
+    session.session.activeOrganizationId,
+    session.user.id,
+  )
 
   if (member?.role === "owner" || member?.role === "admin") {
     if (!session.session.activeTeamId) redirect(`/${companySlug}`)
@@ -57,19 +60,28 @@ export default async function TeamLayout({
   }
 
   const ledTeam = await prisma.team.findFirst({
-    where: { organizationId: session.session.activeOrganizationId, leaderId: member!.id },
+    where: {
+      organizationId: session.session.activeOrganizationId,
+      leaderId: member!.id,
+    },
   })
 
   // Leader viewing own team or no activeTeamId → send to manage-team
   if (ledTeam) {
-    if (!session.session.activeTeamId || session.session.activeTeamId === ledTeam.id) {
+    if (
+      !session.session.activeTeamId ||
+      session.session.activeTeamId === ledTeam.id
+    ) {
       redirect(`/${companySlug}/manage-team`)
     }
     // Leader viewing a different team → stay
   }
 
   const teamMember = await prisma.teamMember.findFirst({
-    where: { userId: session.user.id, team: { organizationId: session.session.activeOrganizationId } },
+    where: {
+      userId: session.user.id,
+      team: { organizationId: session.session.activeOrganizationId },
+    },
   })
   if (!teamMember) redirect(`/${companySlug}`)
 
@@ -82,7 +94,9 @@ export default async function TeamLayout({
     if (validMember.status === "inactive") {
       return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 p-6">
-          <h2 className="text-sm font-medium text-foreground">Access Deactivated</h2>
+          <h2 className="text-sm font-medium text-foreground">
+            Access Deactivated
+          </h2>
           <p className="text-xs text-muted-foreground text-center max-w-md">
             Your access to this team has been deactivated. Contact your team
             leader or organization owner for more information.

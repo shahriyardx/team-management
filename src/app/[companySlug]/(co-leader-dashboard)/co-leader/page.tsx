@@ -99,10 +99,8 @@ export default function CoLeaderDashboardPage() {
           <div className="divide-y divide-border">
             {[...team.team.members]
               .sort((a, b) => {
-                const aIsLeader =
-                  team.team?.leader?.user?.id === a.user.id
-                const bIsLeader =
-                  team.team?.leader?.user?.id === b.user.id
+                const aIsLeader = team.team?.leader?.user?.id === a.user.id
+                const bIsLeader = team.team?.leader?.user?.id === b.user.id
                 if (aIsLeader) return -1
                 if (bIsLeader) return 1
                 return 0
@@ -117,8 +115,7 @@ export default function CoLeaderDashboardPage() {
                     image: string | null
                   }
                 }) => {
-                  const isLeader =
-                    team.team?.leader?.user?.id === tm.user.id
+                  const isLeader = team.team?.leader?.user?.id === tm.user.id
                   return (
                     <div
                       key={tm.id}

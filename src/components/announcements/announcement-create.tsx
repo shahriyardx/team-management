@@ -97,7 +97,8 @@ export function AnnouncementForm({ announcementId }: Props) {
   const _slug = params.companySlug as string
   const utils = api.useUtils()
   const { data: sessionData } = authClient.useSession()
-  const isTeamScoped = pathname.includes("/manage-team/") || pathname.includes("/co-leader/")
+  const isTeamScoped =
+    pathname.includes("/manage-team/") || pathname.includes("/co-leader/")
   const activeTeamId = sessionData?.session?.activeTeamId ?? null
   const isEdit = !!announcementId
 

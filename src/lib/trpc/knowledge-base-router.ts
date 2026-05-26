@@ -73,7 +73,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const category = await prisma.kbCategory.update({
@@ -91,7 +94,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       await prisma.kbCategory.delete({ where: { id: input.id } })
@@ -110,7 +116,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!category) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(category.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        category.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const subcategory = await prisma.kbSubcategory.create({
@@ -131,7 +140,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const subcategory = await prisma.kbSubcategory.update({
@@ -149,7 +161,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       await prisma.kbSubcategory.delete({ where: { id: input.id } })
@@ -418,7 +433,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const changes: Record<string, { old: unknown; new: unknown }> = {}
@@ -485,7 +503,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isPrivileged = member.role === "owner" || member.role === "admin"
@@ -591,7 +612,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!comment) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(comment.kbItem.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        comment.kbItem.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isPrivileged = member.role === "owner" || member.role === "admin"
@@ -700,7 +724,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isPrivileged = member.role === "owner" || member.role === "admin"
@@ -736,7 +763,10 @@ export const knowledgeBaseRouter = router({
       })
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const member = await getMember(existing.organizationId, ctx.session.user.id)
+      const member = await getMember(
+        existing.organizationId,
+        ctx.session.user.id,
+      )
       if (!member) throw new TRPCError({ code: "FORBIDDEN" })
 
       const isPrivileged = member.role === "owner" || member.role === "admin"

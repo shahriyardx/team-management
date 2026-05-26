@@ -15,20 +15,26 @@ import { api } from "@/lib/trpc/client"
 
 function kbBase(slug: string, pathname: string, teamId?: string | null) {
   if (teamId) {
-    if (pathname.includes("/manage-team/")) return `/${slug}/manage-team/knowledge-base`
-    if (pathname.includes("/co-leader/")) return `/${slug}/co-leader/knowledge-base`
+    if (pathname.includes("/manage-team/"))
+      return `/${slug}/manage-team/knowledge-base`
+    if (pathname.includes("/co-leader/"))
+      return `/${slug}/co-leader/knowledge-base`
     return `/${slug}/team/knowledge-base`
   }
-  if (pathname.includes("/dashboard/")) return `/${slug}/dashboard/knowledge-base`
+  if (pathname.includes("/dashboard/"))
+    return `/${slug}/dashboard/knowledge-base`
   return `/${slug}/knowledge-base`
 }
 
 function announcementBase(slug: string, pathname: string) {
-  if (pathname.includes("/manage-team/")) return `/${slug}/manage-team/announcements`
-  if (pathname.includes("/co-leader/")) return `/${slug}/co-leader/announcements`
+  if (pathname.includes("/manage-team/"))
+    return `/${slug}/manage-team/announcements`
+  if (pathname.includes("/co-leader/"))
+    return `/${slug}/co-leader/announcements`
   if (pathname === `/${slug}/team` || pathname.startsWith(`/${slug}/team/`))
     return `/${slug}/team/announcements`
-  if (pathname.includes("/dashboard/")) return `/${slug}/dashboard/announcements`
+  if (pathname.includes("/dashboard/"))
+    return `/${slug}/dashboard/announcements`
   return `/${slug}/announcements`
 }
 

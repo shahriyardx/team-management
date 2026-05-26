@@ -25,7 +25,11 @@ const columnColors: Record<string, string> = {
 
 interface Props {
   tasks: Task[]
-  onStatusChange: (taskId: string, newStatus: string, sortOrder?: number) => void
+  onStatusChange: (
+    taskId: string,
+    newStatus: string,
+    sortOrder?: number,
+  ) => void
   onReorder: (items: Array<{ id: string; sortOrder: number }>) => void
   onCardClick?: (taskId: string) => void
   onAddClick?: (status: string) => void
@@ -43,7 +47,9 @@ export function KanbanBoard({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
   )
 
   const columns = useMemo(
@@ -80,7 +86,8 @@ export function KanbanBoard({
     const isStatusDrop = (statusOrder as readonly string[]).includes(overId)
     const overTask = isStatusDrop ? null : tasks.find((t) => t.id === overId)
     const newStatus = overTask?.status ?? (isStatusDrop ? overId : null)
-    if (!newStatus || !(statusOrder as readonly string[]).includes(newStatus)) return
+    if (!newStatus || !(statusOrder as readonly string[]).includes(newStatus))
+      return
 
     if (task.status === newStatus) {
       // Same column — reorder
@@ -101,7 +108,9 @@ export function KanbanBoard({
       onReorder(items)
     } else {
       // Cross-column — change status with position
-      const targetTasks = tasks.filter((t) => t.status === newStatus && t.id !== taskId)
+      const targetTasks = tasks.filter(
+        (t) => t.status === newStatus && t.id !== taskId,
+      )
       let sortOrder: number
 
       if (overTask) {
@@ -135,9 +144,7 @@ export function KanbanBoard({
             tasks={col.tasks}
             color={col.color}
             onCardClick={onCardClick}
-            onAddClick={
-              onAddClick ? () => onAddClick(col.status) : undefined
-            }
+            onAddClick={onAddClick ? () => onAddClick(col.status) : undefined}
             dragOverId={dragOverId}
             activeTask={activeTask}
           />

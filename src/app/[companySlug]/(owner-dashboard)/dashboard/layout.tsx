@@ -33,7 +33,10 @@ export default async function OwnerLayout({
 }) {
   const { companySlug } = await params
   const session = await getOrgSession()
-  const member = await getMember(session.session.activeOrganizationId, session.user.id)
+  const member = await getMember(
+    session.session.activeOrganizationId,
+    session.user.id,
+  )
 
   if (member?.role === "owner" || member?.role === "admin")
     return (

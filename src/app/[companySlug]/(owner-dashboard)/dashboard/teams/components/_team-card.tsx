@@ -195,15 +195,16 @@ export function TeamCard({
                     variant="destructive"
                     disabled={confirmName !== team.name}
                     onClick={async () => {
-                        const { error } = await authClient.organization.removeTeam({
+                      const { error } =
+                        await authClient.organization.removeTeam({
                           teamId: team.id,
                           organizationId,
                         })
-                        if (error) {
-                          setDeleteError(error.message ?? "Failed to delete team")
-                        } else {
-                          onDeleted()
-                        }
+                      if (error) {
+                        setDeleteError(error.message ?? "Failed to delete team")
+                      } else {
+                        onDeleted()
+                      }
                     }}
                   >
                     Delete team

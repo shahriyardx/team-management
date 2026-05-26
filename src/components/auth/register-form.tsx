@@ -133,12 +133,17 @@ export function RegisterForm({ callbackURL }: { callbackURL?: string }) {
   if (registered) {
     return (
       <div className="w-full max-w-sm mx-auto">
-        <h2 className="text-lg font-semibold text-foreground">Check your email</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          Check your email
+        </h2>
         <p className="mb-8 mt-1 text-sm text-muted-foreground">
-          A verification link has been sent to <strong>{form.getValues("email")}</strong>.
+          A verification link has been sent to{" "}
+          <strong>{form.getValues("email")}</strong>.
         </p>
         <div className="border border-border bg-accent/30 p-4 text-xs text-muted-foreground space-y-2">
-          <p>Click the link in the email to verify your account, then sign in.</p>
+          <p>
+            Click the link in the email to verify your account, then sign in.
+          </p>
           <p>Didn&apos;t receive it? Check your spam folder.</p>
         </div>
         <Button

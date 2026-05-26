@@ -123,7 +123,10 @@ export function TaskTable({
   isLoading: boolean
   listUtils: any
   listInput: any
-  dashboard: "owner-dashboard" | "team-leader-dashboard" | "team-member-dashboard"
+  dashboard:
+    | "owner-dashboard"
+    | "team-leader-dashboard"
+    | "team-member-dashboard"
 }) {
   const { session, organization } = useOrganization()
 
@@ -296,7 +299,10 @@ export function TaskTable({
         createMutation.mutate({
           ...input,
           organizationId: organization.id,
-          teamId: dashboard === "owner-dashboard" ? undefined : (activeTeamId ?? undefined),
+          teamId:
+            dashboard === "owner-dashboard"
+              ? undefined
+              : (activeTeamId ?? undefined),
         })
       }
       setCreateOpen(false)
@@ -321,7 +327,11 @@ export function TaskTable({
         if (!old) return old
         const updated = old.tasks.map((t: any) =>
           t.id === id
-            ? { ...t, status, ...(sortOrder !== undefined ? { sortOrder } : {}) }
+            ? {
+                ...t,
+                status,
+                ...(sortOrder !== undefined ? { sortOrder } : {}),
+              }
             : t,
         )
         updated.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
@@ -460,10 +470,7 @@ export function TaskTable({
                   name="status"
                   control={form.control}
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger className="h-9 w-full rounded-none text-xs">
                         {field.value
                           ? statusLabels[field.value]
@@ -471,9 +478,7 @@ export function TaskTable({
                       </SelectTrigger>
                       <SelectContent position="popper">
                         <SelectItem value="todo">Todo</SelectItem>
-                        <SelectItem value="in_progress">
-                          In Progress
-                        </SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
                         <SelectItem value="done">Done</SelectItem>
                       </SelectContent>
                     </Select>

@@ -47,13 +47,20 @@ export default async function ManageTeamLayout({
 }) {
   const { companySlug } = await params
   const session = await getOrgSession()
-  const member = await getMember(session.session.activeOrganizationId, session.user.id)
+  const member = await getMember(
+    session.session.activeOrganizationId,
+    session.user.id,
+  )
   const activeTeamId = session.session.activeTeamId
 
   if (!activeTeamId || !member) redirect(`/${companySlug}`)
 
   const team = await prisma.team.findFirst({
-    where: { id: activeTeamId, organizationId: session.session.activeOrganizationId, leaderId: member.id },
+    where: {
+      id: activeTeamId,
+      organizationId: session.session.activeOrganizationId,
+      leaderId: member.id,
+    },
   })
   if (!team) redirect(`/${companySlug}`)
 

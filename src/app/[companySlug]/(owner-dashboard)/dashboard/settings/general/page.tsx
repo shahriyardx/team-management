@@ -47,7 +47,8 @@ const orgSchema = z.object({
 type OrgForm = z.infer<typeof orgSchema>
 
 export default function GeneralSettingsPage() {
-  const { organization, refetchOrganizations, refetchSession } = useOrganization()
+  const { organization, refetchOrganizations, refetchSession } =
+    useOrganization()
   const [saving, setSaving] = useState(false)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoError, setLogoError] = useState<string | null>(null)

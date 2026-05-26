@@ -5,7 +5,9 @@ import { TaskTable } from "@/components/tasks/task-table"
 
 export default function AssignedTasksPage() {
   const utils = api.useUtils()
-  const { data, isLoading } = api.task.listOrgTasks.useQuery({ mode: "assigned" })
+  const { data, isLoading } = api.task.listOrgTasks.useQuery({
+    mode: "assigned",
+  })
 
   return (
     <TaskTable
